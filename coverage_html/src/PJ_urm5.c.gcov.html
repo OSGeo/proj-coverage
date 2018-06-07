@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_urm5.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_urm5.c<span style="font-size: 80%;"> (source / <a href="PJ_urm5.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">24</td>
+            <td class="headerCovTableEntry">27</td>
+            <td class="headerCovTableEntryMed">88.9 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : #define PJ_LIB__</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">       4 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">       7 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            : PROJ_HEAD(urm5, &quot;Urmaev V&quot;) &quot;\n\tPCyl., Sph., no inv.\n\tn= q= alpha=&quot;;
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            : struct pj_opaque {
+<span class="lineNum">      12 </span>            :     double m, rmn, q3, n;
+<span class="lineNum">      13 </span>            : };
+<a name="14"><span class="lineNum">      14 </span>            : </a>
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span><span class="lineCov">          6 : static XY s_forward (LP lp, PJ *P) {           /* Spheroidal, forward */</span>
+<span class="lineNum">      17 </span><span class="lineCov">          6 :     XY xy = {0.0, 0.0};</span>
+<span class="lineNum">      18 </span><span class="lineCov">          6 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      19 </span>            :     double t;
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span><span class="lineCov">          6 :     t = lp.phi = aasin (P-&gt;ctx, Q-&gt;n * sin (lp.phi));</span>
+<span class="lineNum">      22 </span><span class="lineCov">          6 :     xy.x = Q-&gt;m * lp.lam * cos (lp.phi);</span>
+<span class="lineNum">      23 </span><span class="lineCov">          6 :     t *= t;</span>
+<span class="lineNum">      24 </span><span class="lineCov">          6 :     xy.y = lp.phi * (1. + t * Q-&gt;q3) * Q-&gt;rmn;</span>
+<span class="lineNum">      25 </span><span class="lineCov">          6 :     return xy;</span>
+<span class="lineNum">      26 </span>            : }
+<a name="27"><span class="lineNum">      27 </span>            : </a>
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span><span class="lineCov">         15 : PJ *PROJECTION(urm5) {</span>
+<span class="lineNum">      30 </span>            :     double alpha, t;
+<span class="lineNum">      31 </span><span class="lineCov">          5 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">      32 </span><span class="lineCov">          5 :     if (0==Q)</span>
+<span class="lineNum">      33 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, ENOMEM);</span>
+<span class="lineNum">      34 </span><span class="lineCov">          5 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span><span class="lineCov">          5 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tn&quot;).i) {</span>
+<span class="lineNum">      37 </span><span class="lineCov">          5 :         Q-&gt;n = pj_param(P-&gt;ctx, P-&gt;params, &quot;dn&quot;).f;</span>
+<span class="lineNum">      38 </span><span class="lineCov">          5 :         if (Q-&gt;n &lt;= 0. || Q-&gt;n &gt; 1.)</span>
+<span class="lineNum">      39 </span><span class="lineNoCov">          0 :             return pj_default_destructor(P, PJD_ERR_N_OUT_OF_RANGE);</span>
+<span class="lineNum">      40 </span>            :     } else {
+<span class="lineNum">      41 </span><span class="lineNoCov">          0 :             return pj_default_destructor(P, PJD_ERR_N_OUT_OF_RANGE);</span>
+<span class="lineNum">      42 </span>            :     }
+<span class="lineNum">      43 </span><span class="lineCov">          5 :     Q-&gt;q3 = pj_param(P-&gt;ctx, P-&gt;params, &quot;dq&quot;).f / 3.;</span>
+<span class="lineNum">      44 </span><span class="lineCov">          5 :     alpha = pj_param(P-&gt;ctx, P-&gt;params, &quot;ralpha&quot;).f;</span>
+<span class="lineNum">      45 </span><span class="lineCov">          5 :     t = Q-&gt;n * sin (alpha);</span>
+<span class="lineNum">      46 </span><span class="lineCov">          5 :     Q-&gt;m = cos (alpha) / sqrt (1. - t * t);</span>
+<span class="lineNum">      47 </span><span class="lineCov">          5 :     Q-&gt;rmn = 1. / (Q-&gt;m * Q-&gt;n);</span>
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span><span class="lineCov">          5 :     P-&gt;es = 0.;</span>
+<span class="lineNum">      50 </span><span class="lineCov">          5 :     P-&gt;inv = 0;</span>
+<span class="lineNum">      51 </span><span class="lineCov">          5 :     P-&gt;fwd = s_forward;</span>
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span><span class="lineCov">          5 :     return P;</span>
+<span class="lineNum">      54 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

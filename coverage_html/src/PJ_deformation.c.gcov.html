@@ -1,0 +1,399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_deformation.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_deformation.c<span style="font-size: 80%;"> (source / <a href="PJ_deformation.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">112</td>
+            <td class="headerCovTableEntry">133</td>
+            <td class="headerCovTableEntryMed">84.2 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntry">9</td>
+            <td class="headerCovTableEntryMed">88.9 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /***********************************************************************</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            :         Kinematic datum shifting utilizing a deformation model
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :                     Kristian Evers, 2017-10-29
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : ************************************************************************
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            : Perform datum shifts by means of a deformation/velocity model.
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            :     X_out = X_in + (T_ct - T_obs)*DX
+<span class="lineNum">      12 </span>            :     Y_out = Y_in + (T_ct - T_obs)*DY
+<span class="lineNum">      13 </span>            :     Z_out = Z_in + (T_ct - T_obs)*DZ
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            : The deformation operation takes cartesian coordinates as input and
+<span class="lineNum">      17 </span>            : returns cartesian coordinates as well.
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            : Corrections in the gridded model are in east, north, up (ENU) space.
+<span class="lineNum">      20 </span>            : Hence the input coordinates needs to be converted to ENU-space when
+<span class="lineNum">      21 </span>            : searching for corrections in the grid. The corrections are then converted
+<span class="lineNum">      22 </span>            : to cartesian XYZ-space and applied to the input coordinates (also in
+<span class="lineNum">      23 </span>            : cartesian space).
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            : A full deformation model is described by two grids, one for the horizontal
+<span class="lineNum">      26 </span>            : components and one for the vertical component. The horizontal grid is
+<span class="lineNum">      27 </span>            : stored in CTable/CTable2 and the vertical grid is stored in the GTX
+<span class="lineNum">      28 </span>            : format. The NTv2 format should not be used for this purpose since grid-
+<span class="lineNum">      29 </span>            : values are scaled upon reading. Both grids are expected to contain
+<span class="lineNum">      30 </span>            : grid-values in units of mm/year in ENU-space.
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            : ************************************************************************
+<span class="lineNum">      33 </span>            : * Copyright (c) 2017, Kristian Evers
+<span class="lineNum">      34 </span>            : *
+<span class="lineNum">      35 </span>            : * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      36 </span>            : * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      37 </span>            : * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      38 </span>            : * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      39 </span>            : * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      40 </span>            : * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      41 </span>            : *
+<span class="lineNum">      42 </span>            : * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      43 </span>            : * in all copies or substantial portions of the Software.
+<span class="lineNum">      44 </span>            : *
+<span class="lineNum">      45 </span>            : * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      46 </span>            : * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      47 </span>            : * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      48 </span>            : * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      49 </span>            : * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      50 </span>            : * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      51 </span>            : * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      52 </span>            : *
+<span class="lineNum">      53 </span>            : ***********************************************************************/
+<span class="lineNum">      54 </span>            : #define PJ_LIB__
+<span class="lineNum">      55 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      56 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">      57 </span>            : #include &quot;proj_internal.h&quot;
+<span class="lineNum">      58 </span>            : #include &quot;proj_math.h&quot;
+<span class="lineNum">      59 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span>            : PROJ_HEAD(deformation, &quot;Kinematic grid shift&quot;);
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span>            : #define TOL 1e-8
+<span class="lineNum">      64 </span>            : #define MAX_ITERATIONS 10
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            : struct pj_opaque {
+<span class="lineNum">      67 </span>            :     double t_obs;
+<span class="lineNum">      68 </span>            :     double t_epoch;
+<span class="lineNum">      69 </span>            :     PJ *cart;
+<span class="lineNum">      70 </span>            : };
+<a name="71"><span class="lineNum">      71 </span>            : </a>
+<span class="lineNum">      72 </span>            : /********************************************************************************/
+<span class="lineNum">      73 </span><span class="lineCov">        124 : static XYZ get_grid_shift(PJ* P, XYZ cartesian) {</span>
+<span class="lineNum">      74 </span>            : /********************************************************************************
+<span class="lineNum">      75 </span>            :     Read correction values from grid. The cartesian input coordinates are
+<span class="lineNum">      76 </span>            :     converted to geodetic coordinates in order look up the correction values
+<span class="lineNum">      77 </span>            :     in the grid. Once the grid corrections are read we need to convert them
+<span class="lineNum">      78 </span>            :     from ENU-space to cartesian XYZ-space. ENU -&gt; XYZ formula described in:
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            :     Nørbech, T., et al, 2003(?), &quot;Transformation from a Common Nordic Reference
+<span class="lineNum">      81 </span>            :     Frame to ETRS89 in Denmark, Finland, Norway, and Sweden – status report&quot;
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            : ********************************************************************************/
+<span class="lineNum">      84 </span>            :     PJ_COORD geodetic, shift, temp;
+<span class="lineNum">      85 </span>            :     double sp, cp, sl, cl;
+<span class="lineNum">      86 </span><span class="lineCov">        124 :     int previous_errno = proj_errno_reset(P);</span>
+<span class="lineNum">      87 </span>            : 
+<span class="lineNum">      88 </span>            :     /* cartesian to geodetic */
+<span class="lineNum">      89 </span><span class="lineCov">        124 :     geodetic.lpz = pj_inv3d(cartesian, P-&gt;opaque-&gt;cart);</span>
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            :     /* look up correction values in grids */
+<span class="lineNum">      92 </span><span class="lineCov">        124 :     shift.lp    = proj_hgrid_value(P, geodetic.lp);</span>
+<span class="lineNum">      93 </span><span class="lineCov">        124 :     shift.enu.u = proj_vgrid_value(P, geodetic.lp);</span>
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span><span class="lineCov">        124 :     if (proj_errno(P) == PJD_ERR_GRID_AREA)</span>
+<span class="lineNum">      96 </span><span class="lineCov">          2 :         proj_log_debug(P, &quot;deformation: coordinate (%.3f, %.3f) outside deformation model&quot;,</span>
+<span class="lineNum">      97 </span>            :                        proj_todeg(geodetic.lp.lam), proj_todeg(geodetic.lp.phi));
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            :     /* grid values are stored as mm/yr, we need m/yr */
+<span class="lineNum">     100 </span><span class="lineCov">        124 :     shift.xyz.x /= 1000;</span>
+<span class="lineNum">     101 </span><span class="lineCov">        124 :     shift.xyz.y /= 1000;</span>
+<span class="lineNum">     102 </span><span class="lineCov">        124 :     shift.xyz.z /= 1000;</span>
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            :     /* pre-calc cosines and sines */
+<span class="lineNum">     105 </span><span class="lineCov">        124 :     sp = sin(geodetic.lp.phi);</span>
+<span class="lineNum">     106 </span><span class="lineCov">        124 :     cp = cos(geodetic.lp.phi);</span>
+<span class="lineNum">     107 </span><span class="lineCov">        124 :     sl = sin(geodetic.lp.lam);</span>
+<span class="lineNum">     108 </span><span class="lineCov">        124 :     cl = cos(geodetic.lp.lam);</span>
+<span class="lineNum">     109 </span>            : 
+<span class="lineNum">     110 </span>            :     /* ENU -&gt; XYZ */
+<span class="lineNum">     111 </span><span class="lineCov">        124 :     temp.xyz.x = -sp*cl*shift.enu.n - sl*shift.enu.e + cp*cl*shift.enu.u;</span>
+<span class="lineNum">     112 </span><span class="lineCov">        124 :     temp.xyz.y = -sp*sl*shift.enu.n + cl*shift.enu.e + cp*sl*shift.enu.u;</span>
+<span class="lineNum">     113 </span><span class="lineCov">        124 :     temp.xyz.z =     cp*shift.enu.n +                     sp*shift.enu.u;</span>
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span><span class="lineCov">        124 :     shift.xyz = temp.xyz;</span>
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span><span class="lineCov">        124 :     proj_errno_restore(P, previous_errno);</span>
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span><span class="lineCov">        124 :     return shift.xyz;</span>
+<span class="lineNum">     120 </span>            : }
+<a name="121"><span class="lineNum">     121 </span>            : </a>
+<span class="lineNum">     122 </span>            : /********************************************************************************/
+<span class="lineNum">     123 </span><span class="lineCov">         10 : static XYZ reverse_shift(PJ *P, XYZ input, double dt) {</span>
+<span class="lineNum">     124 </span>            : /********************************************************************************
+<span class="lineNum">     125 </span>            :     Iteratively determine the reverse grid shift correction values.
+<span class="lineNum">     126 </span>            : *********************************************************************************/
+<span class="lineNum">     127 </span>            :     XYZ out, delta, dif;
+<span class="lineNum">     128 </span>            :     double z0;
+<span class="lineNum">     129 </span><span class="lineCov">         10 :     int i = MAX_ITERATIONS;</span>
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span><span class="lineCov">         10 :     delta = get_grid_shift(P, input);</span>
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span>            :     /* Store the origial z shift for later application */
+<span class="lineNum">     134 </span><span class="lineCov">         10 :     z0 = delta.z;</span>
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span>            :     /* When iterating to find the best horizontal coordinate we also carry   */
+<span class="lineNum">     137 </span>            :     /* along the z-component, since we need it for the cartesian -&gt; geodetic */
+<span class="lineNum">     138 </span>            :     /* conversion. The z-component adjustment is overwritten with z0 after   */
+<span class="lineNum">     139 </span>            :     /* the loop has finished.                                                */
+<span class="lineNum">     140 </span><span class="lineCov">         10 :     out.x = input.x - dt*delta.x;</span>
+<span class="lineNum">     141 </span><span class="lineCov">         10 :     out.y = input.y - dt*delta.y;</span>
+<span class="lineNum">     142 </span><span class="lineCov">         10 :     out.z = input.z + dt*delta.z;</span>
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span>            :     do {
+<span class="lineNum">     145 </span><span class="lineCov">        100 :         delta = get_grid_shift(P, out);</span>
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span><span class="lineCov">        100 :         if (delta.x == HUGE_VAL)</span>
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     149 </span>            : 
+<span class="lineNum">     150 </span><span class="lineCov">        100 :         dif.x  = out.x + dt*delta.x - input.x;</span>
+<span class="lineNum">     151 </span><span class="lineCov">        100 :         dif.y  = out.y + dt*delta.y - input.y;</span>
+<span class="lineNum">     152 </span><span class="lineCov">        100 :         dif.z  = out.z - dt*delta.z - input.z;</span>
+<span class="lineNum">     153 </span><span class="lineCov">        100 :         out.x += dif.x;</span>
+<span class="lineNum">     154 </span><span class="lineCov">        100 :         out.y += dif.y;</span>
+<span class="lineNum">     155 </span><span class="lineCov">        100 :         out.z += dif.z;</span>
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span><span class="lineCov">        100 :     } while ( --i &amp;&amp; hypot(dif.x, dif.y) &gt; TOL );</span>
+<span class="lineNum">     158 </span>            : 
+<span class="lineNum">     159 </span><span class="lineCov">         10 :     out.z = input.z - dt*z0;</span>
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span><span class="lineCov">         10 :     return out;</span>
+<a name="162"><span class="lineNum">     162 </span>            : }</a>
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span><span class="lineCov">          2 : static XYZ forward_3d(LPZ lpz, PJ *P) {</span>
+<span class="lineNum">     165 </span><span class="lineCov">          2 :     struct pj_opaque *Q = (struct pj_opaque *) P-&gt;opaque;</span>
+<span class="lineNum">     166 </span>            :     PJ_COORD out, in;
+<span class="lineNum">     167 </span>            :     XYZ shift;
+<span class="lineNum">     168 </span><span class="lineCov">          2 :     double dt = 0.0;</span>
+<span class="lineNum">     169 </span><span class="lineCov">          2 :     in.lpz = lpz;</span>
+<span class="lineNum">     170 </span><span class="lineCov">          2 :     out = in;</span>
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span><span class="lineCov">          2 :     if (Q-&gt;t_obs != HUGE_VAL) {</span>
+<span class="lineNum">     173 </span><span class="lineCov">          2 :         dt = Q-&gt;t_epoch - Q-&gt;t_obs;</span>
+<span class="lineNum">     174 </span>            :     } else {
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :         out = proj_coord_error(); /* in the 3D case +t_obs must be specified */</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;deformation: +t_obs must be specified&quot;);</span>
+<span class="lineNum">     177 </span><span class="lineNoCov">          0 :         return out.xyz;</span>
+<span class="lineNum">     178 </span>            :     }
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span><span class="lineCov">          2 :     shift = get_grid_shift(P, in.xyz);</span>
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span><span class="lineCov">          2 :     out.xyz.x += dt * shift.x;</span>
+<span class="lineNum">     183 </span><span class="lineCov">          2 :     out.xyz.y += dt * shift.y;</span>
+<span class="lineNum">     184 </span><span class="lineCov">          2 :     out.xyz.z += dt * shift.z;</span>
+<span class="lineNum">     185 </span>            : 
+<span class="lineNum">     186 </span><span class="lineCov">          2 :     return out.xyz;</span>
+<span class="lineNum">     187 </span>            : }
+<a name="188"><span class="lineNum">     188 </span>            : </a>
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span><span class="lineCov">         12 : static PJ_COORD forward_4d(PJ_COORD in, PJ *P) {</span>
+<span class="lineNum">     191 </span><span class="lineCov">         12 :     struct pj_opaque *Q = (struct pj_opaque *) P-&gt;opaque;</span>
+<span class="lineNum">     192 </span>            :     double dt;
+<span class="lineNum">     193 </span>            :     XYZ shift;
+<span class="lineNum">     194 </span><span class="lineCov">         12 :     PJ_COORD out = in;</span>
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span><span class="lineCov">         12 :     if (Q-&gt;t_obs != HUGE_VAL) {</span>
+<span class="lineNum">     197 </span><span class="lineCov">          6 :             dt = Q-&gt;t_epoch - Q-&gt;t_obs;</span>
+<span class="lineNum">     198 </span>            :         } else {
+<span class="lineNum">     199 </span><span class="lineCov">          6 :             dt = Q-&gt;t_epoch - in.xyzt.t;</span>
+<span class="lineNum">     200 </span>            :     }
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span><span class="lineCov">         12 :     shift = get_grid_shift(P, in.xyz);</span>
+<span class="lineNum">     203 </span>            : 
+<span class="lineNum">     204 </span><span class="lineCov">         12 :     out.xyzt.x += dt*shift.x;</span>
+<span class="lineNum">     205 </span><span class="lineCov">         12 :     out.xyzt.y += dt*shift.y;</span>
+<span class="lineNum">     206 </span><span class="lineCov">         12 :     out.xyzt.z += dt*shift.z;</span>
+<span class="lineNum">     207 </span>            : 
+<span class="lineNum">     208 </span>            : 
+<span class="lineNum">     209 </span><span class="lineCov">         12 :     return out;</span>
+<span class="lineNum">     210 </span>            : }
+<a name="211"><span class="lineNum">     211 </span>            : </a>
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 : static LPZ reverse_3d(XYZ in, PJ *P) {</span>
+<span class="lineNum">     214 </span><span class="lineNoCov">          0 :     struct pj_opaque *Q = (struct pj_opaque *) P-&gt;opaque;</span>
+<span class="lineNum">     215 </span>            :     PJ_COORD out;
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :     double dt = 0.0;</span>
+<span class="lineNum">     217 </span><span class="lineNoCov">          0 :     out.xyz = in;</span>
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span><span class="lineNoCov">          0 :     if (Q-&gt;t_obs != HUGE_VAL) {</span>
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :         dt = Q-&gt;t_epoch - Q-&gt;t_obs;</span>
+<span class="lineNum">     221 </span>            :     } else {
+<span class="lineNum">     222 </span><span class="lineNoCov">          0 :         out = proj_coord_error(); /* in the 3D case +t_obs must be specified */</span>
+<span class="lineNum">     223 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;deformation: +t_obs must be specified&quot;);</span>
+<span class="lineNum">     224 </span><span class="lineNoCov">          0 :         return out.lpz;</span>
+<span class="lineNum">     225 </span>            :     }
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span><span class="lineNoCov">          0 :     out.xyz = reverse_shift(P, in, dt);</span>
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span><span class="lineNoCov">          0 :     return out.lpz;</span>
+<a name="230"><span class="lineNum">     230 </span>            : }</a>
+<span class="lineNum">     231 </span>            : 
+<span class="lineNum">     232 </span><span class="lineCov">         10 : static PJ_COORD reverse_4d(PJ_COORD in, PJ *P) {</span>
+<span class="lineNum">     233 </span><span class="lineCov">         10 :     struct pj_opaque *Q = (struct pj_opaque *) P-&gt;opaque;</span>
+<span class="lineNum">     234 </span><span class="lineCov">         10 :     PJ_COORD out = in;</span>
+<span class="lineNum">     235 </span>            :     double dt;
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span><span class="lineCov">         10 :     if (Q-&gt;t_obs != HUGE_VAL) {</span>
+<span class="lineNum">     239 </span><span class="lineCov">          5 :             dt = Q-&gt;t_epoch - Q-&gt;t_obs;</span>
+<span class="lineNum">     240 </span>            :         } else {
+<span class="lineNum">     241 </span><span class="lineCov">          5 :             dt = Q-&gt;t_epoch - in.xyzt.t;</span>
+<span class="lineNum">     242 </span>            :     }
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span><span class="lineCov">         10 :     out.xyz = reverse_shift(P, in.xyz, dt);</span>
+<span class="lineNum">     245 </span><span class="lineCov">         10 :     return out;</span>
+<a name="246"><span class="lineNum">     246 </span>            : }</a>
+<span class="lineNum">     247 </span>            : 
+<span class="lineNum">     248 </span><span class="lineCov">          7 : static void *destructor(PJ *P, int errlev) {</span>
+<span class="lineNum">     249 </span><span class="lineCov">          7 :     if (0==P)</span>
+<span class="lineNum">     250 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     251 </span>            : 
+<span class="lineNum">     252 </span><span class="lineCov">          7 :     if (0==P-&gt;opaque)</span>
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, errlev);</span>
+<span class="lineNum">     254 </span>            : 
+<span class="lineNum">     255 </span><span class="lineCov">          7 :     if (P-&gt;opaque-&gt;cart)</span>
+<span class="lineNum">     256 </span><span class="lineCov">          7 :         P-&gt;opaque-&gt;cart-&gt;destructor (P-&gt;opaque-&gt;cart, errlev);</span>
+<span class="lineNum">     257 </span>            : 
+<span class="lineNum">     258 </span><span class="lineCov">          7 :     return pj_default_destructor(P, errlev);</span>
+<span class="lineNum">     259 </span>            : }
+<a name="260"><span class="lineNum">     260 </span>            : </a>
+<span class="lineNum">     261 </span>            : 
+<span class="lineNum">     262 </span><span class="lineCov">         21 : PJ *TRANSFORMATION(deformation,1) {</span>
+<span class="lineNum">     263 </span><span class="lineCov">          7 :     int has_xy_grids = 0;</span>
+<span class="lineNum">     264 </span><span class="lineCov">          7 :     int has_z_grids  = 0;</span>
+<span class="lineNum">     265 </span><span class="lineCov">          7 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     266 </span><span class="lineCov">          7 :     if (0==Q)</span>
+<span class="lineNum">     267 </span><span class="lineNoCov">          0 :         return destructor(P, ENOMEM);</span>
+<span class="lineNum">     268 </span><span class="lineCov">          7 :     P-&gt;opaque = (void *) Q;</span>
+<span class="lineNum">     269 </span>            : 
+<span class="lineNum">     270 </span><span class="lineCov">          7 :     Q-&gt;cart = proj_create(P-&gt;ctx, &quot;+proj=cart&quot;);</span>
+<span class="lineNum">     271 </span><span class="lineCov">          7 :     if (Q-&gt;cart == 0)</span>
+<span class="lineNum">     272 </span><span class="lineNoCov">          0 :         return destructor(P, ENOMEM);</span>
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span>            :     /* inherit ellipsoid definition from P to Q-&gt;cart */
+<span class="lineNum">     275 </span><span class="lineCov">          7 :     pj_inherit_ellipsoid_def (P, Q-&gt;cart);</span>
+<span class="lineNum">     276 </span>            : 
+<span class="lineNum">     277 </span><span class="lineCov">          7 :     has_xy_grids = pj_param(P-&gt;ctx, P-&gt;params, &quot;txy_grids&quot;).i;</span>
+<span class="lineNum">     278 </span><span class="lineCov">          7 :     has_z_grids  = pj_param(P-&gt;ctx, P-&gt;params, &quot;tz_grids&quot;).i;</span>
+<span class="lineNum">     279 </span>            : 
+<span class="lineNum">     280 </span>            :     /* Build gridlists. Both horizontal and vertical grids are mandatory. */
+<span class="lineNum">     281 </span><span class="lineCov">          7 :     if (!has_xy_grids || !has_z_grids) {</span>
+<span class="lineNum">     282 </span><span class="lineCov">          2 :         proj_log_error(P, &quot;deformation: Both +xy_grids and +z_grids should be specified.&quot;);</span>
+<span class="lineNum">     283 </span><span class="lineCov">          2 :         return destructor(P, PJD_ERR_NO_ARGS );</span>
+<span class="lineNum">     284 </span>            :     }
+<span class="lineNum">     285 </span>            : 
+<span class="lineNum">     286 </span><span class="lineCov">          5 :     proj_hgrid_init(P, &quot;xy_grids&quot;);</span>
+<span class="lineNum">     287 </span><span class="lineCov">          5 :     if (proj_errno(P)) {</span>
+<span class="lineNum">     288 </span><span class="lineCov">          1 :         proj_log_error(P, &quot;deformation: could not find requested xy_grid(s).&quot;);</span>
+<span class="lineNum">     289 </span><span class="lineCov">          1 :         return destructor(P, PJD_ERR_FAILED_TO_LOAD_GRID);</span>
+<span class="lineNum">     290 </span>            :     }
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span><span class="lineCov">          4 :     proj_vgrid_init(P, &quot;z_grids&quot;);</span>
+<span class="lineNum">     293 </span><span class="lineCov">          4 :     if (proj_errno(P)) {</span>
+<span class="lineNum">     294 </span><span class="lineCov">          2 :         proj_log_error(P, &quot;deformation: could not find requested z_grid(s).&quot;);</span>
+<span class="lineNum">     295 </span><span class="lineCov">          2 :         return destructor(P, PJD_ERR_FAILED_TO_LOAD_GRID);</span>
+<span class="lineNum">     296 </span>            :     }
+<span class="lineNum">     297 </span>            : 
+<span class="lineNum">     298 </span><span class="lineCov">          2 :     Q-&gt;t_obs = HUGE_VAL;</span>
+<span class="lineNum">     299 </span><span class="lineCov">          2 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tt_obs&quot;).i) {</span>
+<span class="lineNum">     300 </span><span class="lineCov">          1 :        Q-&gt;t_obs = pj_param(P-&gt;ctx, P-&gt;params, &quot;dt_obs&quot;).f;</span>
+<span class="lineNum">     301 </span>            :     }
+<span class="lineNum">     302 </span>            : 
+<span class="lineNum">     303 </span><span class="lineCov">          2 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tt_epoch&quot;).i) {</span>
+<span class="lineNum">     304 </span><span class="lineCov">          2 :         Q-&gt;t_epoch = pj_param(P-&gt;ctx, P-&gt;params, &quot;dt_epoch&quot;).f;</span>
+<span class="lineNum">     305 </span>            :     } else {
+<span class="lineNum">     306 </span><span class="lineNoCov">          0 :        proj_log_error(P, &quot;deformation: +t_epoch parameter missing.&quot;);</span>
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :        return destructor(P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     308 </span>            :     }
+<span class="lineNum">     309 </span>            : 
+<span class="lineNum">     310 </span><span class="lineCov">          2 :     P-&gt;fwd4d = forward_4d;</span>
+<span class="lineNum">     311 </span><span class="lineCov">          2 :     P-&gt;inv4d = reverse_4d;</span>
+<span class="lineNum">     312 </span><span class="lineCov">          2 :     P-&gt;fwd3d  = forward_3d;</span>
+<span class="lineNum">     313 </span><span class="lineCov">          2 :     P-&gt;inv3d  = reverse_3d;</span>
+<span class="lineNum">     314 </span><span class="lineCov">          2 :     P-&gt;fwd    = 0;</span>
+<span class="lineNum">     315 </span><span class="lineCov">          2 :     P-&gt;inv    = 0;</span>
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span><span class="lineCov">          2 :     P-&gt;left  = PJ_IO_UNITS_CARTESIAN;</span>
+<span class="lineNum">     318 </span><span class="lineCov">          2 :     P-&gt;right = PJ_IO_UNITS_CARTESIAN;</span>
+<span class="lineNum">     319 </span><span class="lineCov">          2 :     P-&gt;destructor = destructor;</span>
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span><span class="lineCov">          2 :     return P;</span>
+<span class="lineNum">     322 </span>            : }
+<span class="lineNum">     323 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

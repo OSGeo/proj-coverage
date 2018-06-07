@@ -1,0 +1,436 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/proj_etmerc.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - proj_etmerc.c<span style="font-size: 80%;"> (source / <a href="proj_etmerc.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">158</td>
+            <td class="headerCovTableEntry">172</td>
+            <td class="headerCovTableEntryHi">91.9 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">10</td>
+            <td class="headerCovTableEntry">10</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            : ** libproj -- library of cartographic projections
+<span class="lineNum">       3 </span>            : **
+<span class="lineNum">       4 </span>            : ** Copyright (c) 2008   Gerald I. Evenden
+<span class="lineNum">       5 </span>            : */
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : /*
+<span class="lineNum">       8 </span>            : ** Permission is hereby granted, free of charge, to any person obtaining
+<span class="lineNum">       9 </span>            : ** a copy of this software and associated documentation files (the
+<span class="lineNum">      10 </span>            : ** &quot;Software&quot;), to deal in the Software without restriction, including
+<span class="lineNum">      11 </span>            : ** without limitation the rights to use, copy, modify, merge, publish,
+<span class="lineNum">      12 </span>            : ** distribute, sublicense, and/or sell copies of the Software, and to
+<span class="lineNum">      13 </span>            : ** permit persons to whom the Software is furnished to do so, subject to
+<span class="lineNum">      14 </span>            : ** the following conditions:
+<span class="lineNum">      15 </span>            : **
+<span class="lineNum">      16 </span>            : ** The above copyright notice and this permission notice shall be
+<span class="lineNum">      17 </span>            : ** included in all copies or substantial portions of the Software.
+<span class="lineNum">      18 </span>            : **
+<span class="lineNum">      19 </span>            : ** THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+<span class="lineNum">      20 </span>            : ** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+<span class="lineNum">      21 </span>            : ** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+<span class="lineNum">      22 </span>            : ** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+<span class="lineNum">      23 </span>            : ** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+<span class="lineNum">      24 </span>            : ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+<span class="lineNum">      25 </span>            : ** SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      26 </span>            : */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : /* The code in this file is largly based upon procedures:
+<span class="lineNum">      29 </span>            :  *
+<span class="lineNum">      30 </span>            :  * Written by: Knud Poder and Karsten Engsager
+<span class="lineNum">      31 </span>            :  *
+<span class="lineNum">      32 </span>            :  * Based on math from: R.Koenig and K.H. Weise, &quot;Mathematische
+<span class="lineNum">      33 </span>            :  * Grundlagen der hoeheren Geodaesie und Kartographie,
+<span class="lineNum">      34 </span>            :  * Springer-Verlag, Berlin/Goettingen&quot; Heidelberg, 1951.
+<span class="lineNum">      35 </span>            :  *
+<span class="lineNum">      36 </span>            :  * Modified and used here by permission of Reference Networks
+<span class="lineNum">      37 </span>            :  * Division, Kort og Matrikelstyrelsen (KMS), Copenhagen, Denmark
+<span class="lineNum">      38 </span>            :  *
+<span class="lineNum">      39 </span>            : */
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : #define PJ_LIB__
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">      46 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      47 </span>            : #include &quot;proj_math.h&quot;
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            : struct pj_opaque {
+<span class="lineNum">      51 </span>            :     double    Qn;    /* Merid. quad., scaled to the projection */ \
+<span class="lineNum">      52 </span>            :     double    Zb;    /* Radius vector in polar coord. systems  */ \
+<span class="lineNum">      53 </span>            :     double    cgb[6]; /* Constants for Gauss -&gt; Geo lat */ \
+<span class="lineNum">      54 </span>            :     double    cbg[6]; /* Constants for Geo lat -&gt; Gauss */ \
+<span class="lineNum">      55 </span>            :     double    utg[6]; /* Constants for transv. merc. -&gt; geo */ \
+<span class="lineNum">      56 </span>            :     double    gtu[6]; /* Constants for geo -&gt; transv. merc. */
+<span class="lineNum">      57 </span>            : };
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            : PROJ_HEAD(etmerc, &quot;Extended Transverse Mercator&quot;)
+<span class="lineNum">      60 </span>            :     &quot;\n\tCyl, Sph\n\tlat_ts=(0)\nlat_0=(0)&quot;;
+<span class="lineNum">      61 </span>            : PROJ_HEAD(utm, &quot;Universal Transverse Mercator (UTM)&quot;)
+<span class="lineNum">      62 </span>            :     &quot;\n\tCyl, Sph\n\tzone= south&quot;;
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            : #define PROJ_ETMERC_ORDER 6
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            : #ifdef _GNU_SOURCE
+<a name="67"><span class="lineNum">      67 </span>            :     inline</a>
+<span class="lineNum">      68 </span>            : #endif
+<span class="lineNum">      69 </span><span class="lineCov">     256418 : static double gatg(double *p1, int len_p1, double B) {</span>
+<span class="lineNum">      70 </span>            :     double *p;
+<span class="lineNum">      71 </span><span class="lineCov">     256418 :     double h = 0, h1, h2 = 0, cos_2B;</span>
+<span class="lineNum">      72 </span>            : 
+<span class="lineNum">      73 </span><span class="lineCov">     256418 :     cos_2B = 2*cos(2*B);</span>
+<span class="lineNum">      74 </span><span class="lineCov">     256418 :     p = p1 + len_p1;</span>
+<span class="lineNum">      75 </span><span class="lineCov">     256418 :     h1 = *--p;</span>
+<span class="lineNum">      76 </span><span class="lineCov">    1794926 :     while (p - p1) {</span>
+<span class="lineNum">      77 </span><span class="lineCov">    1282090 :         h = -h2 + cos_2B*h1 + *--p;</span>
+<span class="lineNum">      78 </span><span class="lineCov">    1282090 :         h2 = h1;</span>
+<span class="lineNum">      79 </span><span class="lineCov">    1282090 :         h1 = h;</span>
+<span class="lineNum">      80 </span>            :     }
+<span class="lineNum">      81 </span><span class="lineCov">     256418 :     return (B + h*sin(2*B));</span>
+<span class="lineNum">      82 </span>            : }
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            : /* Complex Clenshaw summation */
+<span class="lineNum">      85 </span>            : #ifdef _GNU_SOURCE
+<a name="86"><span class="lineNum">      86 </span>            :     inline</a>
+<span class="lineNum">      87 </span>            : #endif
+<span class="lineNum">      88 </span><span class="lineCov">     256357 : static double clenS(double *a, int size, double arg_r, double arg_i, double *R, double *I) {</span>
+<span class="lineNum">      89 </span>            :     double      *p, r, i, hr, hr1, hr2, hi, hi1, hi2;
+<span class="lineNum">      90 </span>            :     double      sin_arg_r, cos_arg_r, sinh_arg_i, cosh_arg_i;
+<span class="lineNum">      91 </span>            : 
+<span class="lineNum">      92 </span>            :     /* arguments */
+<span class="lineNum">      93 </span><span class="lineCov">     256357 :     p = a + size;</span>
+<span class="lineNum">      94 </span>            : #ifdef _GNU_SOURCE
+<span class="lineNum">      95 </span>            :     sincos(arg_r, &amp;sin_arg_r, &amp;cos_arg_r);
+<span class="lineNum">      96 </span>            : #else
+<span class="lineNum">      97 </span><span class="lineCov">     256357 :     sin_arg_r  = sin(arg_r);</span>
+<span class="lineNum">      98 </span><span class="lineCov">     256357 :     cos_arg_r  = cos(arg_r);</span>
+<span class="lineNum">      99 </span>            : #endif
+<span class="lineNum">     100 </span><span class="lineCov">     256357 :     sinh_arg_i = sinh(arg_i);</span>
+<span class="lineNum">     101 </span><span class="lineCov">     256357 :     cosh_arg_i = cosh(arg_i);</span>
+<span class="lineNum">     102 </span><span class="lineCov">     256357 :     r          =  2*cos_arg_r*cosh_arg_i;</span>
+<span class="lineNum">     103 </span><span class="lineCov">     256357 :     i          = -2*sin_arg_r*sinh_arg_i;</span>
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span>            :     /* summation loop */
+<span class="lineNum">     106 </span><span class="lineCov">     256357 :     hi1 = hr1 = hi = 0;</span>
+<span class="lineNum">     107 </span><span class="lineCov">     256357 :     hr = *--p;</span>
+<span class="lineNum">     108 </span><span class="lineCov">    1794499 :     for (; a - p;) {</span>
+<span class="lineNum">     109 </span><span class="lineCov">    1281785 :         hr2 = hr1;</span>
+<span class="lineNum">     110 </span><span class="lineCov">    1281785 :         hi2 = hi1;</span>
+<span class="lineNum">     111 </span><span class="lineCov">    1281785 :         hr1 = hr;</span>
+<span class="lineNum">     112 </span><span class="lineCov">    1281785 :         hi1 = hi;</span>
+<span class="lineNum">     113 </span><span class="lineCov">    1281785 :         hr  = -hr2 + r*hr1 - i*hi1 + *--p;</span>
+<span class="lineNum">     114 </span><span class="lineCov">    1281785 :         hi  = -hi2 + i*hr1 + r*hi1;</span>
+<span class="lineNum">     115 </span>            :     }
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span><span class="lineCov">     256357 :     r   = sin_arg_r*cosh_arg_i;</span>
+<span class="lineNum">     118 </span><span class="lineCov">     256357 :     i   = cos_arg_r*sinh_arg_i;</span>
+<span class="lineNum">     119 </span><span class="lineCov">     256357 :     *R  = r*hr - i*hi;</span>
+<span class="lineNum">     120 </span><span class="lineCov">     256357 :     *I  = r*hi + i*hr;</span>
+<span class="lineNum">     121 </span><span class="lineCov">     256357 :     return *R;</span>
+<span class="lineNum">     122 </span>            : }
+<span class="lineNum">     123 </span>            : 
+<a name="124"><span class="lineNum">     124 </span>            : </a>
+<span class="lineNum">     125 </span>            : /* Real Clenshaw summation */
+<span class="lineNum">     126 </span><span class="lineCov">         61 : static double clens(double *a, int size, double arg_r) {</span>
+<span class="lineNum">     127 </span>            :     double      *p, r, hr, hr1, hr2, cos_arg_r;
+<span class="lineNum">     128 </span>            : 
+<span class="lineNum">     129 </span><span class="lineCov">         61 :     p = a + size;</span>
+<span class="lineNum">     130 </span><span class="lineCov">         61 :     cos_arg_r  = cos(arg_r);</span>
+<span class="lineNum">     131 </span><span class="lineCov">         61 :     r          =  2*cos_arg_r;</span>
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span>            :     /* summation loop */
+<span class="lineNum">     134 </span><span class="lineCov">         61 :     hr1 = 0;</span>
+<span class="lineNum">     135 </span><span class="lineCov">         61 :     hr = *--p;</span>
+<span class="lineNum">     136 </span><span class="lineCov">        427 :     for (; a - p;) {</span>
+<span class="lineNum">     137 </span><span class="lineCov">        305 :         hr2 = hr1;</span>
+<span class="lineNum">     138 </span><span class="lineCov">        305 :         hr1 = hr;</span>
+<span class="lineNum">     139 </span><span class="lineCov">        305 :         hr  = -hr2 + r*hr1 + *--p;</span>
+<span class="lineNum">     140 </span>            :     }
+<span class="lineNum">     141 </span><span class="lineCov">         61 :     return sin (arg_r)*hr;</span>
+<span class="lineNum">     142 </span>            : }
+<span class="lineNum">     143 </span>            : 
+<a name="144"><span class="lineNum">     144 </span>            : </a>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span><span class="lineCov">     128186 : static XY e_forward (LP lp, PJ *P) {          /* Ellipsoidal, forward */</span>
+<span class="lineNum">     147 </span><span class="lineCov">     128186 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">     148 </span><span class="lineCov">     128186 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     149 </span>            :     double sin_Cn, cos_Cn, cos_Ce, sin_Ce, dCn, dCe;
+<span class="lineNum">     150 </span><span class="lineCov">     128186 :     double Cn = lp.phi, Ce = lp.lam;</span>
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span>            :     /* ell. LAT, LNG -&gt; Gaussian LAT, LNG */
+<span class="lineNum">     153 </span><span class="lineCov">     128186 :     Cn  = gatg (Q-&gt;cbg, PROJ_ETMERC_ORDER, Cn);</span>
+<span class="lineNum">     154 </span>            :     /* Gaussian LAT, LNG -&gt; compl. sph. LAT */
+<span class="lineNum">     155 </span>            : #ifdef _GNU_SOURCE
+<span class="lineNum">     156 </span>            :     sincos (Cn, &amp;sin_Cn, &amp;cos_Cn);
+<span class="lineNum">     157 </span>            :     sincos (Ce, &amp;sin_Ce, &amp;cos_Ce);
+<span class="lineNum">     158 </span>            : #else
+<span class="lineNum">     159 </span><span class="lineCov">     128186 :     sin_Cn = sin (Cn);</span>
+<span class="lineNum">     160 </span><span class="lineCov">     128186 :     cos_Cn = cos (Cn);</span>
+<span class="lineNum">     161 </span><span class="lineCov">     128186 :     sin_Ce = sin (Ce);</span>
+<span class="lineNum">     162 </span><span class="lineCov">     128186 :     cos_Ce = cos (Ce);</span>
+<span class="lineNum">     163 </span>            : #endif
+<span class="lineNum">     164 </span>            : 
+<span class="lineNum">     165 </span><span class="lineCov">     128186 :     Cn     = atan2 (sin_Cn, cos_Ce*cos_Cn);</span>
+<span class="lineNum">     166 </span><span class="lineCov">     128186 :     Ce     = atan2 (sin_Ce*cos_Cn,  hypot (sin_Cn, cos_Cn*cos_Ce));</span>
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            :     /* compl. sph. N, E -&gt; ell. norm. N, E */
+<span class="lineNum">     169 </span><span class="lineCov">     128186 :     Ce  = asinh ( tan (Ce) );     /* Replaces: Ce  = log(tan(FORTPI + Ce*0.5)); */</span>
+<span class="lineNum">     170 </span><span class="lineCov">     128186 :     Cn += clenS (Q-&gt;gtu, PROJ_ETMERC_ORDER, 2*Cn, 2*Ce, &amp;dCn, &amp;dCe);</span>
+<span class="lineNum">     171 </span><span class="lineCov">     128186 :     Ce += dCe;</span>
+<span class="lineNum">     172 </span><span class="lineCov">     128186 :     if (fabs (Ce) &lt;= 2.623395162778) {</span>
+<span class="lineNum">     173 </span><span class="lineCov">     128186 :         xy.y  = Q-&gt;Qn * Cn + Q-&gt;Zb;  /* Northing */</span>
+<span class="lineNum">     174 </span><span class="lineCov">     128186 :         xy.x  = Q-&gt;Qn * Ce;          /* Easting  */</span>
+<span class="lineNum">     175 </span>            :     } else
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :         xy.x = xy.y = HUGE_VAL;</span>
+<span class="lineNum">     177 </span><span class="lineCov">     128186 :     return xy;</span>
+<span class="lineNum">     178 </span>            : }
+<span class="lineNum">     179 </span>            : 
+<a name="180"><span class="lineNum">     180 </span>            : </a>
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span><span class="lineCov">     128171 : static LP e_inverse (XY xy, PJ *P) {          /* Ellipsoidal, inverse */</span>
+<span class="lineNum">     183 </span><span class="lineCov">     128171 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">     184 </span><span class="lineCov">     128171 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     185 </span>            :     double sin_Cn, cos_Cn, cos_Ce, sin_Ce, dCn, dCe;
+<span class="lineNum">     186 </span><span class="lineCov">     128171 :     double Cn = xy.y, Ce = xy.x;</span>
+<span class="lineNum">     187 </span>            : 
+<span class="lineNum">     188 </span>            :     /* normalize N, E */
+<span class="lineNum">     189 </span><span class="lineCov">     128171 :     Cn = (Cn - Q-&gt;Zb)/Q-&gt;Qn;</span>
+<span class="lineNum">     190 </span><span class="lineCov">     128171 :     Ce = Ce/Q-&gt;Qn;</span>
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span><span class="lineCov">     128171 :     if (fabs(Ce) &lt;= 2.623395162778) { /* 150 degrees */</span>
+<span class="lineNum">     193 </span>            :         /* norm. N, E -&gt; compl. sph. LAT, LNG */
+<span class="lineNum">     194 </span><span class="lineCov">     128171 :         Cn += clenS(Q-&gt;utg, PROJ_ETMERC_ORDER, 2*Cn, 2*Ce, &amp;dCn, &amp;dCe);</span>
+<span class="lineNum">     195 </span><span class="lineCov">     128171 :         Ce += dCe;</span>
+<span class="lineNum">     196 </span><span class="lineCov">     128171 :         Ce = atan (sinh (Ce)); /* Replaces: Ce = 2*(atan(exp(Ce)) - FORTPI); */</span>
+<span class="lineNum">     197 </span>            :         /* compl. sph. LAT -&gt; Gaussian LAT, LNG */
+<span class="lineNum">     198 </span>            : #ifdef _GNU_SOURCE
+<span class="lineNum">     199 </span>            :         sincos (Cn, &amp;sin_Cn, &amp;cos_Cn);
+<span class="lineNum">     200 </span>            :         sincos (Ce, &amp;sin_Ce, &amp;cos_Ce);
+<span class="lineNum">     201 </span>            : #else
+<span class="lineNum">     202 </span><span class="lineCov">     128171 :         sin_Cn = sin (Cn);</span>
+<span class="lineNum">     203 </span><span class="lineCov">     128171 :         cos_Cn = cos (Cn);</span>
+<span class="lineNum">     204 </span><span class="lineCov">     128171 :         sin_Ce = sin (Ce);</span>
+<span class="lineNum">     205 </span><span class="lineCov">     128171 :         cos_Ce = cos (Ce);</span>
+<span class="lineNum">     206 </span>            : #endif
+<span class="lineNum">     207 </span><span class="lineCov">     128171 :         Ce     = atan2 (sin_Ce, cos_Ce*cos_Cn);</span>
+<span class="lineNum">     208 </span><span class="lineCov">     128171 :         Cn     = atan2 (sin_Cn*cos_Ce,  hypot (sin_Ce, cos_Ce*cos_Cn));</span>
+<span class="lineNum">     209 </span>            :         /* Gaussian LAT, LNG -&gt; ell. LAT, LNG */
+<span class="lineNum">     210 </span><span class="lineCov">     128171 :         lp.phi = gatg (Q-&gt;cgb,  PROJ_ETMERC_ORDER, Cn);</span>
+<span class="lineNum">     211 </span><span class="lineCov">     128171 :         lp.lam = Ce;</span>
+<span class="lineNum">     212 </span>            :     }
+<span class="lineNum">     213 </span>            :     else
+<span class="lineNum">     214 </span><span class="lineNoCov">          0 :         lp.phi = lp.lam = HUGE_VAL;</span>
+<span class="lineNum">     215 </span><span class="lineCov">     128171 :     return lp;</span>
+<span class="lineNum">     216 </span>            : }
+<a name="217"><span class="lineNum">     217 </span>            : </a>
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span><span class="lineCov">         61 : static PJ *setup(PJ *P) { /* general initialization */</span>
+<span class="lineNum">     220 </span>            :     double f, n, np, Z;
+<span class="lineNum">     221 </span><span class="lineCov">         61 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span><span class="lineCov">         61 :     if (P-&gt;es &lt;= 0) {</span>
+<span class="lineNum">     224 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, PJD_ERR_ELLIPSOID_USE_REQUIRED);</span>
+<span class="lineNum">     225 </span>            :     }
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span>            :     /* flattening */
+<span class="lineNum">     228 </span><span class="lineCov">         61 :     f = P-&gt;es / (1 + sqrt (1 -  P-&gt;es)); /* Replaces: f = 1 - sqrt(1-P-&gt;es); */</span>
+<span class="lineNum">     229 </span>            : 
+<span class="lineNum">     230 </span>            :     /* third flattening */
+<span class="lineNum">     231 </span><span class="lineCov">         61 :     np = n = f/(2 - f);</span>
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span>            :     /* COEF. OF TRIG SERIES GEO &lt;-&gt; GAUSS */
+<span class="lineNum">     234 </span>            :     /* cgb := Gaussian -&gt; Geodetic, KW p190 - 191 (61) - (62) */
+<span class="lineNum">     235 </span>            :     /* cbg := Geodetic -&gt; Gaussian, KW p186 - 187 (51) - (52) */
+<span class="lineNum">     236 </span>            :     /* PROJ_ETMERC_ORDER = 6th degree : Engsager and Poder: ICC2007 */
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span><span class="lineCov">         61 :     Q-&gt;cgb[0] = n*( 2 + n*(-2/3.0  + n*(-2      + n*(116/45.0 + n*(26/45.0 +</span>
+<span class="lineNum">     239 </span><span class="lineCov">         61 :                 n*(-2854/675.0 ))))));</span>
+<span class="lineNum">     240 </span><span class="lineCov">         61 :     Q-&gt;cbg[0] = n*(-2 + n*( 2/3.0  + n*( 4/3.0  + n*(-82/45.0 + n*(32/45.0 +</span>
+<span class="lineNum">     241 </span><span class="lineCov">         61 :                 n*( 4642/4725.0))))));</span>
+<span class="lineNum">     242 </span><span class="lineCov">         61 :     np     *= n;</span>
+<span class="lineNum">     243 </span><span class="lineCov">         61 :     Q-&gt;cgb[1] = np*(7/3.0 + n*( -8/5.0  + n*(-227/45.0 + n*(2704/315.0 +</span>
+<span class="lineNum">     244 </span><span class="lineCov">         61 :                 n*( 2323/945.0)))));</span>
+<span class="lineNum">     245 </span><span class="lineCov">         61 :     Q-&gt;cbg[1] = np*(5/3.0 + n*(-16/15.0 + n*( -13/9.0  + n*( 904/315.0 +</span>
+<span class="lineNum">     246 </span><span class="lineCov">         61 :                 n*(-1522/945.0)))));</span>
+<span class="lineNum">     247 </span><span class="lineCov">         61 :     np     *= n;</span>
+<span class="lineNum">     248 </span>            :     /* n^5 coeff corrected from 1262/105 -&gt; -1262/105 */
+<span class="lineNum">     249 </span><span class="lineCov">         61 :     Q-&gt;cgb[2] = np*( 56/15.0  + n*(-136/35.0 + n*(-1262/105.0 +</span>
+<span class="lineNum">     250 </span><span class="lineCov">         61 :                 n*( 73814/2835.0))));</span>
+<span class="lineNum">     251 </span><span class="lineCov">         61 :     Q-&gt;cbg[2] = np*(-26/15.0  + n*(  34/21.0 + n*(    8/5.0   +</span>
+<span class="lineNum">     252 </span><span class="lineCov">         61 :                 n*(-12686/2835.0))));</span>
+<span class="lineNum">     253 </span><span class="lineCov">         61 :     np     *= n;</span>
+<span class="lineNum">     254 </span>            :     /* n^5 coeff corrected from 322/35 -&gt; 332/35 */
+<span class="lineNum">     255 </span><span class="lineCov">         61 :     Q-&gt;cgb[3] = np*(4279/630.0 + n*(-332/35.0 + n*(-399572/14175.0)));</span>
+<span class="lineNum">     256 </span><span class="lineCov">         61 :     Q-&gt;cbg[3] = np*(1237/630.0 + n*( -12/5.0  + n*( -24832/14175.0)));</span>
+<span class="lineNum">     257 </span><span class="lineCov">         61 :     np     *= n;</span>
+<span class="lineNum">     258 </span><span class="lineCov">         61 :     Q-&gt;cgb[4] = np*(4174/315.0 + n*(-144838/6237.0 ));</span>
+<span class="lineNum">     259 </span><span class="lineCov">         61 :     Q-&gt;cbg[4] = np*(-734/315.0 + n*( 109598/31185.0));</span>
+<span class="lineNum">     260 </span><span class="lineCov">         61 :     np     *= n;</span>
+<span class="lineNum">     261 </span><span class="lineCov">         61 :     Q-&gt;cgb[5] = np*(601676/22275.0 );</span>
+<span class="lineNum">     262 </span><span class="lineCov">         61 :     Q-&gt;cbg[5] = np*(444337/155925.0);</span>
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span>            :     /* Constants of the projections */
+<span class="lineNum">     265 </span>            :     /* Transverse Mercator (UTM, ITM, etc) */
+<span class="lineNum">     266 </span><span class="lineCov">         61 :     np = n*n;</span>
+<span class="lineNum">     267 </span>            :     /* Norm. mer. quad, K&amp;W p.50 (96), p.19 (38b), p.5 (2) */
+<span class="lineNum">     268 </span><span class="lineCov">         61 :     Q-&gt;Qn = P-&gt;k0/(1 + n) * (1 + np*(1/4.0 + np*(1/64.0 + np/256.0)));</span>
+<span class="lineNum">     269 </span>            :     /* coef of trig series */
+<span class="lineNum">     270 </span>            :     /* utg := ell. N, E -&gt; sph. N, E,  KW p194 (65) */
+<span class="lineNum">     271 </span>            :     /* gtu := sph. N, E -&gt; ell. N, E,  KW p196 (69) */
+<span class="lineNum">     272 </span><span class="lineCov">         61 :     Q-&gt;utg[0] = n*(-0.5  + n*( 2/3.0 + n*(-37/96.0 + n*( 1/360.0 +</span>
+<span class="lineNum">     273 </span><span class="lineCov">         61 :                 n*(  81/512.0 + n*(-96199/604800.0))))));</span>
+<span class="lineNum">     274 </span><span class="lineCov">         61 :     Q-&gt;gtu[0] = n*( 0.5  + n*(-2/3.0 + n*(  5/16.0 + n*(41/180.0 +</span>
+<span class="lineNum">     275 </span><span class="lineCov">         61 :                 n*(-127/288.0 + n*(  7891/37800.0 ))))));</span>
+<span class="lineNum">     276 </span><span class="lineCov">         61 :     Q-&gt;utg[1] = np*(-1/48.0 + n*(-1/15.0 + n*(437/1440.0 + n*(-46/105.0 +</span>
+<span class="lineNum">     277 </span><span class="lineCov">         61 :                 n*( 1118711/3870720.0)))));</span>
+<span class="lineNum">     278 </span><span class="lineCov">         61 :     Q-&gt;gtu[1] = np*(13/48.0 + n*(-3/5.0  + n*(557/1440.0 + n*(281/630.0 +</span>
+<span class="lineNum">     279 </span><span class="lineCov">         61 :                 n*(-1983433/1935360.0)))));</span>
+<span class="lineNum">     280 </span><span class="lineCov">         61 :     np      *= n;</span>
+<span class="lineNum">     281 </span><span class="lineCov">         61 :     Q-&gt;utg[2] = np*(-17/480.0 + n*(  37/840.0 + n*(  209/4480.0  +</span>
+<span class="lineNum">     282 </span><span class="lineCov">         61 :                 n*( -5569/90720.0 ))));</span>
+<span class="lineNum">     283 </span><span class="lineCov">         61 :     Q-&gt;gtu[2] = np*( 61/240.0 + n*(-103/140.0 + n*(15061/26880.0 +</span>
+<span class="lineNum">     284 </span><span class="lineCov">         61 :                 n*(167603/181440.0))));</span>
+<span class="lineNum">     285 </span><span class="lineCov">         61 :     np      *= n;</span>
+<span class="lineNum">     286 </span><span class="lineCov">         61 :     Q-&gt;utg[3] = np*(-4397/161280.0 + n*(  11/504.0 + n*( 830251/7257600.0)));</span>
+<span class="lineNum">     287 </span><span class="lineCov">         61 :     Q-&gt;gtu[3] = np*(49561/161280.0 + n*(-179/168.0 + n*(6601661/7257600.0)));</span>
+<span class="lineNum">     288 </span><span class="lineCov">         61 :     np     *= n;</span>
+<span class="lineNum">     289 </span><span class="lineCov">         61 :     Q-&gt;utg[4] = np*(-4583/161280.0 + n*(  108847/3991680.0));</span>
+<span class="lineNum">     290 </span><span class="lineCov">         61 :     Q-&gt;gtu[4] = np*(34729/80640.0  + n*(-3418889/1995840.0));</span>
+<span class="lineNum">     291 </span><span class="lineCov">         61 :     np     *= n;</span>
+<span class="lineNum">     292 </span><span class="lineCov">         61 :     Q-&gt;utg[5] = np*(-20648693/638668800.0);</span>
+<span class="lineNum">     293 </span><span class="lineCov">         61 :     Q-&gt;gtu[5] = np*(212378941/319334400.0);</span>
+<span class="lineNum">     294 </span>            : 
+<span class="lineNum">     295 </span>            :     /* Gaussian latitude value of the origin latitude */
+<span class="lineNum">     296 </span><span class="lineCov">         61 :     Z = gatg (Q-&gt;cbg, PROJ_ETMERC_ORDER, P-&gt;phi0);</span>
+<span class="lineNum">     297 </span>            : 
+<span class="lineNum">     298 </span>            :     /* Origin northing minus true northing at the origin latitude */
+<span class="lineNum">     299 </span>            :     /* i.e. true northing = N - P-&gt;Zb                         */
+<span class="lineNum">     300 </span><span class="lineCov">         61 :     Q-&gt;Zb  = - Q-&gt;Qn*(Z + clens(Q-&gt;gtu, PROJ_ETMERC_ORDER, 2*Z));</span>
+<span class="lineNum">     301 </span><span class="lineCov">         61 :     P-&gt;inv = e_inverse;</span>
+<span class="lineNum">     302 </span><span class="lineCov">         61 :     P-&gt;fwd = e_forward;</span>
+<span class="lineNum">     303 </span><span class="lineCov">         61 :     return P;</span>
+<span class="lineNum">     304 </span>            : }
+<span class="lineNum">     305 </span>            : 
+<a name="306"><span class="lineNum">     306 </span>            : </a>
+<span class="lineNum">     307 </span>            : 
+<span class="lineNum">     308 </span><span class="lineCov">         39 : PJ *PROJECTION(etmerc) {</span>
+<span class="lineNum">     309 </span><span class="lineCov">         13 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     310 </span><span class="lineCov">         13 :     if (0==Q)</span>
+<span class="lineNum">     311 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">     312 </span><span class="lineCov">         13 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     313 </span><span class="lineCov">         13 :    return setup (P);</span>
+<span class="lineNum">     314 </span>            : }
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span>            : 
+<span class="lineNum">     318 </span>            : /* utm uses etmerc for the underlying projection */
+<a name="319"><span class="lineNum">     319 </span>            : </a>
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span><span class="lineCov">        148 : PJ *PROJECTION(utm) {</span>
+<span class="lineNum">     322 </span>            :     long zone;
+<span class="lineNum">     323 </span><span class="lineCov">         48 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     324 </span><span class="lineCov">         48 :     if (0==Q)</span>
+<span class="lineNum">     325 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">     326 </span><span class="lineCov">         48 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span><span class="lineCov">         48 :     if (P-&gt;es == 0.0) {</span>
+<span class="lineNum">     329 </span><span class="lineNoCov">          0 :         proj_errno_set(P, PJD_ERR_ELLIPSOID_USE_REQUIRED);</span>
+<span class="lineNum">     330 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, ENOMEM);</span>
+<span class="lineNum">     331 </span>            :     }
+<span class="lineNum">     332 </span><span class="lineCov">         48 :     if (P-&gt;lam0 &lt; -1000.0 || P-&gt;lam0 &gt; 1000.0) {</span>
+<span class="lineNum">     333 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, PJD_ERR_INVALID_UTM_ZONE);</span>
+<span class="lineNum">     334 </span>            :     }
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span><span class="lineCov">         48 :     P-&gt;y0 = pj_param (P-&gt;ctx, P-&gt;params, &quot;bsouth&quot;).i ? 10000000. : 0.;</span>
+<span class="lineNum">     337 </span><span class="lineCov">         48 :     P-&gt;x0 = 500000.;</span>
+<span class="lineNum">     338 </span><span class="lineCov">         48 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tzone&quot;).i) /* zone input ? */</span>
+<span class="lineNum">     339 </span>            :     {
+<span class="lineNum">     340 </span><span class="lineCov">         48 :         zone = pj_param(P-&gt;ctx, P-&gt;params, &quot;izone&quot;).i;</span>
+<span class="lineNum">     341 </span><span class="lineCov">         48 :         if (zone &gt; 0 &amp;&amp; zone &lt;= 60)</span>
+<span class="lineNum">     342 </span><span class="lineCov">         48 :             --zone;</span>
+<span class="lineNum">     343 </span>            :         else {
+<span class="lineNum">     344 </span><span class="lineNoCov">          0 :             return pj_default_destructor(P, PJD_ERR_INVALID_UTM_ZONE);</span>
+<span class="lineNum">     345 </span>            :         }
+<span class="lineNum">     346 </span>            :     }
+<span class="lineNum">     347 </span>            :     else /* nearest central meridian input */
+<span class="lineNum">     348 </span>            :     {
+<span class="lineNum">     349 </span><span class="lineNoCov">          0 :         zone = lround((floor ((adjlon (P-&gt;lam0) + M_PI) * 30. / M_PI)));</span>
+<span class="lineNum">     350 </span><span class="lineNoCov">          0 :         if (zone &lt; 0)</span>
+<span class="lineNum">     351 </span><span class="lineNoCov">          0 :             zone = 0;</span>
+<span class="lineNum">     352 </span><span class="lineNoCov">          0 :         else if (zone &gt;= 60)</span>
+<span class="lineNum">     353 </span><span class="lineNoCov">          0 :             zone = 59;</span>
+<span class="lineNum">     354 </span>            :     }
+<span class="lineNum">     355 </span><span class="lineCov">         48 :     P-&gt;lam0 = (zone + .5) * M_PI / 30. - M_PI;</span>
+<span class="lineNum">     356 </span><span class="lineCov">         48 :     P-&gt;k0 = 0.9996;</span>
+<span class="lineNum">     357 </span><span class="lineCov">         48 :     P-&gt;phi0 = 0.;</span>
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span><span class="lineCov">         48 :     return setup (P);</span>
+<span class="lineNum">     360 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

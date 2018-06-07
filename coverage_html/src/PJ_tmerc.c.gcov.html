@@ -1,0 +1,284 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_tmerc.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_tmerc.c<span style="font-size: 80%;"> (source / <a href="PJ_tmerc.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">94</td>
+            <td class="headerCovTableEntry">114</td>
+            <td class="headerCovTableEntryMed">82.5 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : #define PJ_LIB__</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">       4 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">       7 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            : PROJ_HEAD(tmerc, &quot;Transverse Mercator&quot;) &quot;\n\tCyl, Sph&amp;Ell&quot;;
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : struct pj_opaque {
+<span class="lineNum">      13 </span>            :     double  esp;
+<span class="lineNum">      14 </span>            :     double  ml0;
+<span class="lineNum">      15 </span>            :     double  *en;
+<span class="lineNum">      16 </span>            : };
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #define EPS10   1.e-10
+<span class="lineNum">      19 </span>            : #define FC1 1.
+<span class="lineNum">      20 </span>            : #define FC2 .5
+<span class="lineNum">      21 </span>            : #define FC3 .16666666666666666666
+<span class="lineNum">      22 </span>            : #define FC4 .08333333333333333333
+<span class="lineNum">      23 </span>            : #define FC5 .05
+<span class="lineNum">      24 </span>            : #define FC6 .03333333333333333333
+<span class="lineNum">      25 </span>            : #define FC7 .02380952380952380952
+<span class="lineNum">      26 </span>            : #define FC8 .01785714285714285714
+<a name="27"><span class="lineNum">      27 </span>            : </a>
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span><span class="lineCov">       5419 : static XY e_forward (LP lp, PJ *P) {          /* Ellipsoidal, forward */</span>
+<span class="lineNum">      30 </span><span class="lineCov">       5419 :     XY xy = {0.0, 0.0};</span>
+<span class="lineNum">      31 </span><span class="lineCov">       5419 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      32 </span>            :     double al, als, n, cosphi, sinphi, t;
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            :     /*
+<span class="lineNum">      35 </span>            :      * Fail if our longitude is more than 90 degrees from the
+<span class="lineNum">      36 </span>            :      * central meridian since the results are essentially garbage.
+<span class="lineNum">      37 </span>            :      * Is error -20 really an appropriate return value?
+<span class="lineNum">      38 </span>            :      *
+<span class="lineNum">      39 </span>            :      *  http://trac.osgeo.org/proj/ticket/5
+<span class="lineNum">      40 </span>            :      */
+<span class="lineNum">      41 </span><span class="lineCov">       5419 :     if( lp.lam &lt; -M_HALFPI || lp.lam &gt; M_HALFPI ) {</span>
+<span class="lineNum">      42 </span><span class="lineNoCov">          0 :         xy.x = HUGE_VAL;</span>
+<span class="lineNum">      43 </span><span class="lineNoCov">          0 :         xy.y = HUGE_VAL;</span>
+<span class="lineNum">      44 </span><span class="lineNoCov">          0 :         pj_ctx_set_errno( P-&gt;ctx, PJD_ERR_LAT_OR_LON_EXCEED_LIMIT );</span>
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 :         return xy;</span>
+<span class="lineNum">      46 </span>            :     }
+<span class="lineNum">      47 </span>            : 
+<span class="lineNum">      48 </span><span class="lineCov">       5419 :     sinphi = sin (lp.phi);</span>
+<span class="lineNum">      49 </span><span class="lineCov">       5419 :     cosphi = cos (lp.phi);</span>
+<span class="lineNum">      50 </span><span class="lineCov">       5419 :     t = fabs (cosphi) &gt; 1e-10 ? sinphi/cosphi : 0.;</span>
+<span class="lineNum">      51 </span><span class="lineCov">       5419 :     t *= t;</span>
+<span class="lineNum">      52 </span><span class="lineCov">       5419 :     al = cosphi * lp.lam;</span>
+<span class="lineNum">      53 </span><span class="lineCov">       5419 :     als = al * al;</span>
+<span class="lineNum">      54 </span><span class="lineCov">       5419 :     al /= sqrt (1. - P-&gt;es * sinphi * sinphi);</span>
+<span class="lineNum">      55 </span><span class="lineCov">       5419 :     n = Q-&gt;esp * cosphi * cosphi;</span>
+<span class="lineNum">      56 </span><span class="lineCov">      10838 :     xy.x = P-&gt;k0 * al * (FC1 +</span>
+<span class="lineNum">      57 </span><span class="lineCov">      10838 :         FC3 * als * (1. - t + n +</span>
+<span class="lineNum">      58 </span><span class="lineCov">      10838 :         FC5 * als * (5. + t * (t - 18.) + n * (14. - 58. * t)</span>
+<span class="lineNum">      59 </span><span class="lineCov">       5419 :         + FC7 * als * (61. + t * ( t * (179. - t) - 479. ) )</span>
+<span class="lineNum">      60 </span>            :         )));
+<span class="lineNum">      61 </span><span class="lineCov">      10838 :     xy.y = P-&gt;k0 * (pj_mlfn(lp.phi, sinphi, cosphi, Q-&gt;en) - Q-&gt;ml0 +</span>
+<span class="lineNum">      62 </span><span class="lineCov">      10838 :         sinphi * al * lp.lam * FC2 * ( 1. +</span>
+<span class="lineNum">      63 </span><span class="lineCov">      10838 :         FC4 * als * (5. - t + n * (9. + 4. * n) +</span>
+<span class="lineNum">      64 </span><span class="lineCov">      10838 :         FC6 * als * (61. + t * (t - 58.) + n * (270. - 330 * t)</span>
+<span class="lineNum">      65 </span><span class="lineCov">       5419 :         + FC8 * als * (1385. + t * ( t * (543. - t) - 3111.) )</span>
+<span class="lineNum">      66 </span>            :         ))));
+<span class="lineNum">      67 </span><span class="lineCov">       5419 :     return (xy);</span>
+<span class="lineNum">      68 </span>            : }
+<a name="69"><span class="lineNum">      69 </span>            : </a>
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span><span class="lineCov">          4 : static XY s_forward (LP lp, PJ *P) {           /* Spheroidal, forward */</span>
+<span class="lineNum">      72 </span><span class="lineCov">          4 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">      73 </span>            :     double b, cosphi;
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span>            :     /*
+<span class="lineNum">      76 </span>            :      * Fail if our longitude is more than 90 degrees from the
+<span class="lineNum">      77 </span>            :      * central meridian since the results are essentially garbage.
+<span class="lineNum">      78 </span>            :      * Is error -20 really an appropriate return value?
+<span class="lineNum">      79 </span>            :      *
+<span class="lineNum">      80 </span>            :      *  http://trac.osgeo.org/proj/ticket/5
+<span class="lineNum">      81 </span>            :      */
+<span class="lineNum">      82 </span><span class="lineCov">          4 :     if( lp.lam &lt; -M_HALFPI || lp.lam &gt; M_HALFPI ) {</span>
+<span class="lineNum">      83 </span><span class="lineNoCov">          0 :         xy.x = HUGE_VAL;</span>
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 :         xy.y = HUGE_VAL;</span>
+<span class="lineNum">      85 </span><span class="lineNoCov">          0 :         pj_ctx_set_errno( P-&gt;ctx, PJD_ERR_LAT_OR_LON_EXCEED_LIMIT );</span>
+<span class="lineNum">      86 </span><span class="lineNoCov">          0 :         return xy;</span>
+<span class="lineNum">      87 </span>            :     }
+<span class="lineNum">      88 </span>            : 
+<span class="lineNum">      89 </span><span class="lineCov">          4 :     cosphi = cos(lp.phi);</span>
+<span class="lineNum">      90 </span><span class="lineCov">          4 :     b = cosphi * sin (lp.lam);</span>
+<span class="lineNum">      91 </span><span class="lineCov">          4 :     if (fabs (fabs (b) - 1.) &lt;= EPS10) {</span>
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :         proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">      93 </span><span class="lineNoCov">          0 :         return xy;</span>
+<span class="lineNum">      94 </span>            :     }
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span><span class="lineCov">          4 :     xy.x = P-&gt;opaque-&gt;ml0 * log ((1. + b) / (1. - b));</span>
+<span class="lineNum">      97 </span><span class="lineCov">          4 :     xy.y = cosphi * cos (lp.lam) / sqrt (1. - b * b);</span>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineCov">          4 :     b = fabs ( xy.y );</span>
+<span class="lineNum">     100 </span><span class="lineCov">          4 :     if (b &gt;= 1.) {</span>
+<span class="lineNum">     101 </span><span class="lineNoCov">          0 :         if ((b - 1.) &gt; EPS10) {</span>
+<span class="lineNum">     102 </span><span class="lineNoCov">          0 :             proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 :             return xy;</span>
+<span class="lineNum">     104 </span>            :         }
+<span class="lineNum">     105 </span><span class="lineNoCov">          0 :         else xy.y = 0.;</span>
+<span class="lineNum">     106 </span>            :     } else
+<span class="lineNum">     107 </span><span class="lineCov">          4 :         xy.y = acos (xy.y);</span>
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span><span class="lineCov">          4 :     if (lp.phi &lt; 0.)</span>
+<span class="lineNum">     110 </span><span class="lineCov">          2 :         xy.y = -xy.y;</span>
+<span class="lineNum">     111 </span><span class="lineCov">          4 :     xy.y = P-&gt;opaque-&gt;esp * (xy.y - P-&gt;phi0);</span>
+<span class="lineNum">     112 </span><span class="lineCov">          4 :     return xy;</span>
+<span class="lineNum">     113 </span>            : }
+<a name="114"><span class="lineNum">     114 </span>            : </a>
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span><span class="lineCov">       5019 : static LP e_inverse (XY xy, PJ *P) {          /* Ellipsoidal, inverse */</span>
+<span class="lineNum">     117 </span><span class="lineCov">       5019 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">     118 </span><span class="lineCov">       5019 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     119 </span>            :     double n, con, cosphi, d, ds, sinphi, t;
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span><span class="lineCov">       5019 :     lp.phi = pj_inv_mlfn(P-&gt;ctx, Q-&gt;ml0 + xy.y / P-&gt;k0, P-&gt;es, Q-&gt;en);</span>
+<span class="lineNum">     122 </span><span class="lineCov">       5019 :     if (fabs(lp.phi) &gt;= M_HALFPI) {</span>
+<span class="lineNum">     123 </span><span class="lineNoCov">          0 :         lp.phi = xy.y &lt; 0. ? -M_HALFPI : M_HALFPI;</span>
+<span class="lineNum">     124 </span><span class="lineNoCov">          0 :         lp.lam = 0.;</span>
+<span class="lineNum">     125 </span>            :     } else {
+<span class="lineNum">     126 </span><span class="lineCov">       5019 :         sinphi = sin(lp.phi);</span>
+<span class="lineNum">     127 </span><span class="lineCov">       5019 :         cosphi = cos(lp.phi);</span>
+<span class="lineNum">     128 </span><span class="lineCov">       5019 :         t = fabs (cosphi) &gt; 1e-10 ? sinphi/cosphi : 0.;</span>
+<span class="lineNum">     129 </span><span class="lineCov">       5019 :         n = Q-&gt;esp * cosphi * cosphi;</span>
+<span class="lineNum">     130 </span><span class="lineCov">       5019 :         d = xy.x * sqrt (con = 1. - P-&gt;es * sinphi * sinphi) / P-&gt;k0;</span>
+<span class="lineNum">     131 </span><span class="lineCov">       5019 :         con *= t;</span>
+<span class="lineNum">     132 </span><span class="lineCov">       5019 :         t *= t;</span>
+<span class="lineNum">     133 </span><span class="lineCov">       5019 :         ds = d * d;</span>
+<span class="lineNum">     134 </span><span class="lineCov">      10038 :         lp.phi -= (con * ds / (1.-P-&gt;es)) * FC2 * (1. -</span>
+<span class="lineNum">     135 </span><span class="lineCov">      10038 :             ds * FC4 * (5. + t * (3. - 9. *  n) + n * (1. - 4 * n) -</span>
+<span class="lineNum">     136 </span><span class="lineCov">      15057 :             ds * FC6 * (61. + t * (90. - 252. * n +</span>
+<span class="lineNum">     137 </span><span class="lineCov">      10038 :                 45. * t) + 46. * n</span>
+<span class="lineNum">     138 </span><span class="lineCov">       5019 :            - ds * FC8 * (1385. + t * (3633. + t * (4095. + 1575. * t)) )</span>
+<span class="lineNum">     139 </span>            :             )));
+<span class="lineNum">     140 </span><span class="lineCov">      10038 :         lp.lam = d*(FC1 -</span>
+<span class="lineNum">     141 </span><span class="lineCov">      10038 :             ds*FC3*( 1. + 2.*t + n -</span>
+<span class="lineNum">     142 </span><span class="lineCov">      10038 :             ds*FC5*(5. + t*(28. + 24.*t + 8.*n) + 6.*n</span>
+<span class="lineNum">     143 </span><span class="lineCov">       5019 :            - ds * FC7 * (61. + t * (662. + t * (1320. + 720. * t)) )</span>
+<span class="lineNum">     144 </span><span class="lineCov">       5019 :         ))) / cosphi;</span>
+<span class="lineNum">     145 </span>            :     }
+<span class="lineNum">     146 </span><span class="lineCov">       5019 :     return lp;</span>
+<span class="lineNum">     147 </span>            : }
+<a name="148"><span class="lineNum">     148 </span>            : </a>
+<span class="lineNum">     149 </span>            : 
+<span class="lineNum">     150 </span><span class="lineCov">          4 : static LP s_inverse (XY xy, PJ *P) {           /* Spheroidal, inverse */</span>
+<span class="lineNum">     151 </span><span class="lineCov">          4 :     LP lp = {0.0, 0.0};</span>
+<span class="lineNum">     152 </span>            :     double h, g;
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span><span class="lineCov">          4 :     h = exp(xy.x / P-&gt;opaque-&gt;esp);</span>
+<span class="lineNum">     155 </span><span class="lineCov">          4 :     g = .5 * (h - 1. / h);</span>
+<span class="lineNum">     156 </span><span class="lineCov">          4 :     h = cos (P-&gt;phi0 + xy.y / P-&gt;opaque-&gt;esp);</span>
+<span class="lineNum">     157 </span><span class="lineCov">          4 :     lp.phi = asin(sqrt((1. - h * h) / (1. + g * g)));</span>
+<span class="lineNum">     158 </span>            : 
+<span class="lineNum">     159 </span>            :     /* Make sure that phi is on the correct hemisphere when false northing is used */
+<span class="lineNum">     160 </span><span class="lineCov">          4 :     if (xy.y &lt; 0. &amp;&amp; -lp.phi+P-&gt;phi0 &lt; 0.0) lp.phi = -lp.phi;</span>
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span><span class="lineCov">          4 :     lp.lam = (g != 0.0 || h != 0.0) ? atan2 (g, h) : 0.;</span>
+<span class="lineNum">     163 </span><span class="lineCov">          4 :     return lp;</span>
+<span class="lineNum">     164 </span>            : }
+<a name="165"><span class="lineNum">     165 </span>            : </a>
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span><span class="lineCov">        408 : static void *destructor(PJ *P, int errlev) {                       /* Destructor */</span>
+<span class="lineNum">     168 </span><span class="lineCov">        408 :     if (0==P)</span>
+<span class="lineNum">     169 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span><span class="lineCov">        408 :     if (0==P-&gt;opaque)</span>
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, errlev);</span>
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span><span class="lineCov">        408 :     pj_dealloc (P-&gt;opaque-&gt;en);</span>
+<span class="lineNum">     175 </span><span class="lineCov">        408 :     return pj_default_destructor(P, errlev);</span>
+<span class="lineNum">     176 </span>            : }
+<a name="177"><span class="lineNum">     177 </span>            : </a>
+<span class="lineNum">     178 </span>            : 
+<span class="lineNum">     179 </span><span class="lineCov">        409 : static PJ *setup(PJ *P) {                   /* general initialization */</span>
+<span class="lineNum">     180 </span><span class="lineCov">        409 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     181 </span><span class="lineCov">        409 :     if (P-&gt;es != 0.0) {</span>
+<span class="lineNum">     182 </span><span class="lineCov">        408 :         if (!(Q-&gt;en = pj_enfn(P-&gt;es)))</span>
+<span class="lineNum">     183 </span><span class="lineNoCov">          0 :             return pj_default_destructor(P, ENOMEM);</span>
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span><span class="lineCov">        408 :         Q-&gt;ml0 = pj_mlfn(P-&gt;phi0, sin(P-&gt;phi0), cos(P-&gt;phi0), Q-&gt;en);</span>
+<span class="lineNum">     186 </span><span class="lineCov">        408 :         Q-&gt;esp = P-&gt;es / (1. - P-&gt;es);</span>
+<span class="lineNum">     187 </span><span class="lineCov">        408 :         P-&gt;inv = e_inverse;</span>
+<span class="lineNum">     188 </span><span class="lineCov">        408 :         P-&gt;fwd = e_forward;</span>
+<span class="lineNum">     189 </span>            :     } else {
+<span class="lineNum">     190 </span><span class="lineCov">          1 :         Q-&gt;esp = P-&gt;k0;</span>
+<span class="lineNum">     191 </span><span class="lineCov">          1 :         Q-&gt;ml0 = .5 * Q-&gt;esp;</span>
+<span class="lineNum">     192 </span><span class="lineCov">          1 :         P-&gt;inv = s_inverse;</span>
+<span class="lineNum">     193 </span><span class="lineCov">          1 :         P-&gt;fwd = s_forward;</span>
+<span class="lineNum">     194 </span>            :     }
+<span class="lineNum">     195 </span><span class="lineCov">        409 :     return P;</span>
+<span class="lineNum">     196 </span>            : }
+<a name="197"><span class="lineNum">     197 </span>            : </a>
+<span class="lineNum">     198 </span>            : 
+<span class="lineNum">     199 </span><span class="lineCov">       1227 : PJ *PROJECTION(tmerc) {</span>
+<span class="lineNum">     200 </span><span class="lineCov">        409 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     201 </span><span class="lineCov">        409 :     if (0==Q)</span>
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">     203 </span>            : 
+<span class="lineNum">     204 </span><span class="lineCov">        409 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     205 </span><span class="lineCov">        409 :     P-&gt;destructor = destructor;</span>
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span><span class="lineCov">        409 :     return setup(P);</span>
+<span class="lineNum">     208 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

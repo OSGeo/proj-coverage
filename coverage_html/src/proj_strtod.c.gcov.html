@@ -1,0 +1,516 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/proj_strtod.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - proj_strtod.c<span style="font-size: 80%;"> (source / <a href="proj_strtod.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">105</td>
+            <td class="headerCovTableEntry">139</td>
+            <td class="headerCovTableEntryMed">75.5 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryLo">50.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /***********************************************************************</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            :  proj_strtod: Convert string to double, accepting underscore separators
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :                     Thomas Knudsen, 2017-01-17/09-19
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : ************************************************************************
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            : Conventionally, PROJ.4 does not honor locale settings, consistently
+<span class="lineNum">      10 </span>            : behaving as if LC_ALL=C.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : For this to work, we have, for many years, been using other solutions
+<span class="lineNum">      13 </span>            : than the C standard library strtod/atof functions for converting strings
+<span class="lineNum">      14 </span>            : to doubles.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            : In the early versions of proj, iirc, a gnu version of strtod was used,
+<span class="lineNum">      17 </span>            : mostly to work around cases where the same system library was used for
+<span class="lineNum">      18 </span>            : C and Fortran linking, hence making strtod accept &quot;D&quot; and &quot;d&quot; as
+<span class="lineNum">      19 </span>            : exponentiation indicators, following Fortran Double Precision constant
+<span class="lineNum">      20 </span>            : syntax. This broke the proj angular syntax, accepting a &quot;d&quot; to mean
+<span class="lineNum">      21 </span>            : &quot;degree&quot;: 12d34'56&quot;, meaning 12 degrees 34 minutes and 56 seconds.
+<span class="lineNum">      22 </span>            : 
+<span class="lineNum">      23 </span>            : With an explicit MIT licence, PROJ.4 could not include GPL code any
+<span class="lineNum">      24 </span>            : longer, and apparently at some time, the GPL code was replaced by the
+<span class="lineNum">      25 </span>            : current C port of a GDAL function (in pj_strtod.c), which reads the
+<span class="lineNum">      26 </span>            : LC_NUMERIC setting and, behind the back of the user, momentarily changes
+<span class="lineNum">      27 </span>            : the conventional '.' delimiter to whatever the locale requires, then
+<span class="lineNum">      28 </span>            : calls the system supplied strtod.
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : While this requires a minimum amount of coding, it only solves one
+<span class="lineNum">      31 </span>            : problem, and not in a very generic way.
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            : Another problem, I would like to see solved, is the handling of underscores
+<span class="lineNum">      34 </span>            : as generic delimiters. This is getting popular in a number of programming
+<span class="lineNum">      35 </span>            : languages (Ada, C++, C#, D, Java, Julia, Perl 5, Python, Rust, etc.
+<span class="lineNum">      36 </span>            : cf. e.g. https://www.python.org/dev/peps/pep-0515/), and in our case of
+<span class="lineNum">      37 </span>            : handling numbers being in the order of magnitude of the Earth's dimensions,
+<span class="lineNum">      38 </span>            : and a resolution of submillimetre, i.e. having 10 or more significant digits,
+<span class="lineNum">      39 </span>            : splitting the &quot;wall of digits&quot; into smaller chunks is of immense value.
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : Hence this reimplementation of strtod, which hardcodes '.' as indicator of
+<span class="lineNum">      42 </span>            : numeric fractions, and accepts '_' anywhere in a numerical string sequence:
+<span class="lineNum">      43 </span>            : So a typical northing value can be written
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            :                             6_098_907.8250 m
+<span class="lineNum">      46 </span>            : rather than
+<span class="lineNum">      47 </span>            :                              6098907.8250 m
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : which, in my humble opinion, is well worth the effort.
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            : While writing this code, I took ample inspiration from Michael Ringgaard's
+<span class="lineNum">      52 </span>            : strtod version over at http://www.jbox.dk/sanos/source/lib/strtod.c.html,
+<span class="lineNum">      53 </span>            : and Yasuhiro Matsumoto's public domain version over at
+<span class="lineNum">      54 </span>            : https://gist.github.com/mattn/1890186. The code below is, however, not
+<span class="lineNum">      55 </span>            : copied from any of the two mentioned - it is a reimplementation, and
+<span class="lineNum">      56 </span>            : probably suffers from its own set of bugs. So for now, it is intended
+<span class="lineNum">      57 </span>            : not as a replacement of pj_strtod, but only as an experimental piece of
+<span class="lineNum">      58 </span>            : code for use in an experimental new transformation program, cct.
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            : ************************************************************************
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            : Thomas Knudsen, thokn@sdfe.dk, 2017-01-17/2017-09-18
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            : ************************************************************************
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            : * Copyright (c) 2017 Thomas Knudsen &amp; SDFE
+<span class="lineNum">      67 </span>            : *
+<span class="lineNum">      68 </span>            : * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      69 </span>            : * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      70 </span>            : * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      71 </span>            : * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      72 </span>            : * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      73 </span>            : * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      74 </span>            : *
+<span class="lineNum">      75 </span>            : * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      76 </span>            : * in all copies or substantial portions of the Software.
+<span class="lineNum">      77 </span>            : *
+<span class="lineNum">      78 </span>            : * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      79 </span>            : * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      80 </span>            : * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      81 </span>            : * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      82 </span>            : * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      83 </span>            : * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      84 </span>            : * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            : ***********************************************************************/
+<span class="lineNum">      87 </span>            : 
+<span class="lineNum">      88 </span>            : #include &quot;proj_strtod.h&quot;
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            : #include &lt;stdlib.h&gt; /* for abs */
+<span class="lineNum">      91 </span>            : #include &lt;string.h&gt; /* for strchr */
+<span class="lineNum">      92 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      93 </span>            : #include &lt;ctype.h&gt;
+<span class="lineNum">      94 </span>            : #include &lt;float.h&gt;  /* for HUGE_VAL */
+<span class="lineNum">      95 </span>            : #include &lt;math.h&gt;   /* for pow() */
+<a name="96"><span class="lineNum">      96 </span>            : </a>
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span><span class="lineCov">      17493 : double proj_strtod(const char *str, char **endptr) {</span>
+<span class="lineNum">      99 </span><span class="lineCov">      17493 :     double number = 0, integral_part = 0;</span>
+<span class="lineNum">     100 </span><span class="lineCov">      17493 :     int exponent = 0;</span>
+<span class="lineNum">     101 </span><span class="lineCov">      17493 :     int fraction_is_nonzero = 0;</span>
+<span class="lineNum">     102 </span><span class="lineCov">      17493 :     int sign = 0;</span>
+<span class="lineNum">     103 </span><span class="lineCov">      17493 :     char *p = (char *) str;</span>
+<span class="lineNum">     104 </span><span class="lineCov">      17493 :     int n = 0;</span>
+<span class="lineNum">     105 </span><span class="lineCov">      17493 :     int num_digits_total        = 0;</span>
+<span class="lineNum">     106 </span><span class="lineCov">      17493 :     int num_digits_after_comma  = 0;</span>
+<span class="lineNum">     107 </span><span class="lineCov">      17493 :     int num_prefixed_zeros      = 0;</span>
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span><span class="lineCov">      17493 :     if (0==str) {</span>
+<span class="lineNum">     110 </span><span class="lineNoCov">          0 :         errno = EFAULT;</span>
+<span class="lineNum">     111 </span><span class="lineNoCov">          0 :         if (endptr)</span>
+<span class="lineNum">     112 </span><span class="lineNoCov">          0 :             *endptr = p;</span>
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 :         return HUGE_VAL;</span>
+<span class="lineNum">     114 </span>            :     }
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span>            :     /* First skip leading whitespace */
+<span class="lineNum">     117 </span><span class="lineCov">      40287 :     while (isspace(*p))</span>
+<span class="lineNum">     118 </span><span class="lineCov">       5301 :         p++;</span>
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span>            :     /* Empty string? */
+<span class="lineNum">     121 </span><span class="lineCov">      17493 :     if (0==*p) {</span>
+<span class="lineNum">     122 </span><span class="lineCov">       5228 :         if (endptr)</span>
+<span class="lineNum">     123 </span><span class="lineCov">       5228 :             *endptr = (char *) str;</span>
+<span class="lineNum">     124 </span><span class="lineCov">       5228 :         return 0;</span>
+<span class="lineNum">     125 </span>            :     }
+<span class="lineNum">     126 </span>            : 
+<span class="lineNum">     127 </span>            :     /* non-numeric? */
+<span class="lineNum">     128 </span><span class="lineCov">      12265 :     if (0==strchr(&quot;0123456789+-._&quot;, *p)) {</span>
+<span class="lineNum">     129 </span><span class="lineCov">         11 :         if (endptr)</span>
+<span class="lineNum">     130 </span><span class="lineCov">         11 :             *endptr = (char *) str;</span>
+<span class="lineNum">     131 </span><span class="lineCov">         11 :         return 0;</span>
+<span class="lineNum">     132 </span>            :     }
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span>            :     /* Then handle optional prefixed sign and skip prefix zeros */
+<span class="lineNum">     135 </span><span class="lineCov">      12254 :     switch (*p) {</span>
+<span class="lineNum">     136 </span>            :         case '-':
+<span class="lineNum">     137 </span><span class="lineCov">       3713 :             sign = -1;</span>
+<span class="lineNum">     138 </span><span class="lineCov">       3713 :             p++;</span>
+<span class="lineNum">     139 </span><span class="lineCov">       3713 :             break;</span>
+<span class="lineNum">     140 </span>            :         case '+':
+<span class="lineNum">     141 </span><span class="lineNoCov">          0 :             sign =  1;</span>
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :             p++;</span>
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     144 </span>            :         default:
+<span class="lineNum">     145 </span><span class="lineCov">       8541 :             if (isdigit(*p) || '_'==*p || '.'==*p)</span>
+<span class="lineNum">     146 </span>            :                 break;
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :             if (endptr)</span>
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :                 *endptr = (char *) str;</span>
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     150 </span>            :     }
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span>            :     /* stray sign, as in &quot;+/-&quot;? */
+<span class="lineNum">     153 </span><span class="lineCov">      12254 :     if (0!=sign &amp;&amp; (0==strchr (&quot;0123456789._&quot;, *p) || 0==*p)) {</span>
+<span class="lineNum">     154 </span><span class="lineNoCov">          0 :         if (endptr)</span>
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 :             *endptr = (char *) str;</span>
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     157 </span>            :     }
+<span class="lineNum">     158 </span>            : 
+<span class="lineNum">     159 </span>            :     /* skip prefixed zeros before '.' */
+<span class="lineNum">     160 </span><span class="lineCov">      27808 :     while ('0'==*p || '_'==*p)</span>
+<span class="lineNum">     161 </span><span class="lineCov">       3300 :         p++;</span>
+<span class="lineNum">     162 </span>            : 
+<span class="lineNum">     163 </span>            :     /* zero? */
+<span class="lineNum">     164 </span><span class="lineCov">      12254 :     if ((0==*p) || 0==strchr (&quot;0123456789eE.&quot;, *p) || isspace(*p)) {</span>
+<span class="lineNum">     165 </span><span class="lineCov">        496 :         if (endptr)</span>
+<span class="lineNum">     166 </span><span class="lineCov">        496 :             *endptr = p;</span>
+<span class="lineNum">     167 </span><span class="lineCov">        496 :         return sign==-1? -0: 0;</span>
+<span class="lineNum">     168 </span>            :     }
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span>            :     /* Now expect a (potentially zero-length) string of digits */
+<span class="lineNum">     171 </span><span class="lineCov">      55141 :     while (isdigit(*p) || ('_'==*p)) {</span>
+<span class="lineNum">     172 </span><span class="lineCov">      31625 :         if ('_'==*p) {</span>
+<span class="lineNum">     173 </span><span class="lineCov">         24 :             p++;</span>
+<span class="lineNum">     174 </span><span class="lineCov">         24 :             continue;</span>
+<span class="lineNum">     175 </span>            :         }
+<span class="lineNum">     176 </span><span class="lineCov">      31601 :         number = number * 10. + (*p - '0');</span>
+<span class="lineNum">     177 </span><span class="lineCov">      31601 :         p++;</span>
+<span class="lineNum">     178 </span><span class="lineCov">      31601 :         num_digits_total++;</span>
+<span class="lineNum">     179 </span>            :     }
+<span class="lineNum">     180 </span><span class="lineCov">      11758 :     integral_part = number;</span>
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            :     /* Done? */
+<span class="lineNum">     183 </span><span class="lineCov">      11758 :     if (0==*p) {</span>
+<span class="lineNum">     184 </span><span class="lineCov">       2435 :         if (endptr)</span>
+<span class="lineNum">     185 </span><span class="lineCov">       2435 :             *endptr = p;</span>
+<span class="lineNum">     186 </span><span class="lineCov">       2435 :         if (sign==-1)</span>
+<span class="lineNum">     187 </span><span class="lineCov">        805 :             return -number;</span>
+<span class="lineNum">     188 </span><span class="lineCov">       1630 :         return number;</span>
+<span class="lineNum">     189 </span>            :     }
+<span class="lineNum">     190 </span>            : 
+<span class="lineNum">     191 </span>            :     /* Do we have a fractional part? */
+<span class="lineNum">     192 </span><span class="lineCov">       9323 :     if ('.'==*p) {</span>
+<span class="lineNum">     193 </span><span class="lineCov">       7061 :         p++;</span>
+<span class="lineNum">     194 </span>            : 
+<span class="lineNum">     195 </span>            :         /* keep on skipping prefixed zeros (i.e. allow writing 1e-20 */
+<span class="lineNum">     196 </span>            :         /* as 0.00000000000000000001 without losing precision) */
+<span class="lineNum">     197 </span><span class="lineCov">       7061 :         if (0==integral_part)</span>
+<span class="lineNum">     198 </span><span class="lineCov">       9599 :             while ('0'==*p || '_'==*p) {</span>
+<span class="lineNum">     199 </span><span class="lineCov">       3991 :                 if ('0'==*p)</span>
+<span class="lineNum">     200 </span><span class="lineCov">       3991 :                     num_prefixed_zeros++;</span>
+<span class="lineNum">     201 </span><span class="lineCov">       3991 :                 p++;</span>
+<span class="lineNum">     202 </span>            :             }
+<span class="lineNum">     203 </span>            : 
+<span class="lineNum">     204 </span>            :         /* if the next character is nonnumeric, we have reached the end */
+<span class="lineNum">     205 </span><span class="lineCov">       7061 :         if (0==*p || 0==strchr (&quot;_0123456789eE+-&quot;, *p)) {</span>
+<span class="lineNum">     206 </span><span class="lineCov">        111 :             if (endptr)</span>
+<span class="lineNum">     207 </span><span class="lineCov">        111 :                 *endptr = p;</span>
+<span class="lineNum">     208 </span><span class="lineCov">        111 :             if (sign==-1)</span>
+<span class="lineNum">     209 </span><span class="lineCov">          1 :                 return -number;</span>
+<span class="lineNum">     210 </span><span class="lineCov">        110 :             return number;</span>
+<span class="lineNum">     211 </span>            :         }
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span><span class="lineCov">      47167 :         while (isdigit(*p) || '_'==*p) {</span>
+<span class="lineNum">     214 </span>            :             /* Don't let pathologically long fractions destroy precision */
+<span class="lineNum">     215 </span><span class="lineCov">      33267 :             if ('_'==*p || num_digits_total &gt; 17) {</span>
+<span class="lineNum">     216 </span><span class="lineCov">         44 :                 p++;</span>
+<span class="lineNum">     217 </span><span class="lineCov">         44 :                 continue;</span>
+<span class="lineNum">     218 </span>            :             }
+<span class="lineNum">     219 </span>            : 
+<span class="lineNum">     220 </span><span class="lineCov">      33223 :             number = number * 10. + (*p - '0');</span>
+<span class="lineNum">     221 </span><span class="lineCov">      33223 :             if (*p!='0')</span>
+<span class="lineNum">     222 </span><span class="lineCov">      28649 :                 fraction_is_nonzero = 1;</span>
+<span class="lineNum">     223 </span><span class="lineCov">      33223 :             p++;</span>
+<span class="lineNum">     224 </span><span class="lineCov">      33223 :             num_digits_total++;</span>
+<span class="lineNum">     225 </span><span class="lineCov">      33223 :             num_digits_after_comma++;</span>
+<span class="lineNum">     226 </span>            :         }
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span>            :         /* Avoid having long zero-tails (4321.000...000) destroy precision */
+<span class="lineNum">     229 </span><span class="lineCov">       6950 :         if (fraction_is_nonzero)</span>
+<span class="lineNum">     230 </span><span class="lineCov">       6318 :             exponent = -(num_digits_after_comma + num_prefixed_zeros);</span>
+<span class="lineNum">     231 </span>            :         else
+<span class="lineNum">     232 </span><span class="lineCov">        632 :             number = integral_part;</span>
+<span class="lineNum">     233 </span>            :     }  /* end of fractional part */
+<span class="lineNum">     234 </span>            : 
+<span class="lineNum">     235 </span>            : 
+<span class="lineNum">     236 </span>            :     /* non-digit */
+<span class="lineNum">     237 </span><span class="lineCov">       9212 :     if (0==num_digits_total) {</span>
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 :         errno = EINVAL;</span>
+<span class="lineNum">     239 </span><span class="lineNoCov">          0 :         if (endptr)</span>
+<span class="lineNum">     240 </span><span class="lineNoCov">          0 :             *endptr = p;</span>
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :         return HUGE_VAL;</span>
+<span class="lineNum">     242 </span>            :     }
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span><span class="lineCov">       9212 :     if (sign==-1)</span>
+<span class="lineNum">     245 </span><span class="lineCov">       2907 :         number = -number;</span>
+<span class="lineNum">     246 </span>            : 
+<span class="lineNum">     247 </span>            :     /* Do we have an exponent part? */
+<span class="lineNum">     248 </span><span class="lineCov">      18424 :     while (*p == 'e' || *p == 'E') {</span>
+<span class="lineNum">     249 </span><span class="lineCov">          1 :         p++;</span>
+<span class="lineNum">     250 </span>            : 
+<span class="lineNum">     251 </span>            :         /* Just a stray &quot;e&quot;, as in 100elephants? */
+<span class="lineNum">     252 </span><span class="lineCov">          1 :         if (0==*p || 0==strchr (&quot;0123456789+-_&quot;, *p)) {</span>
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :             p--;</span>
+<span class="lineNum">     254 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     255 </span>            :         }
+<span class="lineNum">     256 </span>            : 
+<span class="lineNum">     257 </span><span class="lineCov">          2 :         while ('_'==*p)</span>
+<span class="lineNum">     258 </span><span class="lineNoCov">          0 :             p++;</span>
+<span class="lineNum">     259 </span>            :         /* Does it have a sign? */
+<span class="lineNum">     260 </span><span class="lineCov">          1 :         sign = 0;</span>
+<span class="lineNum">     261 </span><span class="lineCov">          1 :         if ('-'==*p)</span>
+<span class="lineNum">     262 </span><span class="lineNoCov">          0 :             sign = -1;</span>
+<span class="lineNum">     263 </span><span class="lineCov">          1 :         if ('+'==*p)</span>
+<span class="lineNum">     264 </span><span class="lineNoCov">          0 :             sign = +1;</span>
+<span class="lineNum">     265 </span><span class="lineCov">          1 :         if (0==sign) {</span>
+<span class="lineNum">     266 </span><span class="lineCov">          1 :             if (!isdigit(*p) &amp;&amp; *p!='_') {</span>
+<span class="lineNum">     267 </span><span class="lineNoCov">          0 :                 if (endptr)</span>
+<span class="lineNum">     268 </span><span class="lineNoCov">          0 :                     *endptr = p;</span>
+<span class="lineNum">     269 </span><span class="lineNoCov">          0 :                 return HUGE_VAL;</span>
+<span class="lineNum">     270 </span>            :             }
+<span class="lineNum">     271 </span>            :         }
+<span class="lineNum">     272 </span>            :         else
+<span class="lineNum">     273 </span><span class="lineNoCov">          0 :             p++;</span>
+<span class="lineNum">     274 </span>            : 
+<span class="lineNum">     275 </span>            : 
+<span class="lineNum">     276 </span>            :         /* Go on and read the exponent */
+<span class="lineNum">     277 </span><span class="lineCov">          1 :         n = 0;</span>
+<span class="lineNum">     278 </span><span class="lineCov">          3 :         while (isdigit(*p) || '_'==*p) {</span>
+<span class="lineNum">     279 </span><span class="lineCov">          1 :             if ('_'==*p) {</span>
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :                 p++;</span>
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 :                 continue;</span>
+<span class="lineNum">     282 </span>            :             }
+<span class="lineNum">     283 </span><span class="lineCov">          1 :             n = n * 10 + (*p - '0');</span>
+<span class="lineNum">     284 </span><span class="lineCov">          1 :             p++;</span>
+<span class="lineNum">     285 </span>            :         }
+<span class="lineNum">     286 </span>            : 
+<span class="lineNum">     287 </span><span class="lineCov">          1 :         if (-1==sign)</span>
+<span class="lineNum">     288 </span><span class="lineNoCov">          0 :             n = -n;</span>
+<span class="lineNum">     289 </span><span class="lineCov">          1 :         exponent += n;</span>
+<span class="lineNum">     290 </span><span class="lineCov">          1 :         break;</span>
+<span class="lineNum">     291 </span>            :     }
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span><span class="lineCov">       9212 :     if (endptr)</span>
+<span class="lineNum">     294 </span><span class="lineCov">       9212 :         *endptr = p;</span>
+<span class="lineNum">     295 </span>            : 
+<span class="lineNum">     296 </span><span class="lineCov">       9212 :     if ((exponent &lt; DBL_MIN_EXP) || (exponent &gt; DBL_MAX_EXP)) {</span>
+<span class="lineNum">     297 </span><span class="lineNoCov">          0 :         errno = ERANGE;</span>
+<span class="lineNum">     298 </span><span class="lineNoCov">          0 :         return HUGE_VAL;</span>
+<span class="lineNum">     299 </span>            :     }
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span>            :     /* on some platforms pow() is very slow - so don't call it if exponent is close to 0 */
+<span class="lineNum">     302 </span><span class="lineCov">       9212 :     if (0==exponent)</span>
+<span class="lineNum">     303 </span><span class="lineCov">       2893 :         return number;</span>
+<span class="lineNum">     304 </span><span class="lineCov">      12638 :     if (abs (exponent) &lt; 20) {</span>
+<span class="lineNum">     305 </span><span class="lineCov">       6319 :         double ex = 1;</span>
+<span class="lineNum">     306 </span><span class="lineCov">       6319 :         int absexp = exponent &lt; 0? -exponent: exponent;</span>
+<span class="lineNum">     307 </span><span class="lineCov">      48055 :         while (absexp--)</span>
+<span class="lineNum">     308 </span><span class="lineCov">      35417 :             ex *= 10;</span>
+<span class="lineNum">     309 </span><span class="lineCov">       6319 :         number = exponent &lt; 0? number / ex: number * ex;</span>
+<span class="lineNum">     310 </span>            :     }
+<span class="lineNum">     311 </span>            :     else
+<span class="lineNum">     312 </span><span class="lineNoCov">          0 :         number *= pow (10, exponent);</span>
+<span class="lineNum">     313 </span>            : 
+<span class="lineNum">     314 </span><span class="lineCov">       6319 :     return number;</span>
+<a name="315"><span class="lineNum">     315 </span>            : }</a>
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span><span class="lineNoCov">          0 : double proj_atof(const char *str) {</span>
+<span class="lineNum">     318 </span><span class="lineNoCov">          0 :     return proj_strtod(str, (void *) 0);</span>
+<span class="lineNum">     319 </span>            : }
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span>            : #ifdef TEST
+<span class="lineNum">     322 </span>            : 
+<span class="lineNum">     323 </span>            : /* compile/run: gcc -DTEST -o proj_strtod_test proj_strtod.c  &amp;&amp;  proj_strtod_test */
+<span class="lineNum">     324 </span>            : 
+<span class="lineNum">     325 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">     326 </span>            : 
+<span class="lineNum">     327 </span>            : char *un_underscore (char *s) {
+<span class="lineNum">     328 </span>            :     static char u[1024];
+<span class="lineNum">     329 </span>            :     int i, m,  n;
+<span class="lineNum">     330 </span>            :     for (i = m = 0, n = strlen (s);  i &lt; n;  i++) {
+<span class="lineNum">     331 </span>            :         if (s[i]=='_') {
+<span class="lineNum">     332 </span>            :             m++;
+<span class="lineNum">     333 </span>            :             continue;
+<span class="lineNum">     334 </span>            :         }
+<span class="lineNum">     335 </span>            :         u[i - m] = s[i];
+<span class="lineNum">     336 </span>            :     }
+<span class="lineNum">     337 </span>            :     u[n-m] = 0;
+<span class="lineNum">     338 </span>            :     return u;
+<span class="lineNum">     339 </span>            : }
+<span class="lineNum">     340 </span>            : 
+<span class="lineNum">     341 </span>            : int thetest (char *s, int line) {
+<span class="lineNum">     342 </span>            :     char *endp, *endq, *u;
+<span class="lineNum">     343 </span>            :     double p, q;
+<span class="lineNum">     344 </span>            :     int errnop, errnoq, prev_errno;
+<span class="lineNum">     345 </span>            : 
+<span class="lineNum">     346 </span>            :     prev_errno = errno;
+<span class="lineNum">     347 </span>            : 
+<span class="lineNum">     348 </span>            :     u = un_underscore (s);
+<span class="lineNum">     349 </span>            : 
+<span class="lineNum">     350 </span>            :     errno = 0;
+<span class="lineNum">     351 </span>            :     p = proj_strtod (s, &amp;endp);
+<span class="lineNum">     352 </span>            :     errnop = errno;
+<span class="lineNum">     353 </span>            :     errno = 0;
+<span class="lineNum">     354 </span>            :     q = strtod (u, &amp;endq);
+<span class="lineNum">     355 </span>            :     errnoq = errno;
+<span class="lineNum">     356 </span>            : 
+<span class="lineNum">     357 </span>            :     errno = prev_errno;
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span>            :     if (q==p &amp;&amp; 0==strcmp (endp, endq) &amp;&amp; errnop==errnoq)
+<span class="lineNum">     360 </span>            :         return 0;
+<span class="lineNum">     361 </span>            : 
+<span class="lineNum">     362 </span>            :     errno = line;
+<span class="lineNum">     363 </span>            :     printf (&quot;Line: %3.3d  -  [%s] [%s]\n&quot;, line, s, u);
+<span class="lineNum">     364 </span>            :     printf (&quot;proj_strtod: %2d %.17g  [%s]\n&quot;, errnop, p, endp);
+<span class="lineNum">     365 </span>            :     printf (&quot;libc_strtod: %2d %.17g  [%s]\n&quot;, errnoq, q, endq);
+<span class="lineNum">     366 </span>            :     return 1;
+<span class="lineNum">     367 </span>            : }
+<span class="lineNum">     368 </span>            : 
+<span class="lineNum">     369 </span>            : #define test(s) thetest(s, __LINE__)
+<span class="lineNum">     370 </span>            : 
+<span class="lineNum">     371 </span>            : int main (int argc, char **argv) {
+<span class="lineNum">     372 </span>            :     double res;
+<span class="lineNum">     373 </span>            :     char *endptr;
+<span class="lineNum">     374 </span>            : 
+<span class="lineNum">     375 </span>            :     errno = 0;
+<span class="lineNum">     376 </span>            : 
+<span class="lineNum">     377 </span>            :     test (&quot;&quot;);
+<span class="lineNum">     378 </span>            :     test (&quot;     &quot;);
+<span class="lineNum">     379 </span>            :     test (&quot;     abcde&quot;);
+<span class="lineNum">     380 </span>            :     test (&quot;     edcba&quot;);
+<span class="lineNum">     381 </span>            :     test (&quot;abcde&quot;);
+<span class="lineNum">     382 </span>            :     test (&quot;edcba&quot;);
+<span class="lineNum">     383 </span>            :     test (&quot;+&quot;);
+<span class="lineNum">     384 </span>            :     test (&quot;-&quot;);
+<span class="lineNum">     385 </span>            :     test (&quot;+ &quot;);
+<span class="lineNum">     386 </span>            :     test (&quot;- &quot;);
+<span class="lineNum">     387 </span>            :     test (&quot; + &quot;);
+<span class="lineNum">     388 </span>            :     test (&quot; - &quot;);
+<span class="lineNum">     389 </span>            :     test (&quot;e 1&quot;);
+<span class="lineNum">     390 </span>            :     test (&quot;e1&quot;);
+<span class="lineNum">     391 </span>            :     test (&quot;0 66&quot;);
+<span class="lineNum">     392 </span>            :     test (&quot;1.&quot;);
+<span class="lineNum">     393 </span>            :     test (&quot;0.&quot;);
+<span class="lineNum">     394 </span>            :     test (&quot;1.0&quot;);
+<span class="lineNum">     395 </span>            :     test (&quot;0.0&quot;);
+<span class="lineNum">     396 </span>            :     test (&quot;1 &quot;);
+<span class="lineNum">     397 </span>            :     test (&quot;0 &quot;);
+<span class="lineNum">     398 </span>            :     test (&quot;-0 &quot;);
+<span class="lineNum">     399 </span>            :     test (&quot;0_ &quot;);
+<span class="lineNum">     400 </span>            :     test (&quot;0_&quot;);
+<span class="lineNum">     401 </span>            :     test (&quot;1e&quot;);
+<span class="lineNum">     402 </span>            :     test (&quot;_1.0&quot;);
+<span class="lineNum">     403 </span>            :     test (&quot;_0.0&quot;);
+<span class="lineNum">     404 </span>            :     test (&quot;1_.0&quot;);
+<span class="lineNum">     405 </span>            :     test (&quot;0_.0&quot;);
+<span class="lineNum">     406 </span>            :     test (&quot;1__.0&quot;);
+<span class="lineNum">     407 </span>            :     test (&quot;0__.0&quot;);
+<span class="lineNum">     408 </span>            :     test (&quot;1.__0&quot;);
+<span class="lineNum">     409 </span>            :     test (&quot;0.__0&quot;);
+<span class="lineNum">     410 </span>            :     test (&quot;1.0___&quot;);
+<span class="lineNum">     411 </span>            :     test (&quot;0.0___&quot;);
+<span class="lineNum">     412 </span>            :     test (&quot;1e2&quot;);
+<span class="lineNum">     413 </span>            :     test (&quot;__123_456_789_._10_11_12&quot;);
+<span class="lineNum">     414 </span>            :     test (&quot;1______&quot;);
+<span class="lineNum">     415 </span>            :     test (&quot;1___e__2__&quot;);
+<span class="lineNum">     416 </span>            :     test (&quot;-1&quot;);
+<span class="lineNum">     417 </span>            :     test (&quot;-1.0&quot;);
+<span class="lineNum">     418 </span>            :     test (&quot;-0&quot;);
+<span class="lineNum">     419 </span>            :     test (&quot;-1e__-_2__rest&quot;);
+<span class="lineNum">     420 </span>            :     test (&quot;0.00002&quot;);
+<span class="lineNum">     421 </span>            :     test (&quot;0.00001&quot;);
+<span class="lineNum">     422 </span>            :     test (&quot;-0.00002&quot;);
+<span class="lineNum">     423 </span>            :     test (&quot;-0.00001&quot;);
+<span class="lineNum">     424 </span>            :     test (&quot;-0.00001e-2&quot;);
+<span class="lineNum">     425 </span>            :     test (&quot;-0.00001e2&quot;);
+<span class="lineNum">     426 </span>            :     test (&quot;1e9999&quot;);
+<span class="lineNum">     427 </span>            : 
+<span class="lineNum">     428 </span>            :     /* We expect this one to differ */
+<span class="lineNum">     429 </span>            :     test (&quot;0.000000000000000000000000000000000000000000000000000000000000000000000000002&quot;);
+<span class="lineNum">     430 </span>            : 
+<span class="lineNum">     431 </span>            :     if (errno)
+<span class="lineNum">     432 </span>            :         printf (&quot;First discrepancy in line %d\n&quot;, errno);
+<span class="lineNum">     433 </span>            : 
+<span class="lineNum">     434 </span>            :     if (argc &lt; 2)
+<span class="lineNum">     435 </span>            :         return 0;
+<span class="lineNum">     436 </span>            :     res =  proj_strtod (argv[1], &amp;endptr);
+<span class="lineNum">     437 </span>            :     printf (&quot;res = %20.15g. Rest = [%s],  errno = %d\n&quot;, res, endptr, (int) errno);
+<span class="lineNum">     438 </span>            :     return 0;
+<span class="lineNum">     439 </span>            : }
+<span class="lineNum">     440 </span>            : #endif
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

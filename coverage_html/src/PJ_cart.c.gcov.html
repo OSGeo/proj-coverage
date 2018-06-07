@@ -1,0 +1,295 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_cart.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_cart.c<span style="font-size: 80%;"> (source / <a href="PJ_cart.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">45</td>
+            <td class="headerCovTableEntry">46</td>
+            <td class="headerCovTableEntryHi">97.8 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /******************************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Project:  PROJ.4
+<span class="lineNum">       3 </span>            :  * Purpose:  Convert between ellipsoidal, geodetic coordinates and
+<span class="lineNum">       4 </span>            :  *           cartesian, geocentric coordinates.
+<span class="lineNum">       5 </span>            :  *
+<span class="lineNum">       6 </span>            :  *           Formally, this functionality is also found in the PJ_geocent.c
+<span class="lineNum">       7 </span>            :  *           code.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  *           Actually, however, the PJ_geocent transformations are carried
+<span class="lineNum">      10 </span>            :  *           out in concert between 2D stubs in PJ_geocent.c and 3D code
+<span class="lineNum">      11 </span>            :  *           placed in pj_transform.c.
+<span class="lineNum">      12 </span>            :  *
+<span class="lineNum">      13 </span>            :  *           For pipeline-style datum shifts, we do need direct access
+<span class="lineNum">      14 </span>            :  *           to the full 3D interface for this functionality.
+<span class="lineNum">      15 </span>            :  *
+<span class="lineNum">      16 </span>            :  *           Hence this code, which may look like &quot;just another PJ_geocent&quot;
+<span class="lineNum">      17 </span>            :  *           but really is something substantially different.
+<span class="lineNum">      18 </span>            :  *
+<span class="lineNum">      19 </span>            :  * Author:   Thomas Knudsen, thokn@sdfe.dk
+<span class="lineNum">      20 </span>            :  *
+<span class="lineNum">      21 </span>            :  ******************************************************************************
+<span class="lineNum">      22 </span>            :  * Copyright (c) 2016, Thomas Knudsen / SDFE
+<span class="lineNum">      23 </span>            :  *
+<span class="lineNum">      24 </span>            :  * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      25 </span>            :  * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      26 </span>            :  * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      27 </span>            :  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      28 </span>            :  * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      29 </span>            :  * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      30 </span>            :  *
+<span class="lineNum">      31 </span>            :  * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      32 </span>            :  * in all copies or substantial portions of the Software.
+<span class="lineNum">      33 </span>            :  *
+<span class="lineNum">      34 </span>            :  * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      35 </span>            :  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      36 </span>            :  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      37 </span>            :  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      38 </span>            :  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      39 </span>            :  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      40 </span>            :  * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      41 </span>            :  *****************************************************************************/
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : #define PJ_LIB__
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : #include &quot;proj_internal.h&quot;
+<span class="lineNum">      46 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      47 </span>            : #include &quot;proj_math.h&quot;
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : PROJ_HEAD(cart,    &quot;Geodetic/cartesian conversions&quot;);
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span>            : /**************************************************************
+<span class="lineNum">      53 </span>            :                 CARTESIAN / GEODETIC CONVERSIONS
+<span class="lineNum">      54 </span>            : ***************************************************************
+<span class="lineNum">      55 </span>            :     This material follows:
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            :     Bernhard Hofmann-Wellenhof &amp; Helmut Moritz:
+<span class="lineNum">      58 </span>            :     Physical Geodesy, 2nd edition.
+<span class="lineNum">      59 </span>            :     Springer, 2005.
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span>            :     chapter 5.6: Coordinate transformations
+<span class="lineNum">      62 </span>            :     (HM, below),
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            :     and
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            :     Wikipedia: Geographic Coordinate Conversion,
+<span class="lineNum">      67 </span>            :     https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span>            :     (WP, below).
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            :     The cartesian-to-geodetic conversion is based on Bowring's
+<span class="lineNum">      72 </span>            :     celebrated method:
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span>            :     B. R. Bowring:
+<span class="lineNum">      75 </span>            :     Transformation from spatial to geographical coordinates
+<span class="lineNum">      76 </span>            :     Survey Review 23(181), pp. 323-327, 1976
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            :     (BB, below),
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            :     but could probably use some TLC from a newer and faster
+<span class="lineNum">      81 </span>            :     algorithm:
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            :     Toshio Fukushima:
+<span class="lineNum">      84 </span>            :     Transformation from Cartesian to Geodetic Coordinates
+<span class="lineNum">      85 </span>            :     Accelerated by Halley’s Method
+<span class="lineNum">      86 </span>            :     Journal of Geodesy, February 2006
+<span class="lineNum">      87 </span>            : 
+<span class="lineNum">      88 </span>            :     (TF, below).
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            :     Close to the poles, we avoid singularities by switching to an
+<span class="lineNum">      91 </span>            :     approximation requiring knowledge of the geocentric radius
+<span class="lineNum">      92 </span>            :     at the given latitude. For this, we use an adaptation of the
+<span class="lineNum">      93 </span>            :     formula given in:
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span>            :     Wikipedia: Earth Radius
+<span class="lineNum">      96 </span>            :     https://en.wikipedia.org/wiki/Earth_radius#Radius_at_a_given_geodetic_latitude
+<span class="lineNum">      97 </span>            :     (Derivation and commentary at https://gis.stackexchange.com/q/20200)
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            :     (WP2, below)
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            :     These routines are probably not as robust at those in
+<span class="lineNum">     102 </span>            :     geocent.c, at least thay haven't been through as heavy
+<span class="lineNum">     103 </span>            :     use as their geocent sisters. Some care has been taken
+<span class="lineNum">     104 </span>            :     to avoid singularities, but extreme cases (e.g. setting
+<span class="lineNum">     105 </span>            :     es, the squared eccentricity, to 1), will cause havoc.
+<span class="lineNum">     106 </span>            : 
+<span class="lineNum">     107 </span>            : **************************************************************/
+<span class="lineNum">     108 </span>            : 
+<a name="109"><span class="lineNum">     109 </span>            : </a>
+<span class="lineNum">     110 </span>            : /*********************************************************************/
+<span class="lineNum">     111 </span><span class="lineCov">    1671832 : static double normal_radius_of_curvature (double a, double es, double phi) {</span>
+<span class="lineNum">     112 </span>            : /*********************************************************************/
+<span class="lineNum">     113 </span><span class="lineCov">    1671832 :     double s = sin(phi);</span>
+<span class="lineNum">     114 </span><span class="lineCov">    1671832 :     if (es==0)</span>
+<span class="lineNum">     115 </span><span class="lineNoCov">          0 :         return a;</span>
+<span class="lineNum">     116 </span>            :     /* This is from WP.  HM formula 2-149 gives an a,b version */
+<span class="lineNum">     117 </span><span class="lineCov">    1671832 :     return a / sqrt (1 - es*s*s);</span>
+<span class="lineNum">     118 </span>            : }
+<a name="119"><span class="lineNum">     119 </span>            : </a>
+<span class="lineNum">     120 </span>            : /*********************************************************************/
+<span class="lineNum">     121 </span><span class="lineCov">          2 : static double geocentric_radius (double a, double b, double phi) {</span>
+<span class="lineNum">     122 </span>            : /*********************************************************************
+<span class="lineNum">     123 </span>            :     Return the geocentric radius at latitude phi, of an ellipsoid
+<span class="lineNum">     124 </span>            :     with semimajor axis a and semiminor axis b.
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span>            :     This is from WP2, but uses hypot() for potentially better
+<span class="lineNum">     127 </span>            :     numerical robustness
+<span class="lineNum">     128 </span>            : ***********************************************************************/
+<span class="lineNum">     129 </span><span class="lineCov">          2 :     return hypot (a*a*cos (phi), b*b*sin(phi)) / hypot (a*cos(phi), b*sin(phi));</span>
+<span class="lineNum">     130 </span>            : }
+<span class="lineNum">     131 </span>            : 
+<a name="132"><span class="lineNum">     132 </span>            : </a>
+<span class="lineNum">     133 </span>            : /*********************************************************************/
+<span class="lineNum">     134 </span><span class="lineCov">     835856 : static XYZ cartesian (LPZ geod,  PJ *P) {</span>
+<span class="lineNum">     135 </span>            : /*********************************************************************/
+<span class="lineNum">     136 </span><span class="lineCov">     835856 :     double N, cosphi = cos(geod.phi);</span>
+<span class="lineNum">     137 </span>            :     XYZ xyz;
+<span class="lineNum">     138 </span>            : 
+<span class="lineNum">     139 </span><span class="lineCov">     835856 :     N   =  normal_radius_of_curvature(P-&gt;a, P-&gt;es, geod.phi);</span>
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span>            :     /* HM formula 5-27 (z formula follows WP) */
+<span class="lineNum">     142 </span><span class="lineCov">     835856 :     xyz.x = (N + geod.z) * cosphi      * cos(geod.lam);</span>
+<span class="lineNum">     143 </span><span class="lineCov">     835856 :     xyz.y = (N + geod.z) * cosphi      * sin(geod.lam);</span>
+<span class="lineNum">     144 </span><span class="lineCov">     835856 :     xyz.z = (N * (1 - P-&gt;es) + geod.z) * sin(geod.phi);</span>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span><span class="lineCov">     835856 :     return xyz;</span>
+<span class="lineNum">     147 </span>            : }
+<span class="lineNum">     148 </span>            : 
+<a name="149"><span class="lineNum">     149 </span>            : </a>
+<span class="lineNum">     150 </span>            : /*********************************************************************/
+<span class="lineNum">     151 </span><span class="lineCov">     835976 : static LPZ geodetic (XYZ cart,  PJ *P) {</span>
+<span class="lineNum">     152 </span>            : /*********************************************************************/
+<span class="lineNum">     153 </span>            :     double N, p, theta, c, s;
+<span class="lineNum">     154 </span>            :     LPZ lpz;
+<span class="lineNum">     155 </span>            : 
+<span class="lineNum">     156 </span>            :     /* Perpendicular distance from point to Z-axis (HM eq. 5-28) */
+<span class="lineNum">     157 </span><span class="lineCov">     835976 :     p = hypot (cart.x, cart.y);</span>
+<span class="lineNum">     158 </span>            : 
+<span class="lineNum">     159 </span>            :     /* HM eq. (5-37) */
+<span class="lineNum">     160 </span><span class="lineCov">     835976 :     theta  =  atan2 (cart.z * P-&gt;a,  p * P-&gt;b);</span>
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span>            :     /* HM eq. (5-36) (from BB, 1976) */
+<span class="lineNum">     163 </span><span class="lineCov">     835976 :     c  =  cos(theta);</span>
+<span class="lineNum">     164 </span><span class="lineCov">     835976 :     s  =  sin(theta);</span>
+<span class="lineNum">     165 </span><span class="lineCov">     835976 :     lpz.phi  =  atan2 (cart.z + P-&gt;e2s*P-&gt;b*s*s*s,  p - P-&gt;es*P-&gt;a*c*c*c);</span>
+<span class="lineNum">     166 </span><span class="lineCov">     835976 :     lpz.lam  =  atan2 (cart.y, cart.x);</span>
+<span class="lineNum">     167 </span><span class="lineCov">     835976 :     N        =  normal_radius_of_curvature (P-&gt;a, P-&gt;es, lpz.phi);</span>
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span><span class="lineCov">     835976 :     c  =  cos(lpz.phi);</span>
+<span class="lineNum">     171 </span><span class="lineCov">     835976 :     if (fabs(c) &lt; 1e-6) {</span>
+<span class="lineNum">     172 </span>            :         /* poleward of 89.99994 deg, we avoid division by zero   */
+<span class="lineNum">     173 </span>            :         /* by computing the height as the cartesian z value      */
+<span class="lineNum">     174 </span>            :         /* minus the geocentric radius of the Earth at the given */
+<span class="lineNum">     175 </span>            :         /* latitude                                              */
+<span class="lineNum">     176 </span><span class="lineCov">          2 :         double r = geocentric_radius (P-&gt;a, P-&gt;b, lpz.phi);</span>
+<span class="lineNum">     177 </span><span class="lineCov">          2 :         lpz.z = fabs (cart.z) - r;</span>
+<span class="lineNum">     178 </span>            :     }
+<span class="lineNum">     179 </span>            :     else
+<span class="lineNum">     180 </span><span class="lineCov">     835974 :         lpz.z =  p / c  -  N;</span>
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span><span class="lineCov">     835976 :     return lpz;</span>
+<span class="lineNum">     183 </span>            : }
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span>            : 
+<a name="186"><span class="lineNum">     186 </span>            : </a>
+<span class="lineNum">     187 </span>            : /* In effect, 2 cartesian coordinates of a point on the ellipsoid. Rather pointless, but... */
+<span class="lineNum">     188 </span><span class="lineCov">          2 : static XY cart_forward (LP lp, PJ *P) {</span>
+<span class="lineNum">     189 </span>            :     PJ_COORD point;
+<span class="lineNum">     190 </span><span class="lineCov">          2 :     point.lp = lp;</span>
+<span class="lineNum">     191 </span><span class="lineCov">          2 :     point.lpz.z = 0;</span>
+<span class="lineNum">     192 </span>            : 
+<span class="lineNum">     193 </span><span class="lineCov">          2 :     point.xyz = cartesian (point.lpz, P);</span>
+<span class="lineNum">     194 </span><span class="lineCov">          2 :     return point.xy;</span>
+<span class="lineNum">     195 </span>            : }
+<a name="196"><span class="lineNum">     196 </span>            : </a>
+<span class="lineNum">     197 </span>            : /* And the other way round. Still rather pointless, but... */
+<span class="lineNum">     198 </span><span class="lineCov">          2 : static LP cart_reverse (XY xy, PJ *P) {</span>
+<span class="lineNum">     199 </span>            :     PJ_COORD point;
+<span class="lineNum">     200 </span><span class="lineCov">          2 :     point.xy = xy;</span>
+<span class="lineNum">     201 </span><span class="lineCov">          2 :     point.xyz.z = 0;</span>
+<span class="lineNum">     202 </span>            : 
+<span class="lineNum">     203 </span><span class="lineCov">          2 :     point.lpz = geodetic (point.xyz, P);</span>
+<span class="lineNum">     204 </span><span class="lineCov">          2 :     return point.lp;</span>
+<span class="lineNum">     205 </span>            : }
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            : 
+<a name="208"><span class="lineNum">     208 </span>            : </a>
+<span class="lineNum">     209 </span>            : /*********************************************************************/
+<span class="lineNum">     210 </span><span class="lineCov">        642 : PJ *CONVERSION(cart,1) {</span>
+<span class="lineNum">     211 </span>            : /*********************************************************************/
+<span class="lineNum">     212 </span><span class="lineCov">        214 :     P-&gt;fwd3d  =  cartesian;</span>
+<span class="lineNum">     213 </span><span class="lineCov">        214 :     P-&gt;inv3d  =  geodetic;</span>
+<span class="lineNum">     214 </span><span class="lineCov">        214 :     P-&gt;fwd    =  cart_forward;</span>
+<span class="lineNum">     215 </span><span class="lineCov">        214 :     P-&gt;inv    =  cart_reverse;</span>
+<span class="lineNum">     216 </span><span class="lineCov">        214 :     P-&gt;left   =  PJ_IO_UNITS_ANGULAR;</span>
+<span class="lineNum">     217 </span><span class="lineCov">        214 :     P-&gt;right  =  PJ_IO_UNITS_CARTESIAN;</span>
+<span class="lineNum">     218 </span><span class="lineCov">        214 :     return P;</span>
+<span class="lineNum">     219 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

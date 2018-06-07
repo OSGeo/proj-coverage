@@ -1,0 +1,145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/pj_ellps.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - pj_ellps.c<span style="font-size: 80%;"> (source / <a href="pj_ellps.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryLo">50.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryLo">50.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* definition of standard geoids */</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : #define PJ_ELLPS__
+<span class="lineNum">       8 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       9 </span>            : 
+<span class="lineNum">      10 </span>            : C_NAMESPACE_VAR const struct PJ_ELLPS
+<span class="lineNum">      11 </span>            : pj_ellps[] = {
+<span class="lineNum">      12 </span>            : {&quot;MERIT&quot;, &quot;a=6378137.0&quot;,    &quot;rf=298.257&quot;,   &quot;MERIT 1983&quot;},
+<span class="lineNum">      13 </span>            : {&quot;SGS85&quot;, &quot;a=6378136.0&quot;,    &quot;rf=298.257&quot;,   &quot;Soviet Geodetic System 85&quot;},
+<span class="lineNum">      14 </span>            : {&quot;GRS80&quot;, &quot;a=6378137.0&quot;,    &quot;rf=298.257222101&quot;, &quot;GRS 1980(IUGG, 1980)&quot;},
+<span class="lineNum">      15 </span>            : {&quot;IAU76&quot;, &quot;a=6378140.0&quot;,    &quot;rf=298.257&quot;,   &quot;IAU 1976&quot;},
+<span class="lineNum">      16 </span>            : {&quot;airy&quot;,  &quot;a=6377563.396&quot;,  &quot;b=6356256.910&quot;,  &quot;Airy 1830&quot;},
+<span class="lineNum">      17 </span>            : {&quot;APL4.9&quot;,  &quot;a=6378137.0.&quot;,   &quot;rf=298.25&quot;,    &quot;Appl. Physics. 1965&quot;},
+<span class="lineNum">      18 </span>            : {&quot;NWL9D&quot;, &quot;a=6378145.0.&quot;,   &quot;rf=298.25&quot;,    &quot;Naval Weapons Lab., 1965&quot;},
+<span class="lineNum">      19 </span>            : {&quot;mod_airy&quot;,  &quot;a=6377340.189&quot;,  &quot;b=6356034.446&quot;,  &quot;Modified Airy&quot;},
+<span class="lineNum">      20 </span>            : {&quot;andrae&quot;,  &quot;a=6377104.43&quot;,   &quot;rf=300.0&quot;,   &quot;Andrae 1876 (Den., Iclnd.)&quot;},
+<span class="lineNum">      21 </span>            : {&quot;danish&quot;,  &quot;a=6377019.2563&quot;, &quot;rf=300.0&quot;,   &quot;Andrae 1876 (Denmark, Iceland)&quot;},
+<span class="lineNum">      22 </span>            : {&quot;aust_SA&quot;, &quot;a=6378160.0&quot;,    &quot;rf=298.25&quot;,    &quot;Australian Natl &amp; S. Amer. 1969&quot;},
+<span class="lineNum">      23 </span>            : {&quot;GRS67&quot;, &quot;a=6378160.0&quot;,    &quot;rf=298.2471674270&quot;,  &quot;GRS 67(IUGG 1967)&quot;},
+<span class="lineNum">      24 </span>            : {&quot;GSK2011&quot;, &quot;a=6378136.5&quot;,    &quot;rf=298.2564151&quot;, &quot;GSK-2011&quot;},
+<span class="lineNum">      25 </span>            : {&quot;bessel&quot;,  &quot;a=6377397.155&quot;,  &quot;rf=299.1528128&quot;, &quot;Bessel 1841&quot;},
+<span class="lineNum">      26 </span>            : {&quot;bess_nam&quot;,  &quot;a=6377483.865&quot;,  &quot;rf=299.1528128&quot;, &quot;Bessel 1841 (Namibia)&quot;},
+<span class="lineNum">      27 </span>            : {&quot;clrk66&quot;,  &quot;a=6378206.4&quot;,    &quot;b=6356583.8&quot;,    &quot;Clarke 1866&quot;},
+<span class="lineNum">      28 </span>            : {&quot;clrk80&quot;,  &quot;a=6378249.145&quot;,  &quot;rf=293.4663&quot;,    &quot;Clarke 1880 mod.&quot;},
+<span class="lineNum">      29 </span>            : {&quot;clrk80ign&quot;, &quot;a=6378249.2&quot;,    &quot;rf=293.4660212936269&quot;, &quot;Clarke 1880 (IGN).&quot;},
+<span class="lineNum">      30 </span>            : {&quot;CPM&quot;,   &quot;a=6375738.7&quot;,    &quot;rf=334.29&quot;,    &quot;Comm. des Poids et Mesures 1799&quot;},
+<span class="lineNum">      31 </span>            : {&quot;delmbr&quot;,  &quot;a=6376428.&quot;,   &quot;rf=311.5&quot;,   &quot;Delambre 1810 (Belgium)&quot;},
+<span class="lineNum">      32 </span>            : {&quot;engelis&quot;, &quot;a=6378136.05&quot;,   &quot;rf=298.2566&quot;,    &quot;Engelis 1985&quot;},
+<span class="lineNum">      33 </span>            : {&quot;evrst30&quot;, &quot;a=6377276.345&quot;,  &quot;rf=300.8017&quot;,    &quot;Everest 1830&quot;},
+<span class="lineNum">      34 </span>            : {&quot;evrst48&quot;, &quot;a=6377304.063&quot;,  &quot;rf=300.8017&quot;,    &quot;Everest 1948&quot;},
+<span class="lineNum">      35 </span>            : {&quot;evrst56&quot;, &quot;a=6377301.243&quot;,  &quot;rf=300.8017&quot;,    &quot;Everest 1956&quot;},
+<span class="lineNum">      36 </span>            : {&quot;evrst69&quot;, &quot;a=6377295.664&quot;,  &quot;rf=300.8017&quot;,    &quot;Everest 1969&quot;},
+<span class="lineNum">      37 </span>            : {&quot;evrstSS&quot;, &quot;a=6377298.556&quot;,  &quot;rf=300.8017&quot;,    &quot;Everest (Sabah &amp; Sarawak)&quot;},
+<span class="lineNum">      38 </span>            : {&quot;fschr60&quot;, &quot;a=6378166.&quot;,   &quot;rf=298.3&quot;,   &quot;Fischer (Mercury Datum) 1960&quot;},
+<span class="lineNum">      39 </span>            : {&quot;fschr60m&quot;,  &quot;a=6378155.&quot;,   &quot;rf=298.3&quot;,   &quot;Modified Fischer 1960&quot;},
+<span class="lineNum">      40 </span>            : {&quot;fschr68&quot;, &quot;a=6378150.&quot;,   &quot;rf=298.3&quot;,   &quot;Fischer 1968&quot;},
+<span class="lineNum">      41 </span>            : {&quot;helmert&quot;, &quot;a=6378200.&quot;,   &quot;rf=298.3&quot;,   &quot;Helmert 1906&quot;},
+<span class="lineNum">      42 </span>            : {&quot;hough&quot;, &quot;a=6378270.0&quot;,    &quot;rf=297.&quot;,    &quot;Hough&quot;},
+<span class="lineNum">      43 </span>            : {&quot;intl&quot;,  &quot;a=6378388.0&quot;,    &quot;rf=297.&quot;,    &quot;International 1909 (Hayford)&quot;},
+<span class="lineNum">      44 </span>            : {&quot;krass&quot;, &quot;a=6378245.0&quot;,    &quot;rf=298.3&quot;,   &quot;Krassovsky, 1942&quot;},
+<span class="lineNum">      45 </span>            : {&quot;kaula&quot;, &quot;a=6378163.&quot;,   &quot;rf=298.24&quot;,    &quot;Kaula 1961&quot;},
+<span class="lineNum">      46 </span>            : {&quot;lerch&quot;, &quot;a=6378139.&quot;,   &quot;rf=298.257&quot;,   &quot;Lerch 1979&quot;},
+<span class="lineNum">      47 </span>            : {&quot;mprts&quot;, &quot;a=6397300.&quot;,   &quot;rf=191.&quot;,    &quot;Maupertius 1738&quot;},
+<span class="lineNum">      48 </span>            : {&quot;new_intl&quot;,  &quot;a=6378157.5&quot;,    &quot;b=6356772.2&quot;,    &quot;New International 1967&quot;},
+<span class="lineNum">      49 </span>            : {&quot;plessis&quot;, &quot;a=6376523.&quot;,   &quot;b=6355863.&quot;,     &quot;Plessis 1817 (France)&quot;},
+<span class="lineNum">      50 </span>            : {&quot;PZ90&quot;,  &quot;a=6378136.0&quot;,    &quot;rf=298.25784&quot;,   &quot;PZ-90&quot;},
+<span class="lineNum">      51 </span>            : {&quot;SEasia&quot;,  &quot;a=6378155.0&quot;,    &quot;b=6356773.3205&quot;, &quot;Southeast Asia&quot;},
+<span class="lineNum">      52 </span>            : {&quot;walbeck&quot;, &quot;a=6376896.0&quot;,    &quot;b=6355834.8467&quot;, &quot;Walbeck&quot;},
+<span class="lineNum">      53 </span>            : {&quot;WGS60&quot;, &quot;a=6378165.0&quot;,    &quot;rf=298.3&quot;,   &quot;WGS 60&quot;},
+<span class="lineNum">      54 </span>            : {&quot;WGS66&quot;, &quot;a=6378145.0&quot;,    &quot;rf=298.25&quot;,    &quot;WGS 66&quot;},
+<span class="lineNum">      55 </span>            : {&quot;WGS72&quot;, &quot;a=6378135.0&quot;,    &quot;rf=298.26&quot;,    &quot;WGS 72&quot;},
+<span class="lineNum">      56 </span>            : {&quot;WGS84&quot;, &quot;a=6378137.0&quot;,    &quot;rf=298.257223563&quot;, &quot;WGS 84&quot;},
+<span class="lineNum">      57 </span>            : {&quot;sphere&quot;,  &quot;a=6370997.0&quot;,    &quot;b=6370997.0&quot;,    &quot;Normal Sphere (r=6370997)&quot;},
+<span class="lineNum">      58 </span>            : {NULL,    NULL,     NULL,     NULL}
+<a name="59"><span class="lineNum">      59 </span>            : };</a>
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span><span class="lineNoCov">          0 : struct PJ_ELLPS *pj_get_ellps_ref()</span>
+<span class="lineNum">      62 </span>            : {
+<span class="lineNum">      63 </span><span class="lineNoCov">          0 :     return (struct PJ_ELLPS *)pj_ellps;</span>
+<a name="64"><span class="lineNum">      64 </span>            : }</a>
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span><span class="lineCov">          1 : const PJ_ELLPS *proj_list_ellps(void)</span>
+<span class="lineNum">      67 </span>            : {
+<span class="lineNum">      68 </span><span class="lineCov">          1 :     return pj_ellps;</span>
+<span class="lineNum">      69 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/gen_cheb.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - gen_cheb.c<span style="font-size: 80%;"> (source / <a href="gen_cheb.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">48</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryLo">0.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* generates 'T' option output */</a>
+<span class="lineNum">       2 </span>            : #define PJ_LIB__
+<span class="lineNum">       3 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       4 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">       5 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">       6 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">       7 </span>            : #include &quot;emess.h&quot;
+<span class="lineNum">       8 </span>            : #ifndef COEF_LINE_MAX
+<span class="lineNum">       9 </span>            : #define COEF_LINE_MAX 50
+<span class="lineNum">      10 </span>            : #endif
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : /* FIXME: put the declaration in a header. Also used in proj.c */
+<span class="lineNum">      13 </span>            : void gen_cheb(int inverse, projUV (*proj)(projUV), char *s, PJ *P,
+<span class="lineNum">      14 </span>            :               int iargc, char **iargv);
+<a name="15"><span class="lineNum">      15 </span>            : extern void p_series(Tseries *, FILE *, char *);</a>
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span><span class="lineNoCov">          0 : void gen_cheb(int inverse, projUV (*proj)(projUV), char *s, PJ *P,</span>
+<span class="lineNum">      18 </span>            :               int iargc, char **iargv) {
+<span class="lineNum">      19 </span><span class="lineNoCov">          0 :   long NU = 15, NV = 15;</span>
+<span class="lineNum">      20 </span><span class="lineNoCov">          0 :   int errin = 0, pwr;</span>
+<span class="lineNum">      21 </span><span class="lineNoCov">          0 :   long res = -1;</span>
+<span class="lineNum">      22 </span>            :   char *arg, fmt[32];
+<span class="lineNum">      23 </span>            :   projUV low, upp, resid;
+<span class="lineNum">      24 </span>            :   Tseries *F;
+<span class="lineNum">      25 </span>            :   double (*input)(const char *, char **);
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span><span class="lineNoCov">          0 :   input = inverse ? strtod : dmstor;</span>
+<span class="lineNum">      28 </span><span class="lineNoCov">          0 :   if (*s) low.u = input(s, &amp;s); else { low.u = 0; ++errin; }</span>
+<span class="lineNum">      29 </span><span class="lineNoCov">          0 :   if (*s == ',') upp.u = input(s+1, &amp;s); else { upp.u = 0; ++errin; }</span>
+<span class="lineNum">      30 </span><span class="lineNoCov">          0 :   if (*s == ',') low.v = input(s+1, &amp;s); else { low.v = 0; ++errin; }</span>
+<span class="lineNum">      31 </span><span class="lineNoCov">          0 :   if (*s == ',') upp.v = input(s+1, &amp;s); else { upp.v = 0; ++errin; }</span>
+<span class="lineNum">      32 </span><span class="lineNoCov">          0 :   if (errin)</span>
+<span class="lineNum">      33 </span><span class="lineNoCov">          0 :     emess(16,&quot;null or absent -T parameters&quot;);</span>
+<span class="lineNum">      34 </span><span class="lineNoCov">          0 :   if (*s == ',') if (*++s != ',') res = strtol(s, &amp;s, 10);</span>
+<span class="lineNum">      35 </span><span class="lineNoCov">          0 :   if (*s == ',') if (*++s != ',') NU = strtol(s, &amp;s, 10);</span>
+<span class="lineNum">      36 </span><span class="lineNoCov">          0 :   if (*s == ',') if (*++s != ',') NV = strtol(s, &amp;s, 10);</span>
+<span class="lineNum">      37 </span><span class="lineNoCov">          0 :   pwr = s &amp;&amp; *s &amp;&amp; !strcmp(s, &quot;,P&quot;);</span>
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :   (void)printf(&quot;#proj_%s\n#    run-line:\n&quot;,</span>
+<span class="lineNum">      39 </span>            :     pwr ? &quot;Power&quot; : &quot;Chebyshev&quot;);
+<span class="lineNum">      40 </span><span class="lineNoCov">          0 :   if (iargc &gt; 0) { /* proj execution audit trail */</span>
+<span class="lineNum">      41 </span><span class="lineNoCov">          0 :     int n = 0, L;</span>
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span><span class="lineNoCov">          0 :     for ( ; iargc ; --iargc) {</span>
+<span class="lineNum">      44 </span><span class="lineNoCov">          0 :       arg = *iargv++;</span>
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 :       if (*arg != '+') {</span>
+<span class="lineNum">      46 </span><span class="lineNoCov">          0 :         if (!n) { putchar('#'); ++n; }</span>
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 :         (void)printf(&quot; %s%n&quot;,arg, &amp;L);</span>
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 :         if ((n += L) &gt; COEF_LINE_MAX) { putchar('\n'); n = 0; }</span>
+<span class="lineNum">      49 </span>            :       }
+<span class="lineNum">      50 </span>            :     }
+<span class="lineNum">      51 </span><span class="lineNoCov">          0 :     if (n) putchar('\n');</span>
+<span class="lineNum">      52 </span>            :   }
+<span class="lineNum">      53 </span><span class="lineNoCov">          0 :   (void)printf(&quot;# projection parameters\n&quot;);</span>
+<span class="lineNum">      54 </span><span class="lineNoCov">          0 :   pj_pr_list(P);</span>
+<span class="lineNum">      55 </span><span class="lineNoCov">          0 :   if (low.u == upp.u || low.v &gt;= upp.v)</span>
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :     emess(16,&quot;approx. argument range error&quot;);</span>
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :   if (low.u &gt; upp.u)</span>
+<span class="lineNum">      58 </span><span class="lineNoCov">          0 :     low.u -= M_TWOPI;</span>
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :   if (NU &lt; 2 || NV &lt; 2 || NU &gt; INT_MAX || NV &gt; INT_MAX)</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :     emess(16,&quot;approx. work dimensions (%ld %ld) too small or large&quot;,NU,NV);</span>
+<span class="lineNum">      61 </span><span class="lineNoCov">          0 :   if (!(F = mk_cheby(low, upp, pow(10., (double)res)*.5, &amp;resid, proj,</span>
+<span class="lineNum">      62 </span>            :     (int)NU, (int)NV, pwr)))
+<span class="lineNum">      63 </span><span class="lineNoCov">          0 :     emess(16,&quot;generation of approx failed\nreason: %s\n&quot;,</span>
+<span class="lineNum">      64 </span><span class="lineNoCov">          0 :       pj_strerrno(errno));</span>
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 :   (void)printf(&quot;%c,%.12g,%.12g,%.12g,%.12g,%.12g\n&quot;,inverse?'I':'F',</span>
+<span class="lineNum">      66 </span><span class="lineNoCov">          0 :     P-&gt;lam0*RAD_TO_DEG,</span>
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :     low.u*(inverse?1.:RAD_TO_DEG),upp.u*(inverse?1.:RAD_TO_DEG),</span>
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 :     low.v*(inverse?1.:RAD_TO_DEG),upp.v*(inverse?1.:RAD_TO_DEG));</span>
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 :   if (pwr)</span>
+<span class="lineNum">      70 </span><span class="lineNoCov">          0 :     strcpy(fmt, &quot;%.15g&quot;);</span>
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :   else if (res &lt;= 0)</span>
+<span class="lineNum">      72 </span><span class="lineNoCov">          0 :     (void)sprintf(fmt,&quot;%%.%ldf&quot;,-res+1);</span>
+<span class="lineNum">      73 </span>            :   else
+<span class="lineNum">      74 </span><span class="lineNoCov">          0 :     (void)strcpy(fmt,&quot;%.0f&quot;);</span>
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 :   p_series(F, stdout, fmt);</span>
+<span class="lineNum">      76 </span><span class="lineNoCov">          0 :   (void)printf(&quot;# |u,v| sums %g %g\n#end_proj_%s\n&quot;,</span>
+<span class="lineNum">      77 </span>            :     resid.u, resid.v, pwr ? &quot;Power&quot; : &quot;Chebyshev&quot;);
+<span class="lineNum">      78 </span><span class="lineNoCov">          0 : }</span>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_natearth2.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_natearth2.c<span style="font-size: 80%;"> (source / <a href="PJ_natearth2.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">33</td>
+            <td class="headerCovTableEntry">36</td>
+            <td class="headerCovTableEntryHi">91.7 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            : The Natural Earth II projection was designed by Tom Patterson, US National
+<span class="lineNum">       3 </span>            : Park Service, in 2012, using Flex Projector. The polynomial equation was
+<span class="lineNum">       4 </span>            : developed by Bojan Savric and Bernhard Jenny, College of Earth, Ocean,
+<span class="lineNum">       5 </span>            : and Atmospheric Sciences, Oregon State University.
+<span class="lineNum">       6 </span>            : Port to PROJ.4 by Bojan Savric, 4 April 2016
+<span class="lineNum">       7 </span>            : */
+<span class="lineNum">       8 </span>            : #define PJ_LIB__
+<span class="lineNum">       9 </span>            : 
+<span class="lineNum">      10 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      13 </span>            : 
+<span class="lineNum">      14 </span>            : PROJ_HEAD(natearth2, &quot;Natural Earth 2&quot;) &quot;\n\tPCyl., Sph.&quot;;
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            : #define A0 0.84719
+<span class="lineNum">      17 </span>            : #define A1 -0.13063
+<span class="lineNum">      18 </span>            : #define A2 -0.04515
+<span class="lineNum">      19 </span>            : #define A3 0.05494
+<span class="lineNum">      20 </span>            : #define A4 -0.02326
+<span class="lineNum">      21 </span>            : #define A5 0.00331
+<span class="lineNum">      22 </span>            : #define B0 1.01183
+<span class="lineNum">      23 </span>            : #define B1 -0.02625
+<span class="lineNum">      24 </span>            : #define B2 0.01926
+<span class="lineNum">      25 </span>            : #define B3 -0.00396
+<span class="lineNum">      26 </span>            : #define C0 B0
+<span class="lineNum">      27 </span>            : #define C1 (9 * B1)
+<span class="lineNum">      28 </span>            : #define C2 (11 * B2)
+<span class="lineNum">      29 </span>            : #define C3 (13 * B3)
+<span class="lineNum">      30 </span>            : #define EPS 1e-11
+<span class="lineNum">      31 </span>            : #define MAX_Y (0.84719 * 0.535117535153096 * M_PI)
+<span class="lineNum">      32 </span>            : /* Not sure at all of the appropriate number for MAX_ITER... */
+<span class="lineNum">      33 </span>            : #define MAX_ITER 100
+<a name="34"><span class="lineNum">      34 </span>            : </a>
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span><span class="lineCov">         54 : static XY s_forward (LP lp, PJ *P) {           /* Spheroidal, forward */</span>
+<span class="lineNum">      37 </span><span class="lineCov">         54 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">      38 </span>            :     double phi2, phi4, phi6;
+<span class="lineNum">      39 </span>            :     (void) P;
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span><span class="lineCov">         54 :     phi2 = lp.phi * lp.phi;</span>
+<span class="lineNum">      42 </span><span class="lineCov">         54 :     phi4 = phi2 * phi2;</span>
+<span class="lineNum">      43 </span><span class="lineCov">         54 :     phi6 = phi2 * phi4;</span>
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span><span class="lineCov">         54 :     xy.x = lp.lam * (A0 + A1 * phi2 + phi6 * phi6 * (A2 + A3 * phi2 + A4 * phi4 + A5 * phi6));</span>
+<span class="lineNum">      46 </span><span class="lineCov">         54 :     xy.y = lp.phi * (B0 + phi4 * phi4 * (B1 + B2 * phi2 + B3 * phi4));</span>
+<span class="lineNum">      47 </span><span class="lineCov">         54 :     return xy;</span>
+<span class="lineNum">      48 </span>            : }
+<a name="49"><span class="lineNum">      49 </span>            : </a>
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span><span class="lineCov">          4 : static LP s_inverse (XY xy, PJ *P) {           /* Spheroidal, inverse */</span>
+<span class="lineNum">      52 </span><span class="lineCov">          4 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">      53 </span>            :     double yc, tol, y2, y4, y6, f, fder;
+<span class="lineNum">      54 </span>            :     int i;
+<span class="lineNum">      55 </span>            :     (void) P;
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            :     /* make sure y is inside valid range */
+<span class="lineNum">      58 </span><span class="lineCov">          4 :     if (xy.y &gt; MAX_Y) {</span>
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :         xy.y = MAX_Y;</span>
+<span class="lineNum">      60 </span><span class="lineCov">          4 :     } else if (xy.y &lt; -MAX_Y) {</span>
+<span class="lineNum">      61 </span><span class="lineNoCov">          0 :         xy.y = -MAX_Y;</span>
+<span class="lineNum">      62 </span>            :     }
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            :     /* latitude */
+<span class="lineNum">      65 </span><span class="lineCov">          4 :     yc = xy.y;</span>
+<span class="lineNum">      66 </span><span class="lineCov">          8 :     for (i = MAX_ITER; i ; --i) { /* Newton-Raphson */</span>
+<span class="lineNum">      67 </span><span class="lineCov">          8 :         y2 = yc * yc;</span>
+<span class="lineNum">      68 </span><span class="lineCov">          8 :         y4 = y2 * y2;</span>
+<span class="lineNum">      69 </span><span class="lineCov">          8 :         f = (yc * (B0 + y4 * y4 * (B1 + B2 * y2 + B3 * y4))) - xy.y;</span>
+<span class="lineNum">      70 </span><span class="lineCov">          8 :         fder = C0 + y4 * y4 * (C1 + C2 * y2 + C3 * y4);</span>
+<span class="lineNum">      71 </span><span class="lineCov">          8 :         yc -= tol = f / fder;</span>
+<span class="lineNum">      72 </span><span class="lineCov">          8 :         if (fabs(tol) &lt; EPS) {</span>
+<span class="lineNum">      73 </span><span class="lineCov">          4 :             break;</span>
+<span class="lineNum">      74 </span>            :         }
+<span class="lineNum">      75 </span>            :     }
+<span class="lineNum">      76 </span><span class="lineCov">          4 :     if( i == 0 )</span>
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :         pj_ctx_set_errno( P-&gt;ctx, PJD_ERR_NON_CONVERGENT );</span>
+<span class="lineNum">      78 </span><span class="lineCov">          4 :     lp.phi = yc;</span>
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            :     /* longitude */
+<span class="lineNum">      81 </span><span class="lineCov">          4 :     y2 = yc * yc;</span>
+<span class="lineNum">      82 </span><span class="lineCov">          4 :     y4 = y2 * y2;</span>
+<span class="lineNum">      83 </span><span class="lineCov">          4 :     y6 = y2 * y4;</span>
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span><span class="lineCov">          4 :     lp.lam = xy.x / (A0 + A1 * y2 + y6 * y6 * (A2 + A3 * y2 + A4 * y4 + A5 * y6));</span>
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span><span class="lineCov">          4 :     return lp;</span>
+<span class="lineNum">      88 </span>            : }
+<a name="89"><span class="lineNum">      89 </span>            : </a>
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span><span class="lineCov">          9 : PJ *PROJECTION(natearth2) {</span>
+<span class="lineNum">      92 </span><span class="lineCov">          3 :     P-&gt;es = 0;</span>
+<span class="lineNum">      93 </span><span class="lineCov">          3 :     P-&gt;inv = s_inverse;</span>
+<span class="lineNum">      94 </span><span class="lineCov">          3 :     P-&gt;fwd = s_forward;</span>
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span><span class="lineCov">          3 :     return P;</span>
+<span class="lineNum">      97 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/pj_strerrno.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - pj_strerrno.c<span style="font-size: 80%;"> (source / <a href="pj_strerrno.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntryLo">53.8 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryLo">50.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* list of projection system pj_errno values */</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">       4 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">       5 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">       8 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       9 </span>            : 
+<span class="lineNum">      10 </span>            : static const char * const
+<span class="lineNum">      11 </span>            : pj_err_list[] = {
+<span class="lineNum">      12 </span>            :     &quot;no arguments in initialization list&quot;,                             /*  -1 */
+<span class="lineNum">      13 </span>            :     &quot;no options found in 'init' file&quot;,                                 /*  -2 */
+<span class="lineNum">      14 </span>            :     &quot;no colon in init= string&quot;,                                        /*  -3 */
+<span class="lineNum">      15 </span>            :     &quot;projection not named&quot;,                                            /*  -4 */
+<span class="lineNum">      16 </span>            :     &quot;unknown projection id&quot;,                                           /*  -5 */
+<span class="lineNum">      17 </span>            :     &quot;effective eccentricity = 1.&quot;,                                     /*  -6 */
+<span class="lineNum">      18 </span>            :     &quot;unknown unit conversion id&quot;,                                      /*  -7 */
+<span class="lineNum">      19 </span>            :     &quot;invalid boolean param argument&quot;,                                  /*  -8 */
+<span class="lineNum">      20 </span>            :     &quot;unknown elliptical parameter name&quot;,                               /*  -9 */
+<span class="lineNum">      21 </span>            :     &quot;reciprocal flattening (1/f) = 0&quot;,                                 /* -10 */
+<span class="lineNum">      22 </span>            :     &quot;|radius reference latitude| &gt; 90&quot;,                                /* -11 */
+<span class="lineNum">      23 </span>            :     &quot;squared eccentricity &lt; 0&quot;,                                        /* -12 */
+<span class="lineNum">      24 </span>            :     &quot;major axis or radius = 0 or not given&quot;,                           /* -13 */
+<span class="lineNum">      25 </span>            :     &quot;latitude or longitude exceeded limits&quot;,                           /* -14 */
+<span class="lineNum">      26 </span>            :     &quot;invalid x or y&quot;,                                                  /* -15 */
+<span class="lineNum">      27 </span>            :     &quot;improperly formed DMS value&quot;,                                     /* -16 */
+<span class="lineNum">      28 </span>            :     &quot;non-convergent inverse meridional dist&quot;,                          /* -17 */
+<span class="lineNum">      29 </span>            :     &quot;non-convergent inverse phi2&quot;,                                     /* -18 */
+<span class="lineNum">      30 </span>            :     &quot;acos/asin: |arg| &gt;1.+1e-14&quot;,                                      /* -19 */
+<span class="lineNum">      31 </span>            :     &quot;tolerance condition error&quot;,                                       /* -20 */
+<span class="lineNum">      32 </span>            :     &quot;conic lat_1 = -lat_2&quot;,                                            /* -21 */
+<span class="lineNum">      33 </span>            :     &quot;lat_1 &gt;= 90&quot;,                                                     /* -22 */
+<span class="lineNum">      34 </span>            :     &quot;lat_1 = 0&quot;,                                                       /* -23 */
+<span class="lineNum">      35 </span>            :     &quot;lat_ts &gt;= 90&quot;,                                                    /* -24 */
+<span class="lineNum">      36 </span>            :     &quot;no distance between control points&quot;,                              /* -25 */
+<span class="lineNum">      37 </span>            :     &quot;projection not selected to be rotated&quot;,                           /* -26 */
+<span class="lineNum">      38 </span>            :     &quot;W &lt;= 0 or M &lt;= 0&quot;,                                                /* -27 */
+<span class="lineNum">      39 </span>            :     &quot;lsat not in 1-5 range&quot;,                                           /* -28 */
+<span class="lineNum">      40 </span>            :     &quot;path not in range&quot;,                                               /* -29 */
+<span class="lineNum">      41 </span>            :     &quot;h &lt;= 0&quot;,                                                          /* -30 */
+<span class="lineNum">      42 </span>            :     &quot;k &lt;= 0&quot;,                                                          /* -31 */
+<span class="lineNum">      43 </span>            :     &quot;lat_0 = 0 or 90 or alpha = 90&quot;,                                   /* -32 */
+<span class="lineNum">      44 </span>            :     &quot;lat_1=lat_2 or lat_1=0 or lat_2=90&quot;,                              /* -33 */
+<span class="lineNum">      45 </span>            :     &quot;elliptical usage required&quot;,                                       /* -34 */
+<span class="lineNum">      46 </span>            :     &quot;invalid UTM zone number&quot;,                                         /* -35 */
+<span class="lineNum">      47 </span>            :     &quot;arg(s) out of range for Tcheby eval&quot;,                             /* -36 */
+<span class="lineNum">      48 </span>            :     &quot;failed to find projection to be rotated&quot;,                         /* -37 */
+<span class="lineNum">      49 </span>            :     &quot;failed to load datum shift file&quot;,                                 /* -38 */
+<span class="lineNum">      50 </span>            :     &quot;both n &amp; m must be spec'd and &gt; 0&quot;,                               /* -39 */
+<span class="lineNum">      51 </span>            :     &quot;n &lt;= 0, n &gt; 1 or not specified&quot;,                                  /* -40 */
+<span class="lineNum">      52 </span>            :     &quot;lat_1 or lat_2 not specified&quot;,                                    /* -41 */
+<span class="lineNum">      53 </span>            :     &quot;|lat_1| == |lat_2|&quot;,                                              /* -42 */
+<span class="lineNum">      54 </span>            :     &quot;lat_0 is pi/2 from mean lat&quot;,                                     /* -43 */
+<span class="lineNum">      55 </span>            :     &quot;unparseable coordinate system definition&quot;,                        /* -44 */
+<span class="lineNum">      56 </span>            :     &quot;geocentric transformation missing z or ellps&quot;,                    /* -45 */
+<span class="lineNum">      57 </span>            :     &quot;unknown prime meridian conversion id&quot;,                            /* -46 */
+<span class="lineNum">      58 </span>            :     &quot;illegal axis orientation combination&quot;,                            /* -47 */
+<span class="lineNum">      59 </span>            :     &quot;point not within available datum shift grids&quot;,                    /* -48 */
+<span class="lineNum">      60 </span>            :     &quot;invalid sweep axis, choose x or y&quot;,                               /* -49 */
+<span class="lineNum">      61 </span>            :     &quot;malformed pipeline&quot;,                                              /* -50 */
+<span class="lineNum">      62 </span>            :     &quot;unit conversion factor must be &gt; 0&quot;,                              /* -51 */
+<span class="lineNum">      63 </span>            :     &quot;invalid scale&quot;,                                                   /* -52 */
+<span class="lineNum">      64 </span>            :     &quot;non-convergent computation&quot;,                                      /* -53 */
+<span class="lineNum">      65 </span>            :     &quot;missing required arguments&quot;,                                      /* -54 */
+<span class="lineNum">      66 </span>            :     &quot;lat_0 = 0&quot;,                                                       /* -55 */
+<span class="lineNum">      67 </span>            :     &quot;ellipsoidal usage unsupported&quot;,                                   /* -56 */
+<span class="lineNum">      68 </span>            :     &quot;only one +init allowed for non-pipeline operations&quot;,              /* -57 */
+<span class="lineNum">      69 </span>            :     &quot;argument not numerical or out of range&quot;,                          /* -58 */
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            :     /* When adding error messages, remember to update ID defines in
+<span class="lineNum">      72 </span>            :        projects.h, and transient_error array in pj_transform                  */
+<a name="73"><span class="lineNum">      73 </span>            : };</a>
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span><span class="lineCov">         15 : char *pj_strerrno(int err) {</span>
+<span class="lineNum">      76 </span>            :     static char note[50];
+<span class="lineNum">      77 </span>            :     size_t adjusted_err;
+<span class="lineNum">      78 </span>            : 
+<span class="lineNum">      79 </span><span class="lineCov">         15 :     if (0==err)</span>
+<span class="lineNum">      80 </span><span class="lineCov">          2 :         return 0;</span>
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span>            :     /* System error codes are positive */
+<span class="lineNum">      83 </span><span class="lineCov">         13 :     if (err &gt; 0) {</span>
+<span class="lineNum">      84 </span>            : #ifdef HAVE_STRERROR
+<span class="lineNum">      85 </span>            :         return strerror(err);
+<span class="lineNum">      86 </span>            : #else
+<span class="lineNum">      87 </span>            :         /* Defend string boundary against exorbitantly large err values */
+<span class="lineNum">      88 </span>            :         /* which may occur on platforms with 64-bit ints */
+<span class="lineNum">      89 </span><span class="lineNoCov">          0 :         sprintf(note,&quot;no system list, errno: %d\n&quot;, (err &lt; 9999)? err: 9999);</span>
+<span class="lineNum">      90 </span><span class="lineNoCov">          0 :         return note;</span>
+<span class="lineNum">      91 </span>            : #endif
+<span class="lineNum">      92 </span>            :     }
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            :     /* PROJ.4 error codes are negative */
+<span class="lineNum">      95 </span><span class="lineCov">         13 :     adjusted_err = - err - 1;</span>
+<span class="lineNum">      96 </span><span class="lineCov">         13 :     if (adjusted_err &lt; (sizeof(pj_err_list) / sizeof(char *)))</span>
+<span class="lineNum">      97 </span><span class="lineCov">         13 :         return (char *)pj_err_list[adjusted_err];</span>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineNoCov">          0 :     sprintf( note, &quot;invalid projection system error (%d)&quot;, (err &gt; -9999)? err: -9999);</span>
+<span class="lineNum">     100 </span><span class="lineNoCov">          0 :     return note;</span>
+<a name="101"><span class="lineNum">     101 </span>            : }</a>
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 : const char* proj_errno_string(int err) {</span>
+<span class="lineNum">     104 </span><span class="lineNoCov">          0 :     return pj_strerrno(err);</span>
+<span class="lineNum">     105 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

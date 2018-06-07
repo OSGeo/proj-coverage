@@ -1,0 +1,577 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_pipeline.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_pipeline.c<span style="font-size: 80%;"> (source / <a href="PJ_pipeline.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">177</td>
+            <td class="headerCovTableEntry">192</td>
+            <td class="headerCovTableEntryHi">92.2 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntry">13</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*******************************************************************************</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            :                        Transformation pipeline manager
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            :                     Thomas Knudsen, 2016-05-20/2016-11-20
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : ********************************************************************************
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            :     Geodetic transformations are typically organized in a number of
+<span class="lineNum">      10 </span>            :     steps. For example, a datum shift could be carried out through
+<span class="lineNum">      11 </span>            :     these steps:
+<span class="lineNum">      12 </span>            : 
+<span class="lineNum">      13 </span>            :     1. Convert (latitude, longitude, ellipsoidal height) to
+<span class="lineNum">      14 </span>            :        3D geocentric cartesian coordinates (X, Y, Z)
+<span class="lineNum">      15 </span>            :     2. Transform the (X, Y, Z) coordinates to the new datum, using a
+<span class="lineNum">      16 </span>            :        7 parameter Helmert transformation.
+<span class="lineNum">      17 </span>            :     3. Convert (X, Y, Z) back to (latitude, longitude, ellipsoidal height)
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            :     If the height system used is orthometric, rather than ellipsoidal,
+<span class="lineNum">      20 </span>            :     another step is needed at each end of the process:
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            :     1. Add the local geoid undulation (N) to the orthometric height
+<span class="lineNum">      23 </span>            :        to obtain the ellipsoidal (i.e. geometric) height.
+<span class="lineNum">      24 </span>            :     2. Convert (latitude, longitude, ellipsoidal height) to
+<span class="lineNum">      25 </span>            :        3D geocentric cartesian coordinates (X, Y, Z)
+<span class="lineNum">      26 </span>            :     3. Transform the (X, Y, Z) coordinates to the new datum, using a
+<span class="lineNum">      27 </span>            :        7 parameter Helmert transformation.
+<span class="lineNum">      28 </span>            :     4. Convert (X, Y, Z) back to (latitude, longitude, ellipsoidal height)
+<span class="lineNum">      29 </span>            :     5. Subtract the local geoid undulation (N) from the ellipsoidal height
+<span class="lineNum">      30 </span>            :        to obtain the orthometric height.
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            :     Additional steps can be added for e.g. change of vertical datum, so the
+<span class="lineNum">      33 </span>            :     list can grow fairly long. None of the steps are, however, particularly
+<span class="lineNum">      34 </span>            :     complex, and data flow is strictly from top to bottom.
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            :     Hence, in principle, the first example above could be implemented using
+<span class="lineNum">      37 </span>            :     Unix pipelines:
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            :     cat my_coordinates | geographic_to_xyz | helmert | xyz_to_geographic &gt; my_transformed_coordinates
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            :     in the grand tradition of Software Tools [1].
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            :     The proj pipeline driver implements a similar concept: Stringing together
+<span class="lineNum">      44 </span>            :     a number of steps, feeding the output of one step to the input of the next.
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span>            :     It is a very powerful concept, that increases the range of relevance of the
+<span class="lineNum">      47 </span>            :     proj.4 system substantially. It is, however, not a particularly intrusive
+<span class="lineNum">      48 </span>            :     addition to the PROJ.4 code base: The implementation is by and large completed
+<span class="lineNum">      49 </span>            :     by adding an extra projection called &quot;pipeline&quot; (i.e. this file), which
+<span class="lineNum">      50 </span>            :     handles all business, and a small amount of added functionality in the
+<span class="lineNum">      51 </span>            :     pj_init code, implementing support for multilevel, embedded pipelines.
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            :     Syntactically, the pipeline system introduces the &quot;+step&quot; keyword (which
+<span class="lineNum">      54 </span>            :     indicates the start of each transformation step), and reintroduces the +inv
+<span class="lineNum">      55 </span>            :     keyword (indicating that a given transformation step should run in reverse, i.e.
+<span class="lineNum">      56 </span>            :     forward, when the pipeline is executed in inverse direction, and vice versa).
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span>            :     Hence, the first transformation example above, can be implemented as:
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            :     +proj=pipeline +step proj=cart +step proj=helmert &lt;ARGS&gt; +step proj=cart +inv
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            :     Where &lt;ARGS&gt; indicate the Helmert arguments: 3 translations (+x=..., +y=...,
+<span class="lineNum">      63 </span>            :     +z=...), 3 rotations (+rx=..., +ry=..., +rz=...) and a scale factor (+s=...).
+<span class="lineNum">      64 </span>            :     Following geodetic conventions, the rotations are given in arcseconds,
+<span class="lineNum">      65 </span>            :     and the scale factor is given as parts-per-million.
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            :     [1] B. W. Kernighan &amp; P. J. Plauger: Software tools.
+<span class="lineNum">      68 </span>            :         Reading, Massachusetts, Addison-Wesley, 1976, 338 pp.
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            : ********************************************************************************
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            : Thomas Knudsen, thokn@sdfe.dk, 2016-05-20
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span>            : ********************************************************************************
+<span class="lineNum">      75 </span>            : * Copyright (c) 2016, 2017, 2018 Thomas Knudsen / SDFE
+<span class="lineNum">      76 </span>            : *
+<span class="lineNum">      77 </span>            : * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      78 </span>            : * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      79 </span>            : * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      80 </span>            : * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      81 </span>            : * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      82 </span>            : * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      83 </span>            : *
+<span class="lineNum">      84 </span>            : * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      85 </span>            : * in all copies or substantial portions of the Software.
+<span class="lineNum">      86 </span>            : *
+<span class="lineNum">      87 </span>            : * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      88 </span>            : * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      89 </span>            : * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      90 </span>            : * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      91 </span>            : * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      92 </span>            : * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      93 </span>            : * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      94 </span>            : *
+<span class="lineNum">      95 </span>            : ********************************************************************************/
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span>            : #define PJ_LIB__
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">     100 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">     101 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">     102 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            : #include &quot;geodesic.h&quot;
+<span class="lineNum">     105 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">     106 </span>            : #include &quot;proj_internal.h&quot;
+<span class="lineNum">     107 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            : PROJ_HEAD(pipeline,         &quot;Transformation pipeline manager&quot;);
+<span class="lineNum">     110 </span>            : 
+<span class="lineNum">     111 </span>            : /* Projection specific elements for the PJ object */
+<span class="lineNum">     112 </span>            : struct pj_opaque {
+<span class="lineNum">     113 </span>            :     int steps;
+<span class="lineNum">     114 </span>            :     char **argv;
+<span class="lineNum">     115 </span>            :     char **current_argv;
+<span class="lineNum">     116 </span>            :     PJ **pipeline;
+<span class="lineNum">     117 </span>            : };
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            : static PJ_COORD pipeline_forward_4d (PJ_COORD point, PJ *P);
+<span class="lineNum">     122 </span>            : static PJ_COORD pipeline_reverse_4d (PJ_COORD point, PJ *P);
+<span class="lineNum">     123 </span>            : static XYZ    pipeline_forward_3d (LPZ lpz, PJ *P);
+<span class="lineNum">     124 </span>            : static LPZ    pipeline_reverse_3d (XYZ xyz, PJ *P);
+<span class="lineNum">     125 </span>            : static XY     pipeline_forward (LP lp, PJ *P);
+<span class="lineNum">     126 </span>            : static LP     pipeline_reverse (XY xy, PJ *P);
+<span class="lineNum">     127 </span>            : 
+<span class="lineNum">     128 </span>            : 
+<a name="129"><span class="lineNum">     129 </span>            : </a>
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span><span class="lineCov">     334010 : static PJ_COORD pipeline_forward_4d (PJ_COORD point, PJ *P) {</span>
+<span class="lineNum">     132 </span>            :     int i, first_step, last_step;
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span><span class="lineCov">     334010 :     first_step = 1;</span>
+<span class="lineNum">     135 </span><span class="lineCov">     334010 :     last_step  = P-&gt;opaque-&gt;steps + 1;</span>
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span><span class="lineCov">    1002032 :     for (i = first_step;  i != last_step;  i++)</span>
+<span class="lineNum">     138 </span><span class="lineCov">     668022 :         point = proj_trans (P-&gt;opaque-&gt;pipeline[i], 1, point);</span>
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span><span class="lineCov">     334010 :     return point;</span>
+<span class="lineNum">     141 </span>            : }
+<a name="142"><span class="lineNum">     142 </span>            : </a>
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span><span class="lineCov">     334006 : static PJ_COORD pipeline_reverse_4d (PJ_COORD point, PJ *P) {</span>
+<span class="lineNum">     145 </span>            :     int i, first_step, last_step;
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span><span class="lineCov">     334006 :     first_step = P-&gt;opaque-&gt;steps;</span>
+<span class="lineNum">     148 </span><span class="lineCov">     334006 :     last_step  =  0;</span>
+<span class="lineNum">     149 </span>            : 
+<span class="lineNum">     150 </span><span class="lineCov">    1002019 :     for (i = first_step;  i != last_step;  i--)</span>
+<span class="lineNum">     151 </span><span class="lineCov">     668013 :         point = proj_trans (P-&gt;opaque-&gt;pipeline[i], -1, point);</span>
+<span class="lineNum">     152 </span>            : 
+<span class="lineNum">     153 </span><span class="lineCov">     334006 :     return point;</span>
+<span class="lineNum">     154 </span>            : }
+<span class="lineNum">     155 </span>            : 
+<span class="lineNum">     156 </span>            : 
+<a name="157"><span class="lineNum">     157 </span>            : </a>
+<span class="lineNum">     158 </span>            : 
+<span class="lineNum">     159 </span><span class="lineCov">         66 : static XYZ pipeline_forward_3d (LPZ lpz, PJ *P) {</span>
+<span class="lineNum">     160 </span><span class="lineCov">         66 :     PJ_COORD point = {{0,0,0,0}};</span>
+<span class="lineNum">     161 </span>            :     int i;
+<span class="lineNum">     162 </span><span class="lineCov">         66 :     point.lpz = lpz;</span>
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span><span class="lineCov">        198 :     for (i = 1;  i &lt;= P-&gt;opaque-&gt;steps;  i++)</span>
+<span class="lineNum">     165 </span><span class="lineCov">        132 :         point = pj_approx_3D_trans (P-&gt;opaque-&gt;pipeline[i], 1, point);</span>
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span><span class="lineCov">         66 :     return point.xyz;</span>
+<span class="lineNum">     168 </span>            : }
+<a name="169"><span class="lineNum">     169 </span>            : </a>
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span><span class="lineCov">          2 : static LPZ pipeline_reverse_3d (XYZ xyz, PJ *P) {</span>
+<span class="lineNum">     172 </span><span class="lineCov">          2 :     PJ_COORD point = {{0,0,0,0}};</span>
+<span class="lineNum">     173 </span>            :     int i;
+<span class="lineNum">     174 </span><span class="lineCov">          2 :     point.xyz = xyz;</span>
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span><span class="lineCov">          6 :     for (i = P-&gt;opaque-&gt;steps;  i &gt; 0 ;  i--)</span>
+<span class="lineNum">     177 </span><span class="lineCov">          4 :         point = pj_approx_3D_trans (P-&gt;opaque-&gt;pipeline[i], -1, point);</span>
+<span class="lineNum">     178 </span>            : 
+<span class="lineNum">     179 </span><span class="lineCov">          2 :     return point.lpz;</span>
+<span class="lineNum">     180 </span>            : }
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            : 
+<a name="183"><span class="lineNum">     183 </span>            : </a>
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span><span class="lineCov">        625 : static XY pipeline_forward (LP lp, PJ *P) {</span>
+<span class="lineNum">     186 </span><span class="lineCov">        625 :     PJ_COORD point = {{0,0,0,0}};</span>
+<span class="lineNum">     187 </span>            :     int i;
+<span class="lineNum">     188 </span><span class="lineCov">        625 :     point.lp = lp;</span>
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span><span class="lineCov">       1877 :     for (i = 1;  i &lt;= P-&gt;opaque-&gt;steps;  i++)</span>
+<span class="lineNum">     191 </span><span class="lineCov">       1252 :         point = pj_approx_2D_trans (P-&gt;opaque-&gt;pipeline[i], 1, point);</span>
+<span class="lineNum">     192 </span>            : 
+<span class="lineNum">     193 </span><span class="lineCov">        625 :     return point.xy;</span>
+<span class="lineNum">     194 </span>            : }
+<a name="195"><span class="lineNum">     195 </span>            : </a>
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span><span class="lineCov">          5 : static LP pipeline_reverse (XY xy, PJ *P) {</span>
+<span class="lineNum">     198 </span><span class="lineCov">          5 :     PJ_COORD point = {{0,0,0,0}};</span>
+<span class="lineNum">     199 </span>            :     int i;
+<span class="lineNum">     200 </span><span class="lineCov">          5 :     point.xy = xy;</span>
+<span class="lineNum">     201 </span><span class="lineCov">         15 :     for (i = P-&gt;opaque-&gt;steps;  i &gt; 0 ;  i--)</span>
+<span class="lineNum">     202 </span><span class="lineCov">         10 :         point = pj_approx_2D_trans (P-&gt;opaque-&gt;pipeline[i], -1, point);</span>
+<span class="lineNum">     203 </span>            : 
+<span class="lineNum">     204 </span><span class="lineCov">          5 :     return point.lp;</span>
+<span class="lineNum">     205 </span>            : }
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            : 
+<a name="208"><span class="lineNum">     208 </span>            : </a>
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span><span class="lineCov">         70 : static void *destructor (PJ *P, int errlev) {</span>
+<span class="lineNum">     211 </span>            :     int i;
+<span class="lineNum">     212 </span><span class="lineCov">         70 :     if (0==P)</span>
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span><span class="lineCov">         70 :     if (0==P-&gt;opaque)</span>
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, errlev);</span>
+<span class="lineNum">     217 </span>            : 
+<span class="lineNum">     218 </span>            :     /* Deallocate each pipeine step, then pipeline array */
+<span class="lineNum">     219 </span><span class="lineCov">         70 :     if (0!=P-&gt;opaque-&gt;pipeline)</span>
+<span class="lineNum">     220 </span><span class="lineCov">        208 :         for (i = 0;  i &lt; P-&gt;opaque-&gt;steps; i++)</span>
+<span class="lineNum">     221 </span><span class="lineCov">        140 :             proj_destroy (P-&gt;opaque-&gt;pipeline[i+1]);</span>
+<span class="lineNum">     222 </span><span class="lineCov">         70 :     pj_dealloc (P-&gt;opaque-&gt;pipeline);</span>
+<span class="lineNum">     223 </span>            : 
+<span class="lineNum">     224 </span><span class="lineCov">         70 :     pj_dealloc (P-&gt;opaque-&gt;argv);</span>
+<span class="lineNum">     225 </span><span class="lineCov">         70 :     pj_dealloc (P-&gt;opaque-&gt;current_argv);</span>
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span><span class="lineCov">         70 :     return pj_default_destructor(P, errlev);</span>
+<span class="lineNum">     228 </span>            : }
+<a name="229"><span class="lineNum">     229 </span>            : </a>
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span><span class="lineCov">         86 : static PJ *pj_create_pipeline (PJ *P, size_t steps) {</span>
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span>            :     /* Room for the pipeline: An array of PJ * with room for sentinels at both ends */
+<span class="lineNum">     234 </span><span class="lineCov">         86 :     P-&gt;opaque-&gt;pipeline = pj_calloc (steps + 2, sizeof(PJ *));</span>
+<span class="lineNum">     235 </span><span class="lineCov">         86 :     if (0==P-&gt;opaque-&gt;pipeline)</span>
+<span class="lineNum">     236 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span><span class="lineCov">         86 :     P-&gt;opaque-&gt;steps = (int)steps;</span>
+<span class="lineNum">     239 </span>            : 
+<span class="lineNum">     240 </span><span class="lineCov">         86 :     return P;</span>
+<span class="lineNum">     241 </span>            : }
+<span class="lineNum">     242 </span>            : 
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span>            : 
+<a name="245"><span class="lineNum">     245 </span>            : </a>
+<span class="lineNum">     246 </span>            : /* count the number of args in pipeline definition, and mark all args as used */
+<span class="lineNum">     247 </span><span class="lineCov">         88 : static size_t argc_params (paralist *params) {</span>
+<span class="lineNum">     248 </span><span class="lineCov">         88 :     size_t argc = 0;</span>
+<span class="lineNum">     249 </span><span class="lineCov">        799 :     for (; params != 0; params = params-&gt;next) {</span>
+<span class="lineNum">     250 </span><span class="lineCov">        711 :         argc++;</span>
+<span class="lineNum">     251 </span><span class="lineCov">        711 :         params-&gt;used = 1;</span>
+<span class="lineNum">     252 </span>            :     }
+<span class="lineNum">     253 </span><span class="lineCov">         88 :     return ++argc;  /* one extra for the sentinel */</span>
+<span class="lineNum">     254 </span>            : }
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span>            : /* Sentinel for argument list */
+<span class="lineNum">     257 </span>            : static char *argv_sentinel = &quot;step&quot;;
+<a name="258"><span class="lineNum">     258 </span>            : </a>
+<span class="lineNum">     259 </span>            : /* turn paralist into argc/argv style argument list */
+<span class="lineNum">     260 </span><span class="lineCov">         88 : static char **argv_params (paralist *params, size_t argc) {</span>
+<span class="lineNum">     261 </span>            :     char **argv;
+<span class="lineNum">     262 </span><span class="lineCov">         88 :     size_t i = 0;</span>
+<span class="lineNum">     263 </span><span class="lineCov">         88 :     argv = pj_calloc (argc, sizeof (char *));</span>
+<span class="lineNum">     264 </span><span class="lineCov">         88 :     if (0==argv)</span>
+<span class="lineNum">     265 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     266 </span><span class="lineCov">        799 :     for (; params != 0; params = params-&gt;next)</span>
+<span class="lineNum">     267 </span><span class="lineCov">        711 :         argv[i++] = params-&gt;param;</span>
+<span class="lineNum">     268 </span><span class="lineCov">         88 :     argv[i++] = argv_sentinel;</span>
+<span class="lineNum">     269 </span><span class="lineCov">         88 :     return argv;</span>
+<span class="lineNum">     270 </span>            : }
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span>            : 
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span>            : 
+<span class="lineNum">     275 </span>            : /* Being the special operator that the pipeline is, we have to handle the    */
+<span class="lineNum">     276 </span>            : /* ellipsoid differently than usual. In general, the pipeline operation does */
+<span class="lineNum">     277 </span>            : /* not need an ellipsoid, but in some cases it is beneficial nonetheless.    */
+<span class="lineNum">     278 </span>            : /* Unfortunately we can't use the normal ellipsoid setter in pj_init, since  */
+<span class="lineNum">     279 </span>            : /* it adds a +ellps parameter to the global args if nothing else is specified*/
+<span class="lineNum">     280 </span>            : /* This is problematic since that ellipsoid spec is then passed on to the    */
+<span class="lineNum">     281 </span>            : /* pipeline children. This is rarely what we want, so here we implement our  */
+<span class="lineNum">     282 </span>            : /* own logic instead. If an ellipsoid is set in the global args, it is used  */
+<span class="lineNum">     283 </span>            : /* as the pipeline ellipsoid. Otherwise we use WGS84 parameters as default.  */
+<a name="284"><span class="lineNum">     284 </span>            : /* At last we calculate the rest of the ellipsoid parameters and             */</a>
+<span class="lineNum">     285 </span>            : /* re-initialize P-&gt;geod.                                                    */
+<span class="lineNum">     286 </span><span class="lineCov">         86 : static void set_ellipsoid(PJ *P) {</span>
+<span class="lineNum">     287 </span>            :     paralist *cur, *attachment;
+<span class="lineNum">     288 </span><span class="lineCov">         86 :     int err = proj_errno_reset (P);</span>
+<span class="lineNum">     289 </span>            : 
+<span class="lineNum">     290 </span>            :     /* Break the linked list after the global args */
+<span class="lineNum">     291 </span><span class="lineCov">         86 :     attachment = 0;</span>
+<span class="lineNum">     292 </span><span class="lineCov">        101 :     for (cur = P-&gt;params; cur != 0; cur = cur-&gt;next)</span>
+<span class="lineNum">     293 </span>            :         /* cur-&gt;next will always be non 0 given argv_sentinel presence, */
+<span class="lineNum">     294 </span>            :         /* but this is far from being obvious for a static analyzer */
+<span class="lineNum">     295 </span><span class="lineCov">        101 :         if (cur-&gt;next != 0 &amp;&amp; strcmp(argv_sentinel, cur-&gt;next-&gt;param) == 0) {</span>
+<span class="lineNum">     296 </span><span class="lineCov">         86 :             attachment = cur-&gt;next;</span>
+<span class="lineNum">     297 </span><span class="lineCov">         86 :             cur-&gt;next = 0;</span>
+<span class="lineNum">     298 </span><span class="lineCov">         86 :             break;</span>
+<span class="lineNum">     299 </span>            :         }
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span>            :     /* Check if there's any ellipsoid specification in the global params. */
+<span class="lineNum">     302 </span>            :     /* If not, use WGS84 as default                                       */
+<span class="lineNum">     303 </span><span class="lineCov">         86 :     if (0 != pj_ellipsoid (P)) {</span>
+<span class="lineNum">     304 </span><span class="lineNoCov">          0 :         P-&gt;a  = 6378137.0;</span>
+<span class="lineNum">     305 </span><span class="lineNoCov">          0 :         P-&gt;es = .00669438002290341575;</span>
+<span class="lineNum">     306 </span>            : 
+<span class="lineNum">     307 </span>            :         /* reset an &quot;unerror&quot;: In this special use case, the errno is    */
+<span class="lineNum">     308 </span>            :         /* not an error signal, but just a reply from pj_ellipsoid,      */
+<span class="lineNum">     309 </span>            :         /* telling us that &quot;No - there was no ellipsoid definition in    */
+<span class="lineNum">     310 </span>            :         /* the PJ you provided&quot;.                                         */
+<span class="lineNum">     311 </span><span class="lineNoCov">          0 :         proj_errno_reset (P);</span>
+<span class="lineNum">     312 </span>            :     }
+<span class="lineNum">     313 </span><span class="lineCov">         86 :     P-&gt;a_orig = P-&gt;a;</span>
+<span class="lineNum">     314 </span><span class="lineCov">         86 :     P-&gt;es_orig = P-&gt;es;</span>
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span><span class="lineCov">         86 :     pj_calc_ellipsoid_params (P, P-&gt;a, P-&gt;es);</span>
+<span class="lineNum">     317 </span>            : 
+<span class="lineNum">     318 </span><span class="lineCov">         86 :     geod_init(P-&gt;geod, P-&gt;a,  (1 - sqrt (1 - P-&gt;es)));</span>
+<span class="lineNum">     319 </span>            : 
+<span class="lineNum">     320 </span>            :     /* Re-attach the dangling list */
+<span class="lineNum">     321 </span>            :     /* Note: cur will always be non 0 given argv_sentinel presence, */
+<span class="lineNum">     322 </span>            :     /* but this is far from being obvious for a static analyzer */
+<span class="lineNum">     323 </span><span class="lineCov">         86 :     if( cur != 0 )</span>
+<span class="lineNum">     324 </span><span class="lineCov">         86 :         cur-&gt;next = attachment;</span>
+<span class="lineNum">     325 </span><span class="lineCov">         86 :     proj_errno_restore (P, err);</span>
+<span class="lineNum">     326 </span><span class="lineCov">         86 : }</span>
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span>            : 
+<a name="329"><span class="lineNum">     329 </span>            : </a>
+<span class="lineNum">     330 </span>            : 
+<span class="lineNum">     331 </span><span class="lineCov">        264 : PJ *OPERATION(pipeline,0) {</span>
+<span class="lineNum">     332 </span><span class="lineCov">         88 :     int i, nsteps = 0, argc;</span>
+<span class="lineNum">     333 </span><span class="lineCov">         88 :     int i_pipeline = -1, i_first_step = -1, i_current_step;</span>
+<span class="lineNum">     334 </span>            :     char **argv, **current_argv;
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span><span class="lineCov">         88 :     P-&gt;fwd4d  =  pipeline_forward_4d;</span>
+<span class="lineNum">     337 </span><span class="lineCov">         88 :     P-&gt;inv4d  =  pipeline_reverse_4d;</span>
+<span class="lineNum">     338 </span><span class="lineCov">         88 :     P-&gt;fwd3d  =  pipeline_forward_3d;</span>
+<span class="lineNum">     339 </span><span class="lineCov">         88 :     P-&gt;inv3d  =  pipeline_reverse_3d;</span>
+<span class="lineNum">     340 </span><span class="lineCov">         88 :     P-&gt;fwd    =  pipeline_forward;</span>
+<span class="lineNum">     341 </span><span class="lineCov">         88 :     P-&gt;inv    =  pipeline_reverse;</span>
+<span class="lineNum">     342 </span><span class="lineCov">         88 :     P-&gt;destructor  =  destructor;</span>
+<span class="lineNum">     343 </span><span class="lineCov">         88 :     P-&gt;is_pipeline =  1;</span>
+<span class="lineNum">     344 </span>            : 
+<span class="lineNum">     345 </span>            :     /* Currently, the pipeline driver is a raw bit mover, enabling other operations */
+<span class="lineNum">     346 </span>            :     /* to collaborate efficiently. All prep/fin stuff is done at the step levels. */
+<span class="lineNum">     347 </span><span class="lineCov">         88 :     P-&gt;skip_fwd_prepare  = 1;</span>
+<span class="lineNum">     348 </span><span class="lineCov">         88 :     P-&gt;skip_fwd_finalize = 1;</span>
+<span class="lineNum">     349 </span><span class="lineCov">         88 :     P-&gt;skip_inv_prepare  = 1;</span>
+<span class="lineNum">     350 </span><span class="lineCov">         88 :     P-&gt;skip_inv_finalize = 1;</span>
+<span class="lineNum">     351 </span>            : 
+<span class="lineNum">     352 </span>            : 
+<span class="lineNum">     353 </span><span class="lineCov">         88 :     P-&gt;opaque = pj_calloc (1, sizeof(struct pj_opaque));</span>
+<span class="lineNum">     354 </span><span class="lineCov">         88 :     if (0==P-&gt;opaque)</span>
+<span class="lineNum">     355 </span><span class="lineNoCov">          0 :         return destructor(P, ENOMEM);</span>
+<span class="lineNum">     356 </span>            : 
+<span class="lineNum">     357 </span><span class="lineCov">         88 :     argc = (int)argc_params (P-&gt;params);</span>
+<span class="lineNum">     358 </span><span class="lineCov">         88 :     P-&gt;opaque-&gt;argv = argv = argv_params (P-&gt;params, argc);</span>
+<span class="lineNum">     359 </span><span class="lineCov">         88 :     if (0==argv)</span>
+<span class="lineNum">     360 </span><span class="lineNoCov">          0 :         return destructor (P, ENOMEM);</span>
+<span class="lineNum">     361 </span>            : 
+<span class="lineNum">     362 </span><span class="lineCov">         88 :     P-&gt;opaque-&gt;current_argv = current_argv = pj_calloc (argc, sizeof (char *));</span>
+<span class="lineNum">     363 </span><span class="lineCov">         88 :     if (0==current_argv)</span>
+<span class="lineNum">     364 </span><span class="lineNoCov">          0 :         return destructor (P, ENOMEM);</span>
+<span class="lineNum">     365 </span>            : 
+<span class="lineNum">     366 </span>            :     /* Do some syntactical sanity checking */
+<span class="lineNum">     367 </span><span class="lineCov">        882 :     for (i = 0;  i &lt; argc;  i++) {</span>
+<span class="lineNum">     368 </span><span class="lineCov">        795 :         if (0==strcmp (argv_sentinel, argv[i])) {</span>
+<span class="lineNum">     369 </span><span class="lineCov">        264 :             if (-1==i_pipeline) {</span>
+<span class="lineNum">     370 </span><span class="lineCov">          1 :                 proj_log_error (P, &quot;Pipeline: +step before +proj=pipeline&quot;);</span>
+<span class="lineNum">     371 </span><span class="lineCov">          1 :                 return destructor (P, PJD_ERR_MALFORMED_PIPELINE);</span>
+<span class="lineNum">     372 </span>            :             }
+<span class="lineNum">     373 </span><span class="lineCov">        263 :             if (0==nsteps)</span>
+<span class="lineNum">     374 </span><span class="lineCov">         87 :                 i_first_step = i;</span>
+<span class="lineNum">     375 </span><span class="lineCov">        263 :             nsteps++;</span>
+<span class="lineNum">     376 </span><span class="lineCov">        263 :             continue;</span>
+<span class="lineNum">     377 </span>            :         }
+<span class="lineNum">     378 </span>            : 
+<span class="lineNum">     379 </span><span class="lineCov">        531 :         if (0==strcmp (&quot;proj=pipeline&quot;, argv[i])) {</span>
+<span class="lineNum">     380 </span><span class="lineCov">         87 :             if (-1 != i_pipeline) {</span>
+<span class="lineNum">     381 </span><span class="lineNoCov">          0 :                 proj_log_error (P, &quot;Pipeline: Nesting only allowed when child pipelines are wrapped in '+init's&quot;);</span>
+<span class="lineNum">     382 </span><span class="lineNoCov">          0 :                 return destructor (P, PJD_ERR_MALFORMED_PIPELINE); /* ERROR: nested pipelines */</span>
+<span class="lineNum">     383 </span>            :             }
+<span class="lineNum">     384 </span><span class="lineCov">         87 :             i_pipeline = i;</span>
+<span class="lineNum">     385 </span>            :         }
+<span class="lineNum">     386 </span>            :     }
+<span class="lineNum">     387 </span><span class="lineCov">         87 :     nsteps--; /* Last instance of +step is just a sentinel */</span>
+<span class="lineNum">     388 </span><span class="lineCov">         87 :     P-&gt;opaque-&gt;steps = nsteps;</span>
+<span class="lineNum">     389 </span>            : 
+<span class="lineNum">     390 </span><span class="lineCov">         87 :     if (-1==i_pipeline)</span>
+<span class="lineNum">     391 </span><span class="lineNoCov">          0 :         return destructor (P, PJD_ERR_MALFORMED_PIPELINE); /* ERROR: no pipeline def */</span>
+<span class="lineNum">     392 </span>            : 
+<span class="lineNum">     393 </span><span class="lineCov">         87 :     if (0==nsteps)</span>
+<span class="lineNum">     394 </span><span class="lineCov">          1 :         return destructor (P, PJD_ERR_MALFORMED_PIPELINE); /* ERROR: no pipeline def */</span>
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span>            :     /* Make room for the pipeline and execution indicators */
+<span class="lineNum">     397 </span><span class="lineCov">         86 :     if (0==pj_create_pipeline (P, nsteps))</span>
+<span class="lineNum">     398 </span><span class="lineNoCov">          0 :         return destructor (P, ENOMEM);</span>
+<span class="lineNum">     399 </span>            : 
+<span class="lineNum">     400 </span><span class="lineCov">         86 :     set_ellipsoid(P);</span>
+<span class="lineNum">     401 </span>            : 
+<span class="lineNum">     402 </span>            :     /* Now loop over all steps, building a new set of arguments for each init */
+<span class="lineNum">     403 </span><span class="lineCov">         86 :     i_current_step = i_first_step;</span>
+<span class="lineNum">     404 </span><span class="lineCov">        249 :     for (i = 0;  i &lt; nsteps;  i++) {</span>
+<span class="lineNum">     405 </span>            :         int j;
+<span class="lineNum">     406 </span><span class="lineCov">        169 :         int  current_argc = 0;</span>
+<span class="lineNum">     407 </span>            :         int  err;
+<span class="lineNum">     408 </span><span class="lineCov">        169 :         PJ     *next_step = 0;</span>
+<span class="lineNum">     409 </span>            : 
+<span class="lineNum">     410 </span>            :         /* Build a set of setup args for the current step */
+<span class="lineNum">     411 </span><span class="lineCov">        169 :         proj_log_trace (P, &quot;Pipeline: Building arg list for step no. %d&quot;, i);</span>
+<span class="lineNum">     412 </span>            : 
+<span class="lineNum">     413 </span>            :         /* First add the step specific args */
+<span class="lineNum">     414 </span><span class="lineCov">        584 :         for (j = i_current_step + 1;  0 != strcmp (&quot;step&quot;, argv[j]); j++)</span>
+<span class="lineNum">     415 </span><span class="lineCov">        415 :             current_argv[current_argc++] = argv[j];</span>
+<span class="lineNum">     416 </span>            : 
+<span class="lineNum">     417 </span><span class="lineCov">        169 :         i_current_step = j;</span>
+<span class="lineNum">     418 </span>            : 
+<span class="lineNum">     419 </span>            :         /* Then add the global args */
+<span class="lineNum">     420 </span><span class="lineCov">        198 :         for (j = i_pipeline + 1;  0 != strcmp (&quot;step&quot;, argv[j]); j++)</span>
+<span class="lineNum">     421 </span><span class="lineCov">         29 :             current_argv[current_argc++] = argv[j];</span>
+<span class="lineNum">     422 </span>            : 
+<span class="lineNum">     423 </span><span class="lineCov">        169 :         proj_log_trace (P, &quot;Pipeline: init - %s, %d&quot;, current_argv[0], current_argc);</span>
+<span class="lineNum">     424 </span><span class="lineCov">        444 :         for (j = 1;  j &lt; current_argc; j++)</span>
+<span class="lineNum">     425 </span><span class="lineCov">        275 :             proj_log_trace (P, &quot;    %s&quot;, current_argv[j]);</span>
+<span class="lineNum">     426 </span>            : 
+<span class="lineNum">     427 </span><span class="lineCov">        169 :         err = proj_errno_reset (P);</span>
+<span class="lineNum">     428 </span>            : 
+<span class="lineNum">     429 </span><span class="lineCov">        169 :         next_step = proj_create_argv (P-&gt;ctx, current_argc, current_argv);</span>
+<span class="lineNum">     430 </span><span class="lineCov">        169 :         proj_log_trace (P, &quot;Pipeline: Step %d (%s) at %p&quot;, i, current_argv[0], next_step);</span>
+<span class="lineNum">     431 </span>            : 
+<span class="lineNum">     432 </span><span class="lineCov">        169 :         if (0==next_step) {</span>
+<span class="lineNum">     433 </span>            :             /* The step init failed, but possibly without setting errno. If so, we say &quot;malformed&quot; */
+<span class="lineNum">     434 </span><span class="lineCov">          6 :             int err_to_report = proj_errno(P);</span>
+<span class="lineNum">     435 </span><span class="lineCov">          6 :             if (0==err_to_report)</span>
+<span class="lineNum">     436 </span><span class="lineNoCov">          0 :                 err_to_report = PJD_ERR_MALFORMED_PIPELINE;</span>
+<span class="lineNum">     437 </span><span class="lineCov">          6 :             proj_log_error (P, &quot;Pipeline: Bad step definition: %s (%s)&quot;, current_argv[0], pj_strerrno (err_to_report));</span>
+<span class="lineNum">     438 </span><span class="lineCov">          6 :             return destructor (P, err_to_report); /* ERROR: bad pipeline def */</span>
+<span class="lineNum">     439 </span>            :         }
+<span class="lineNum">     440 </span>            : 
+<span class="lineNum">     441 </span><span class="lineCov">        163 :         proj_errno_restore (P, err);</span>
+<span class="lineNum">     442 </span>            : 
+<span class="lineNum">     443 </span>            :         /* Is this step inverted? */
+<span class="lineNum">     444 </span><span class="lineCov">        596 :         for (j = 0;  j &lt; current_argc; j++)</span>
+<span class="lineNum">     445 </span><span class="lineCov">        433 :             if (0==strcmp(&quot;inv&quot;, current_argv[j])) {</span>
+<span class="lineNum">     446 </span>            :                 /* if +inv exists in both global and local args the forward operation should be used */
+<span class="lineNum">     447 </span><span class="lineCov">         76 :                 next_step-&gt;inverted = next_step-&gt;inverted == 0 ? 1 : 0;</span>
+<span class="lineNum">     448 </span>            :             }
+<span class="lineNum">     449 </span>            : 
+<span class="lineNum">     450 </span><span class="lineCov">        163 :         P-&gt;opaque-&gt;pipeline[i+1] = next_step;</span>
+<span class="lineNum">     451 </span>            : 
+<span class="lineNum">     452 </span><span class="lineCov">        163 :         proj_log_trace (P, &quot;Pipeline at [%p]:    step at [%p] (%s) done&quot;, P, next_step, current_argv[0]);</span>
+<span class="lineNum">     453 </span>            :     }
+<span class="lineNum">     454 </span>            : 
+<span class="lineNum">     455 </span>            :     /* Require a forward path through the pipeline */
+<span class="lineNum">     456 </span><span class="lineCov">        482 :     for (i = 1; i &lt;= nsteps; i++) {</span>
+<span class="lineNum">     457 </span><span class="lineCov">        163 :         PJ *Q = P-&gt;opaque-&gt;pipeline[i];</span>
+<span class="lineNum">     458 </span><span class="lineCov">        254 :         if ( ( Q-&gt;inverted &amp;&amp; (Q-&gt;inv || Q-&gt;inv3d || Q-&gt;fwd4d) ) ||</span>
+<span class="lineNum">     459 </span><span class="lineCov">        180 :              (!Q-&gt;inverted &amp;&amp; (Q-&gt;fwd || Q-&gt;fwd3d || Q-&gt;fwd4d) ) ) {</span>
+<span class="lineNum">     460 </span><span class="lineCov">        161 :             continue;</span>
+<span class="lineNum">     461 </span>            :         } else {
+<span class="lineNum">     462 </span><span class="lineCov">          2 :             proj_log_error (P, &quot;Pipeline: A forward operation couldn't be constructed&quot;);</span>
+<span class="lineNum">     463 </span><span class="lineCov">          2 :             return destructor (P, PJD_ERR_MALFORMED_PIPELINE);</span>
+<span class="lineNum">     464 </span>            :         }
+<span class="lineNum">     465 </span>            :     }
+<span class="lineNum">     466 </span>            : 
+<span class="lineNum">     467 </span>            :     /* determine if an inverse operation is possible */
+<span class="lineNum">     468 </span><span class="lineCov">        474 :     for (i = 1; i &lt;= nsteps; i++) {</span>
+<span class="lineNum">     469 </span><span class="lineCov">        161 :         PJ *Q = P-&gt;opaque-&gt;pipeline[i];</span>
+<span class="lineNum">     470 </span><span class="lineCov">        161 :         if ( pj_has_inverse(Q) ) {</span>
+<span class="lineNum">     471 </span><span class="lineCov">        159 :             continue;</span>
+<span class="lineNum">     472 </span>            :         } else {
+<span class="lineNum">     473 </span><span class="lineCov">          2 :             P-&gt;inv   = 0;</span>
+<span class="lineNum">     474 </span><span class="lineCov">          2 :             P-&gt;inv3d = 0;</span>
+<span class="lineNum">     475 </span><span class="lineCov">          2 :             P-&gt;inv4d = 0;</span>
+<span class="lineNum">     476 </span><span class="lineCov">          2 :             break;</span>
+<span class="lineNum">     477 </span>            :         }
+<span class="lineNum">     478 </span>            :     }
+<span class="lineNum">     479 </span>            : 
+<span class="lineNum">     480 </span>            :     /* Check that output units from step i are compatible with expected units in step i+1 */
+<span class="lineNum">     481 </span><span class="lineCov">        159 :     for (i = 1; i &lt; nsteps; i++) {</span>
+<span class="lineNum">     482 </span><span class="lineCov">         83 :         enum pj_io_units unit_returned = pj_right (P-&gt;opaque-&gt;pipeline[i]);</span>
+<span class="lineNum">     483 </span><span class="lineCov">         83 :         enum pj_io_units unit_expected = pj_left  (P-&gt;opaque-&gt;pipeline[i+1]);</span>
+<span class="lineNum">     484 </span>            : 
+<span class="lineNum">     485 </span><span class="lineCov">         83 :         if ( unit_returned == PJ_IO_UNITS_WHATEVER || unit_expected == PJ_IO_UNITS_WHATEVER )</span>
+<span class="lineNum">     486 </span><span class="lineCov">          2 :             continue;</span>
+<span class="lineNum">     487 </span><span class="lineCov">         81 :         if ( unit_returned != unit_expected ) {</span>
+<span class="lineNum">     488 </span><span class="lineCov">          2 :             proj_log_error (P, &quot;Pipeline: Mismatched units between step %d and %d&quot;, i, i+1);</span>
+<span class="lineNum">     489 </span><span class="lineCov">          2 :             return destructor (P, PJD_ERR_MALFORMED_PIPELINE);</span>
+<span class="lineNum">     490 </span>            :         }
+<span class="lineNum">     491 </span>            :     }
+<span class="lineNum">     492 </span>            : 
+<span class="lineNum">     493 </span><span class="lineCov">         76 :     proj_log_trace (P, &quot;Pipeline: %d steps built. Determining i/o characteristics&quot;, nsteps);</span>
+<span class="lineNum">     494 </span>            : 
+<span class="lineNum">     495 </span>            :     /* Determine forward input (= reverse output) data type */
+<span class="lineNum">     496 </span><span class="lineCov">         76 :     P-&gt;left = pj_left (P-&gt;opaque-&gt;pipeline[1]);</span>
+<span class="lineNum">     497 </span>            : 
+<span class="lineNum">     498 </span>            :     /* Now, correspondingly determine forward output (= reverse input) data type */
+<span class="lineNum">     499 </span><span class="lineCov">         76 :     P-&gt;right = pj_right (P-&gt;opaque-&gt;pipeline[nsteps]);</span>
+<span class="lineNum">     500 </span><span class="lineCov">         76 :     return P;</span>
+<span class="lineNum">     501 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

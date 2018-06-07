@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/pj_factors.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - pj_factors.c<span style="font-size: 80%;"> (source / <a href="pj_factors.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">40</td>
+            <td class="headerCovTableEntry">50</td>
+            <td class="headerCovTableEntryMed">80.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* projection scale factors */</a>
+<span class="lineNum">       2 </span>            : #define PJ_LIB__
+<span class="lineNum">       3 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">       4 </span>            : #include &quot;proj_math.h&quot;
+<span class="lineNum">       5 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">       8 </span>            : 
+<span class="lineNum">       9 </span>            : #ifndef DEFAULT_H
+<span class="lineNum">      10 </span>            : #define DEFAULT_H   1e-5    /* radian default for numeric h */
+<span class="lineNum">      11 </span>            : #endif
+<span class="lineNum">      12 </span>            : 
+<a name="13"><span class="lineNum">      13 </span>            : #define EPS 1.0e-12</a>
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span><span class="lineCov">          1 : int pj_factors(LP lp, const PJ *P, double h, struct FACTORS *fac) {</span>
+<span class="lineNum">      16 </span>            :     double cosphi, t, n, r;
+<span class="lineNum">      17 </span>            :     int err;
+<span class="lineNum">      18 </span><span class="lineCov">          1 :     PJ_COORD coo = {{0, 0, 0, 0}};</span>
+<span class="lineNum">      19 </span><span class="lineCov">          1 :     coo.lp = lp;</span>
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            :     /* Failing the 3 initial checks will most likely be due to */
+<span class="lineNum">      22 </span>            :     /* earlier errors, so we leave errno alone */
+<span class="lineNum">      23 </span><span class="lineCov">          1 :     if (0==fac)</span>
+<span class="lineNum">      24 </span><span class="lineNoCov">          0 :         return 1;</span>
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span><span class="lineCov">          1 :     if (0==P)</span>
+<span class="lineNum">      27 </span><span class="lineNoCov">          0 :         return 1;</span>
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span><span class="lineCov">          1 :     if (HUGE_VAL==lp.lam)</span>
+<span class="lineNum">      30 </span><span class="lineNoCov">          0 :         return 1;</span>
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            :     /* But from here, we're ready to make our own mistakes */
+<span class="lineNum">      33 </span><span class="lineCov">          1 :     err = proj_errno_reset (P);</span>
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            :     /* Indicate that all factors are numerical approximations */
+<span class="lineNum">      36 </span><span class="lineCov">          1 :     fac-&gt;code = 0;</span>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :     /* Check for latitude or longitude overange */
+<span class="lineNum">      39 </span><span class="lineCov">          1 :     if ((fabs (lp.phi)-M_HALFPI) &gt; EPS || fabs (lp.lam) &gt; 10.) {</span>
+<span class="lineNum">      40 </span><span class="lineNoCov">          0 :         proj_errno_set (P, PJD_ERR_LAT_OR_LON_EXCEED_LIMIT);</span>
+<span class="lineNum">      41 </span><span class="lineNoCov">          0 :         return 1;</span>
+<span class="lineNum">      42 </span>            :     }
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span>            :     /* Set a reasonable step size for the numerical derivatives */
+<span class="lineNum">      45 </span><span class="lineCov">          1 :     h = fabs (h);</span>
+<span class="lineNum">      46 </span><span class="lineCov">          1 :     if (h &lt; EPS)</span>
+<span class="lineNum">      47 </span><span class="lineCov">          1 :         h = DEFAULT_H;</span>
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            :     /* If input latitudes are geocentric, convert to geographic */
+<span class="lineNum">      50 </span><span class="lineCov">          1 :     if (P-&gt;geoc)</span>
+<span class="lineNum">      51 </span><span class="lineNoCov">          0 :         lp = proj_geocentric_latitude (P, PJ_INV, coo).lp;</span>
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            :     /* If latitude + one step overshoots the pole, move it slightly inside, */
+<span class="lineNum">      54 </span>            :     /* so the numerical derivative still exists */
+<span class="lineNum">      55 </span><span class="lineCov">          1 :     if (fabs (lp.phi) &gt; (M_HALFPI - h))</span>
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :         lp.phi = lp.phi &lt; 0. ? -(M_HALFPI-h) : (M_HALFPI-h);</span>
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span>            :     /* Longitudinal distance from central meridian */
+<span class="lineNum">      59 </span><span class="lineCov">          1 :     lp.lam -= P-&gt;lam0;</span>
+<span class="lineNum">      60 </span><span class="lineCov">          1 :     if (!P-&gt;over)</span>
+<span class="lineNum">      61 </span><span class="lineCov">          1 :         lp.lam = adjlon(lp.lam);</span>
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span>            :     /* Derivatives */
+<span class="lineNum">      64 </span><span class="lineCov">          1 :     if (pj_deriv (lp, h, P, &amp;(fac-&gt;der))) {</span>
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 :         proj_errno_set (P, PJD_ERR_LAT_OR_LON_EXCEED_LIMIT);</span>
+<span class="lineNum">      66 </span><span class="lineNoCov">          0 :         return 1;</span>
+<span class="lineNum">      67 </span>            :     }
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span>            :     /* Scale factors */
+<span class="lineNum">      70 </span><span class="lineCov">          1 :     cosphi = cos (lp.phi);</span>
+<span class="lineNum">      71 </span><span class="lineCov">          1 :     fac-&gt;h = hypot (fac-&gt;der.x_p, fac-&gt;der.y_p);</span>
+<span class="lineNum">      72 </span><span class="lineCov">          1 :     fac-&gt;k = hypot (fac-&gt;der.x_l, fac-&gt;der.y_l) / cosphi;</span>
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span><span class="lineCov">          1 :     if (P-&gt;es != 0.0) {</span>
+<span class="lineNum">      75 </span><span class="lineCov">          1 :         t = sin(lp.phi);</span>
+<span class="lineNum">      76 </span><span class="lineCov">          1 :         t = 1. - P-&gt;es * t * t;</span>
+<span class="lineNum">      77 </span><span class="lineCov">          1 :         n = sqrt(t);</span>
+<span class="lineNum">      78 </span><span class="lineCov">          1 :         fac-&gt;h *= t * n / P-&gt;one_es;</span>
+<span class="lineNum">      79 </span><span class="lineCov">          1 :         fac-&gt;k *= n;</span>
+<span class="lineNum">      80 </span><span class="lineCov">          1 :         r = t * t / P-&gt;one_es;</span>
+<span class="lineNum">      81 </span>            :     } else
+<span class="lineNum">      82 </span><span class="lineNoCov">          0 :         r = 1.;</span>
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            :     /* Convergence */
+<span class="lineNum">      85 </span><span class="lineCov">          1 :     fac-&gt;conv = -atan2 (fac-&gt;der.x_p, fac-&gt;der.y_p);</span>
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            :     /* Areal scale factor */
+<span class="lineNum">      88 </span><span class="lineCov">          1 :     fac-&gt;s = (fac-&gt;der.y_p * fac-&gt;der.x_l - fac-&gt;der.x_p * fac-&gt;der.y_l) * r / cosphi;</span>
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span>            :     /* Meridian-parallel angle (theta prime) */
+<span class="lineNum">      91 </span><span class="lineCov">          1 :     fac-&gt;thetap = aasin(P-&gt;ctx,fac-&gt;s / (fac-&gt;h * fac-&gt;k));</span>
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            :     /* Tissot ellipse axis */
+<span class="lineNum">      94 </span><span class="lineCov">          1 :     t = fac-&gt;k * fac-&gt;k + fac-&gt;h * fac-&gt;h;</span>
+<span class="lineNum">      95 </span><span class="lineCov">          1 :     fac-&gt;a = sqrt(t + 2. * fac-&gt;s);</span>
+<span class="lineNum">      96 </span><span class="lineCov">          1 :     t = t - 2. * fac-&gt;s;</span>
+<span class="lineNum">      97 </span><span class="lineCov">          1 :     t = t &gt; 0? sqrt(t): 0;</span>
+<span class="lineNum">      98 </span><span class="lineCov">          1 :     fac-&gt;b = 0.5 * (fac-&gt;a - t);</span>
+<span class="lineNum">      99 </span><span class="lineCov">          1 :     fac-&gt;a = 0.5 * (fac-&gt;a + t);</span>
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            :     /* Angular distortion */
+<span class="lineNum">     102 </span><span class="lineCov">          1 :     fac-&gt;omega = 2. * aasin(P-&gt;ctx, (fac-&gt;a - fac-&gt;b) / (fac-&gt;a + fac-&gt;b) );</span>
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span><span class="lineCov">          1 :     proj_errno_restore (P, err);</span>
+<span class="lineNum">     105 </span><span class="lineCov">          1 :     return 0;</span>
+<span class="lineNum">     106 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

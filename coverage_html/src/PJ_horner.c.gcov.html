@@ -1,0 +1,589 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_horner.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_horner.c<span style="font-size: 80%;"> (source / <a href="PJ_horner.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">165</td>
+            <td class="headerCovTableEntry">206</td>
+            <td class="headerCovTableEntryMed">80.1 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">12</td>
+            <td class="headerCovTableEntry">12</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /***********************************************************************</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            :     Interfacing to a classic piece of geodetic software
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            : ************************************************************************
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            :     gen_pol is a highly efficient, classic implementation of a generic
+<span class="lineNum">       8 </span>            :     2D Horner's Scheme polynomial evaluation routine by Knud Poder and
+<span class="lineNum">       9 </span>            :     Karsten Engsager, originating in the vivid geodetic environment at
+<span class="lineNum">      10 </span>            :     what was then (1960-ish) the Danish Geodetic Institute.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :     The original Poder/Engsager gen_pol implementation (where
+<span class="lineNum">      13 </span>            :     the polynomial degree and two sets of polynomial coefficients
+<span class="lineNum">      14 </span>            :     are packed together in one compound array, handled via a plain
+<span class="lineNum">      15 </span>            :     double pointer) is compelling and &quot;true to the code history&quot;:
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :     It has a beautiful classical 1960s ring to it, not unlike the
+<span class="lineNum">      18 </span>            :     original fft implementations, which revolutionized spectral
+<span class="lineNum">      19 </span>            :     analysis in twenty lines of code.
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            :     The Poder coding sound, as classic 1960s as Phil Spector's Wall
+<span class="lineNum">      22 </span>            :     of Sound, is beautiful and inimitable.
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            :   On the other hand: For the uninitiated, the gen_pol code is hard
+<span class="lineNum">      25 </span>            :     to follow, despite being compact.
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            :     Also, since adding metadata and improving maintainability
+<span class="lineNum">      28 </span>            :     of the code are among the implied goals of a current SDFE/DTU Space
+<span class="lineNum">      29 </span>            :   project, the material in this file introduces a version with a
+<span class="lineNum">      30 </span>            :   more modern (or at least 1990s) look, introducing a &quot;double 2D
+<span class="lineNum">      31 </span>            :   polynomial&quot; data type, HORNER.
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            :     Despite introducing a new data type for handling the polynomial
+<span class="lineNum">      34 </span>            :     coefficients, great care has been taken to keep the coefficient
+<span class="lineNum">      35 </span>            :     array organization identical to that of gen_pol.
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            :     Hence, on one hand, the HORNER data type helps improving the
+<span class="lineNum">      38 </span>            :     long term maintainability of the code by making the data
+<span class="lineNum">      39 </span>            :     organization more mentally accessible.
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            :     On the other hand, it allows us to preserve the business end of
+<span class="lineNum">      42 </span>            :     the original gen_pol implementation - although not including the
+<span class="lineNum">      43 </span>            :   famous &quot;Poder dual autocheck&quot; in all its enigmatic elegance.
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            :  **********************************************************************
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            :   The material included here was written by Knud Poder, starting
+<span class="lineNum">      48 </span>            :   around 1960, and Karsten Engsager, starting around 1970. It was
+<span class="lineNum">      49 </span>            :     originally written in Algol 60, later (1980s) reimplemented in C.
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            :     The HORNER data type interface, and the organization as a header
+<span class="lineNum">      52 </span>            :     library was implemented by Thomas Knudsen, starting around 2015.
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            :  ***********************************************************************
+<span class="lineNum">      55 </span>            :  *
+<span class="lineNum">      56 </span>            :  * Copyright (c) 2016, SDFE http://www.sdfe.dk / Thomas Knudsen / Karsten Engsager
+<span class="lineNum">      57 </span>            :  *
+<span class="lineNum">      58 </span>            :  * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      59 </span>            :  * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      60 </span>            :  * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      61 </span>            :  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      62 </span>            :  * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      63 </span>            :  * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      64 </span>            :  *
+<span class="lineNum">      65 </span>            :  * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      66 </span>            :  * in all copies or substantial portions of the Software.
+<span class="lineNum">      67 </span>            :  *
+<span class="lineNum">      68 </span>            :  * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      69 </span>            :  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      70 </span>            :  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      71 </span>            :  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      72 </span>            :  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      73 </span>            :  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      74 </span>            :  * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      75 </span>            :  *
+<span class="lineNum">      76 </span>            :  *****************************************************************************/
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            : #define PJ_LIB__
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      81 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      82 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">      83 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">      84 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            : #include &quot;proj_internal.h&quot;
+<span class="lineNum">      87 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      88 </span>            : 
+<span class="lineNum">      89 </span>            : PROJ_HEAD(horner, &quot;Horner polynomial evaluation&quot;);
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            : /* make horner.h interface with proj's memory management */
+<span class="lineNum">      92 </span>            : #define horner_dealloc(x) pj_dealloc(x)
+<span class="lineNum">      93 </span>            : #define horner_calloc(n,x) pj_calloc(n,x)
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span>            : struct horner;
+<span class="lineNum">      97 </span>            : typedef struct horner HORNER;
+<span class="lineNum">      98 </span>            : static UV      horner (const HORNER *transformation, PJ_DIRECTION direction, UV position);
+<span class="lineNum">      99 </span>            : static HORNER *horner_alloc (size_t order, int complex_polynomia);
+<span class="lineNum">     100 </span>            : static void    horner_free (HORNER *h);
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : struct horner {
+<span class="lineNum">     103 </span>            :     int    uneg;     /* u axis negated? */
+<span class="lineNum">     104 </span>            :     int    vneg;     /* v axis negated? */
+<span class="lineNum">     105 </span>            :     int    order;    /* maximum degree of polynomium */
+<span class="lineNum">     106 </span>            :     int    coefs;    /* number of coefficients for each polynomium  */
+<span class="lineNum">     107 </span>            :     double range;    /* radius of the region of validity */
+<span class="lineNum">     108 </span>            : 
+<span class="lineNum">     109 </span>            :     double *fwd_u;   /* coefficients for the forward transformations */
+<span class="lineNum">     110 </span>            :     double *fwd_v;   /* i.e. latitude/longitude to northing/easting  */
+<span class="lineNum">     111 </span>            : 
+<span class="lineNum">     112 </span>            :     double *inv_u;   /* coefficients for the inverse transformations */
+<span class="lineNum">     113 </span>            :     double *inv_v;   /* i.e. northing/easting to latitude/longitude  */
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span>            :     double *fwd_c;   /* coefficients for the complex forward transformations */
+<span class="lineNum">     116 </span>            :     double *inv_c;   /* coefficients for the complex inverse transformations */
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span>            :     UV *fwd_origin;  /* False longitude/latitude */
+<span class="lineNum">     119 </span>            :     UV *inv_origin;  /* False easting/northing   */
+<span class="lineNum">     120 </span>            : };
+<span class="lineNum">     121 </span>            : 
+<span class="lineNum">     122 </span>            : /* e.g. degree = 2: a + bx + cy + dxx + eyy + fxy, i.e. 6 coefficients */
+<span class="lineNum">     123 </span>            : #define horner_number_of_coefficients(order) \
+<span class="lineNum">     124 </span>            :             (((order + 1)*(order + 2)/2))
+<a name="125"><span class="lineNum">     125 </span>            : </a>
+<span class="lineNum">     126 </span>            : 
+<span class="lineNum">     127 </span><span class="lineCov">          2 : static void horner_free (HORNER *h) {</span>
+<span class="lineNum">     128 </span><span class="lineCov">          2 :     horner_dealloc (h-&gt;inv_v);</span>
+<span class="lineNum">     129 </span><span class="lineCov">          2 :     horner_dealloc (h-&gt;inv_u);</span>
+<span class="lineNum">     130 </span><span class="lineCov">          2 :     horner_dealloc (h-&gt;fwd_v);</span>
+<span class="lineNum">     131 </span><span class="lineCov">          2 :     horner_dealloc (h-&gt;fwd_u);</span>
+<span class="lineNum">     132 </span><span class="lineCov">          2 :     horner_dealloc (h-&gt;fwd_c);</span>
+<span class="lineNum">     133 </span><span class="lineCov">          2 :     horner_dealloc (h-&gt;inv_c);</span>
+<span class="lineNum">     134 </span><span class="lineCov">          2 :     horner_dealloc (h-&gt;fwd_origin);</span>
+<span class="lineNum">     135 </span><span class="lineCov">          2 :     horner_dealloc (h-&gt;inv_origin);</span>
+<span class="lineNum">     136 </span><span class="lineCov">          2 :     horner_dealloc (h);</span>
+<span class="lineNum">     137 </span><span class="lineCov">          2 : }</span>
+<a name="138"><span class="lineNum">     138 </span>            : </a>
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span><span class="lineCov">          2 : static HORNER *horner_alloc (size_t order, int complex_polynomia) {</span>
+<span class="lineNum">     141 </span>            :     /* size_t is unsigned, so we need not check for order &gt; 0 */
+<span class="lineNum">     142 </span><span class="lineCov">          2 :     int n = (int)horner_number_of_coefficients(order);</span>
+<span class="lineNum">     143 </span><span class="lineCov">          2 :     int polynomia_ok = 0;</span>
+<span class="lineNum">     144 </span><span class="lineCov">          2 :     HORNER *h = horner_calloc (1, sizeof (HORNER));</span>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span><span class="lineCov">          2 :     if (0==h)</span>
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     148 </span>            : 
+<span class="lineNum">     149 </span><span class="lineCov">          2 :     if (complex_polynomia)</span>
+<span class="lineNum">     150 </span><span class="lineCov">          1 :         n = 2*(int)order + 2;</span>
+<span class="lineNum">     151 </span><span class="lineCov">          2 :     h-&gt;order = (int)order;</span>
+<span class="lineNum">     152 </span><span class="lineCov">          2 :     h-&gt;coefs = n;</span>
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span><span class="lineCov">          2 :     if (complex_polynomia) {</span>
+<span class="lineNum">     155 </span><span class="lineCov">          1 :         h-&gt;fwd_c = horner_calloc (n, sizeof(double));</span>
+<span class="lineNum">     156 </span><span class="lineCov">          1 :         h-&gt;inv_c = horner_calloc (n, sizeof(double));</span>
+<span class="lineNum">     157 </span><span class="lineCov">          1 :         if (h-&gt;fwd_c &amp;&amp; h-&gt;inv_c)</span>
+<span class="lineNum">     158 </span><span class="lineCov">          1 :             polynomia_ok = 1;</span>
+<span class="lineNum">     159 </span>            :     }
+<span class="lineNum">     160 </span>            :     else {
+<span class="lineNum">     161 </span><span class="lineCov">          1 :         h-&gt;fwd_u = horner_calloc (n, sizeof(double));</span>
+<span class="lineNum">     162 </span><span class="lineCov">          1 :         h-&gt;fwd_v = horner_calloc (n, sizeof(double));</span>
+<span class="lineNum">     163 </span><span class="lineCov">          1 :         h-&gt;inv_u = horner_calloc (n, sizeof(double));</span>
+<span class="lineNum">     164 </span><span class="lineCov">          1 :         h-&gt;inv_v = horner_calloc (n, sizeof(double));</span>
+<span class="lineNum">     165 </span><span class="lineCov">          1 :         if (h-&gt;fwd_u &amp;&amp; h-&gt;fwd_v &amp;&amp; h-&gt;inv_u &amp;&amp; h-&gt;inv_v)</span>
+<span class="lineNum">     166 </span><span class="lineCov">          1 :             polynomia_ok = 1;</span>
+<span class="lineNum">     167 </span>            :     }
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span><span class="lineCov">          2 :     h-&gt;fwd_origin = horner_calloc (1, sizeof(UV));</span>
+<span class="lineNum">     170 </span><span class="lineCov">          2 :     h-&gt;inv_origin = horner_calloc (1, sizeof(UV));</span>
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span><span class="lineCov">          2 :     if (polynomia_ok &amp;&amp; h-&gt;fwd_origin &amp;&amp; h-&gt;inv_origin)</span>
+<span class="lineNum">     173 </span><span class="lineCov">          2 :         return h;</span>
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span>            :     /* safe, since all pointers are null-initialized (by calloc) */
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :     horner_free (h);</span>
+<span class="lineNum">     177 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     178 </span>            : }
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span>            : 
+<a name="182"><span class="lineNum">     182 </span>            : </a>
+<span class="lineNum">     183 </span>            : /**********************************************************************/
+<span class="lineNum">     184 </span><span class="lineCov">          2 : static UV horner (const HORNER *transformation, PJ_DIRECTION direction, UV position) {</span>
+<span class="lineNum">     185 </span>            : /***********************************************************************
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span>            : A reimplementation of the classic Engsager/Poder 2D Horner polynomial
+<span class="lineNum">     188 </span>            : evaluation engine &quot;gen_pol&quot;.
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span>            : This version omits the inimitable Poder &quot;dual autocheck&quot;-machinery,
+<span class="lineNum">     191 </span>            : which here is intended to be implemented at a higher level of the
+<span class="lineNum">     192 </span>            : library: We separate the polynomial evaluation from the quality
+<span class="lineNum">     193 </span>            : control (which, given the limited MTBF for &quot;computing machinery&quot;,
+<span class="lineNum">     194 </span>            : typical when Knud Poder invented the dual autocheck method,
+<span class="lineNum">     195 </span>            : was not defensible at that time).
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span>            : Another difference from the original version is that we return the
+<span class="lineNum">     198 </span>            : result on the stack, rather than accepting pointers to result variables
+<span class="lineNum">     199 </span>            : as input. This results in code that is easy to read:
+<span class="lineNum">     200 </span>            : 
+<span class="lineNum">     201 </span>            :             projected  = horner (s34j,  1, geographic);
+<span class="lineNum">     202 </span>            :             geographic = horner (s34j, -1, projected );
+<span class="lineNum">     203 </span>            : 
+<span class="lineNum">     204 </span>            : and experiments have shown that on contemporary architectures, the time
+<span class="lineNum">     205 </span>            : taken for returning even comparatively large objects on the stack (and
+<span class="lineNum">     206 </span>            : the UV is not that large - typically only 16 bytes) is negligibly
+<span class="lineNum">     207 </span>            : different from passing two pointers (i.e. typically also 16 bytes) the
+<span class="lineNum">     208 </span>            : other way.
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span>            : The polynomium has the form:
+<span class="lineNum">     211 </span>            : 
+<span class="lineNum">     212 </span>            : P = sum (i = [0 : order])
+<span class="lineNum">     213 </span>            :         sum (j = [0 : order - i])
+<span class="lineNum">     214 </span>            :             pow(par_1, i) * pow(par_2, j) * coef(index(order, i, j))
+<span class="lineNum">     215 </span>            : 
+<span class="lineNum">     216 </span>            : For numerical stability, the summation is carried out backwards,
+<span class="lineNum">     217 </span>            : summing the tiny high order elements first.
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span>            : ***********************************************************************/
+<span class="lineNum">     220 </span>            : 
+<span class="lineNum">     221 </span>            :     /* These variable names follow the Engsager/Poder  implementation */
+<span class="lineNum">     222 </span>            :     int     sz;              /* Number of coefficients per polynomial */
+<span class="lineNum">     223 </span>            :     double *tcx, *tcy;                        /* Coefficient pointers */
+<span class="lineNum">     224 </span>            :     double  range; /* Equivalent to the gen_pol's FLOATLIMIT constant */
+<span class="lineNum">     225 </span>            :     double  n, e;
+<span class="lineNum">     226 </span>            :     UV uv_error;
+<span class="lineNum">     227 </span><span class="lineCov">          2 :     uv_error.u = uv_error.v = HUGE_VAL;</span>
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span><span class="lineCov">          2 :     if (0==transformation)</span>
+<span class="lineNum">     230 </span><span class="lineNoCov">          0 :         return uv_error;</span>
+<span class="lineNum">     231 </span>            : 
+<span class="lineNum">     232 </span>            :     /* Check for valid value of direction (-1, 0, 1) */
+<span class="lineNum">     233 </span><span class="lineCov">          2 :     switch (direction) {</span>
+<span class="lineNum">     234 </span>            :         case PJ_IDENT:    /*  no-op  */
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :             return position;</span>
+<span class="lineNum">     236 </span>            :         case PJ_FWD:   /* forward */
+<span class="lineNum">     237 </span>            :         case PJ_INV:   /* inverse */
+<span class="lineNum">     238 </span><span class="lineCov">          2 :             break;</span>
+<span class="lineNum">     239 </span>            :         default:   /* invalid */
+<span class="lineNum">     240 </span><span class="lineNoCov">          0 :             errno = EINVAL;</span>
+<span class="lineNum">     241 </span><span class="lineNoCov">          0 :             return uv_error;</span>
+<span class="lineNum">     242 </span>            :     }
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span>            :     /* Prepare for double Horner */
+<span class="lineNum">     245 </span><span class="lineCov">          2 :     sz    =  horner_number_of_coefficients(transformation-&gt;order);</span>
+<span class="lineNum">     246 </span><span class="lineCov">          2 :     range =  transformation-&gt;range;</span>
+<span class="lineNum">     247 </span>            : 
+<span class="lineNum">     248 </span>            : 
+<span class="lineNum">     249 </span><span class="lineCov">          2 :     if (direction==PJ_FWD) {                              /* forward */</span>
+<span class="lineNum">     250 </span><span class="lineCov">          1 :         tcx = transformation-&gt;fwd_u + sz;</span>
+<span class="lineNum">     251 </span><span class="lineCov">          1 :         tcy = transformation-&gt;fwd_v + sz;</span>
+<span class="lineNum">     252 </span><span class="lineCov">          1 :         e   = position.u - transformation-&gt;fwd_origin-&gt;u;</span>
+<span class="lineNum">     253 </span><span class="lineCov">          1 :         n   = position.v - transformation-&gt;fwd_origin-&gt;v;</span>
+<span class="lineNum">     254 </span>            :     } else {                                              /* inverse */
+<span class="lineNum">     255 </span><span class="lineCov">          1 :         tcx = transformation-&gt;inv_u + sz;</span>
+<span class="lineNum">     256 </span><span class="lineCov">          1 :         tcy = transformation-&gt;inv_v + sz;</span>
+<span class="lineNum">     257 </span><span class="lineCov">          1 :         e   = position.u - transformation-&gt;inv_origin-&gt;u;</span>
+<span class="lineNum">     258 </span><span class="lineCov">          1 :         n   = position.v - transformation-&gt;inv_origin-&gt;v;</span>
+<span class="lineNum">     259 </span>            :     }
+<span class="lineNum">     260 </span>            : 
+<span class="lineNum">     261 </span><span class="lineCov">          2 :     if ((fabs(n) &gt; range) || (fabs(e) &gt; range)) {</span>
+<span class="lineNum">     262 </span><span class="lineNoCov">          0 :         errno = EDOM;</span>
+<span class="lineNum">     263 </span><span class="lineNoCov">          0 :         return uv_error;</span>
+<span class="lineNum">     264 </span>            :     }
+<span class="lineNum">     265 </span>            : 
+<span class="lineNum">     266 </span>            :     /* The melody of this block is straight out of the great Engsager/Poder songbook */
+<span class="lineNum">     267 </span>            :     else {
+<span class="lineNum">     268 </span><span class="lineCov">          2 :         int g =  transformation-&gt;order;</span>
+<span class="lineNum">     269 </span><span class="lineCov">          2 :         int r = g, c;</span>
+<span class="lineNum">     270 </span>            :         double u, v, N, E;
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span>            :         /* Double Horner's scheme: N = n*Cy*e -&gt; yout, E = e*Cx*n -&gt; xout */
+<span class="lineNum">     273 </span><span class="lineCov">          2 :         N = *--tcy;</span>
+<span class="lineNum">     274 </span><span class="lineCov">          2 :         E = *--tcx;</span>
+<span class="lineNum">     275 </span><span class="lineCov">         10 :         for (;    r &gt; 0;    r--) {</span>
+<span class="lineNum">     276 </span><span class="lineCov">          8 :             u = *--tcy;</span>
+<span class="lineNum">     277 </span><span class="lineCov">          8 :             v = *--tcx;</span>
+<span class="lineNum">     278 </span><span class="lineCov">         28 :             for (c = g;    c &gt;= r;    c--) {</span>
+<span class="lineNum">     279 </span><span class="lineCov">         20 :                 u = n*u + *--tcy;</span>
+<span class="lineNum">     280 </span><span class="lineCov">         20 :                 v = e*v + *--tcx;</span>
+<span class="lineNum">     281 </span>            :             }
+<span class="lineNum">     282 </span><span class="lineCov">          8 :             N = e*N + u;</span>
+<span class="lineNum">     283 </span><span class="lineCov">          8 :             E = n*E + v;</span>
+<span class="lineNum">     284 </span>            :         }
+<span class="lineNum">     285 </span>            : 
+<span class="lineNum">     286 </span><span class="lineCov">          2 :         position.u = E;</span>
+<span class="lineNum">     287 </span><span class="lineCov">          2 :         position.v = N;</span>
+<span class="lineNum">     288 </span>            :     }
+<span class="lineNum">     289 </span>            : 
+<span class="lineNum">     290 </span><span class="lineCov">          2 :     return position;</span>
+<span class="lineNum">     291 </span>            : }
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span>            : 
+<span class="lineNum">     294 </span>            : 
+<span class="lineNum">     295 </span>            : 
+<span class="lineNum">     296 </span>            : 
+<a name="297"><span class="lineNum">     297 </span>            : </a>
+<span class="lineNum">     298 </span>            : 
+<span class="lineNum">     299 </span><span class="lineCov">          1 : static PJ_COORD horner_forward_4d (PJ_COORD point, PJ *P) {</span>
+<span class="lineNum">     300 </span><span class="lineCov">          1 :     point.uv = horner ((HORNER *) P-&gt;opaque, 1, point.uv);</span>
+<span class="lineNum">     301 </span><span class="lineCov">          1 :     return point;</span>
+<a name="302"><span class="lineNum">     302 </span>            : }</a>
+<span class="lineNum">     303 </span>            : 
+<span class="lineNum">     304 </span><span class="lineCov">          1 : static PJ_COORD horner_reverse_4d (PJ_COORD point, PJ *P) {</span>
+<span class="lineNum">     305 </span><span class="lineCov">          1 :     point.uv = horner ((HORNER *) P-&gt;opaque, -1, point.uv);</span>
+<span class="lineNum">     306 </span><span class="lineCov">          1 :     return point;</span>
+<span class="lineNum">     307 </span>            : }
+<span class="lineNum">     308 </span>            : 
+<span class="lineNum">     309 </span>            : 
+<span class="lineNum">     310 </span>            : 
+<a name="311"><span class="lineNum">     311 </span>            : </a>
+<span class="lineNum">     312 </span>            : /**********************************************************************/
+<span class="lineNum">     313 </span><span class="lineCov">          4 : static UV complex_horner (const HORNER *transformation, PJ_DIRECTION direction, UV position) {</span>
+<span class="lineNum">     314 </span>            : /***********************************************************************
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span>            : A reimplementation of a classic Engsager/Poder Horner complex
+<span class="lineNum">     317 </span>            : polynomial evaluation engine.
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span>            : ***********************************************************************/
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span>            :     /* These variable names follow the Engsager/Poder  implementation */
+<span class="lineNum">     322 </span>            :     int     sz;                             /* Number of coefficients */
+<span class="lineNum">     323 </span>            :     double *c, *cb;                           /* Coefficient pointers */
+<span class="lineNum">     324 </span>            :     double  range; /* Equivalent to the gen_pol's FLOATLIMIT constant */
+<span class="lineNum">     325 </span>            :     double  n, e, w, N, E;
+<span class="lineNum">     326 </span>            :     UV uv_error;
+<span class="lineNum">     327 </span><span class="lineCov">          4 :     uv_error.u = uv_error.v = HUGE_VAL;</span>
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span><span class="lineCov">          4 :     if (0==transformation)</span>
+<span class="lineNum">     330 </span><span class="lineNoCov">          0 :         return uv_error;</span>
+<span class="lineNum">     331 </span>            : 
+<span class="lineNum">     332 </span>            :     /* Check for valid value of direction (-1, 0, 1) */
+<span class="lineNum">     333 </span><span class="lineCov">          4 :     switch (direction) {</span>
+<span class="lineNum">     334 </span>            :         case PJ_IDENT:    /*  no-op  */
+<span class="lineNum">     335 </span><span class="lineNoCov">          0 :             return position;</span>
+<span class="lineNum">     336 </span>            :         case PJ_FWD:   /* forward */
+<span class="lineNum">     337 </span>            :         case PJ_INV:   /* inverse */
+<span class="lineNum">     338 </span><span class="lineCov">          4 :             break;</span>
+<span class="lineNum">     339 </span>            :         default:   /* invalid */
+<span class="lineNum">     340 </span><span class="lineNoCov">          0 :             errno = EINVAL;</span>
+<span class="lineNum">     341 </span><span class="lineNoCov">          0 :             return uv_error;</span>
+<span class="lineNum">     342 </span>            :     }
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span>            :     /* Prepare for double Horner */
+<span class="lineNum">     345 </span><span class="lineCov">          4 :     sz    =  2*transformation-&gt;order + 2;</span>
+<span class="lineNum">     346 </span><span class="lineCov">          4 :     range =  transformation-&gt;range;</span>
+<span class="lineNum">     347 </span>            : 
+<span class="lineNum">     348 </span><span class="lineCov">          4 :     if (direction==PJ_FWD) {                              /* forward */</span>
+<span class="lineNum">     349 </span><span class="lineCov">          2 :         cb =  transformation-&gt;fwd_c;</span>
+<span class="lineNum">     350 </span><span class="lineCov">          2 :         c  =  cb + sz;</span>
+<span class="lineNum">     351 </span><span class="lineCov">          2 :         e  =  position.u - transformation-&gt;fwd_origin-&gt;u;</span>
+<span class="lineNum">     352 </span><span class="lineCov">          2 :         n  =  position.v - transformation-&gt;fwd_origin-&gt;v;</span>
+<span class="lineNum">     353 </span><span class="lineCov">          2 :         if (transformation-&gt;uneg)</span>
+<span class="lineNum">     354 </span><span class="lineNoCov">          0 :             e  =  -e;</span>
+<span class="lineNum">     355 </span><span class="lineCov">          2 :         if (transformation-&gt;vneg)</span>
+<span class="lineNum">     356 </span><span class="lineNoCov">          0 :             n  =  -n;</span>
+<span class="lineNum">     357 </span>            :     } else {                                              /* inverse */
+<span class="lineNum">     358 </span><span class="lineCov">          2 :         cb =  transformation-&gt;inv_c;</span>
+<span class="lineNum">     359 </span><span class="lineCov">          2 :         c  =  cb + sz;</span>
+<span class="lineNum">     360 </span><span class="lineCov">          2 :         e  =  position.u - transformation-&gt;inv_origin-&gt;u;</span>
+<span class="lineNum">     361 </span><span class="lineCov">          2 :         n  =  position.v - transformation-&gt;inv_origin-&gt;v;</span>
+<span class="lineNum">     362 </span><span class="lineCov">          2 :         if (transformation-&gt;uneg)</span>
+<span class="lineNum">     363 </span><span class="lineNoCov">          0 :             e  =  -e;</span>
+<span class="lineNum">     364 </span><span class="lineCov">          2 :         if (transformation-&gt;vneg)</span>
+<span class="lineNum">     365 </span><span class="lineNoCov">          0 :             n  =  -n;</span>
+<span class="lineNum">     366 </span>            :     }
+<span class="lineNum">     367 </span>            : 
+<span class="lineNum">     368 </span><span class="lineCov">          4 :     if ((fabs(n) &gt; range) || (fabs(e) &gt; range)) {</span>
+<span class="lineNum">     369 </span><span class="lineNoCov">          0 :         errno = EDOM;</span>
+<span class="lineNum">     370 </span><span class="lineNoCov">          0 :         return uv_error;</span>
+<span class="lineNum">     371 </span>            :     }
+<span class="lineNum">     372 </span>            : 
+<span class="lineNum">     373 </span>            :     /* Everything's set up properly - now do the actual polynomium evaluation */
+<span class="lineNum">     374 </span><span class="lineCov">          4 :     E = *--c;</span>
+<span class="lineNum">     375 </span><span class="lineCov">          4 :     N = *--c;</span>
+<span class="lineNum">     376 </span><span class="lineCov">         20 :     while (c &gt; cb) {</span>
+<span class="lineNum">     377 </span><span class="lineCov">         12 :         w = n*E + e*N + *--c;</span>
+<span class="lineNum">     378 </span><span class="lineCov">         12 :         N = n*N - e*E + *--c;</span>
+<span class="lineNum">     379 </span><span class="lineCov">         12 :         E = w;</span>
+<span class="lineNum">     380 </span>            :     }
+<span class="lineNum">     381 </span>            : 
+<span class="lineNum">     382 </span><span class="lineCov">          4 :     position.u = E;</span>
+<span class="lineNum">     383 </span><span class="lineCov">          4 :     position.v = N;</span>
+<span class="lineNum">     384 </span><span class="lineCov">          4 :     return position;</span>
+<span class="lineNum">     385 </span>            : }
+<span class="lineNum">     386 </span>            : 
+<a name="387"><span class="lineNum">     387 </span>            : </a>
+<span class="lineNum">     388 </span>            : 
+<span class="lineNum">     389 </span><span class="lineCov">          2 : static PJ_COORD complex_horner_forward_4d (PJ_COORD point, PJ *P) {</span>
+<span class="lineNum">     390 </span><span class="lineCov">          2 :     point.uv = complex_horner ((HORNER *) P-&gt;opaque, PJ_FWD, point.uv);</span>
+<span class="lineNum">     391 </span><span class="lineCov">          2 :     return point;</span>
+<a name="392"><span class="lineNum">     392 </span>            : }</a>
+<span class="lineNum">     393 </span>            : 
+<span class="lineNum">     394 </span><span class="lineCov">          2 : static PJ_COORD complex_horner_reverse_4d (PJ_COORD point, PJ *P) {</span>
+<span class="lineNum">     395 </span><span class="lineCov">          2 :     point.uv = complex_horner ((HORNER *) P-&gt;opaque, PJ_INV, point.uv);</span>
+<span class="lineNum">     396 </span><span class="lineCov">          2 :     return point;</span>
+<span class="lineNum">     397 </span>            : }
+<a name="398"><span class="lineNum">     398 </span>            : </a>
+<span class="lineNum">     399 </span>            : 
+<span class="lineNum">     400 </span><span class="lineCov">          2 : static void *horner_freeup (PJ *P, int errlev) {                        /* Destructor */</span>
+<span class="lineNum">     401 </span><span class="lineCov">          2 :     if (0==P)</span>
+<span class="lineNum">     402 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     403 </span><span class="lineCov">          2 :     if (0==P-&gt;opaque)</span>
+<span class="lineNum">     404 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, errlev);</span>
+<span class="lineNum">     405 </span><span class="lineCov">          2 :     horner_free ((HORNER *) P-&gt;opaque);</span>
+<span class="lineNum">     406 </span><span class="lineCov">          2 :     P-&gt;opaque = 0;</span>
+<span class="lineNum">     407 </span><span class="lineCov">          2 :     return pj_default_destructor (P, errlev);</span>
+<span class="lineNum">     408 </span>            : }
+<a name="409"><span class="lineNum">     409 </span>            : </a>
+<span class="lineNum">     410 </span>            : 
+<span class="lineNum">     411 </span><span class="lineCov">         12 : static int parse_coefs (PJ *P, double *coefs, char *param, int ncoefs) {</span>
+<span class="lineNum">     412 </span><span class="lineCov">         12 :     char *buf, *init, *next = 0;</span>
+<span class="lineNum">     413 </span>            :     int i;
+<span class="lineNum">     414 </span>            : 
+<span class="lineNum">     415 </span><span class="lineCov">         12 :     buf = pj_calloc (strlen (param) + 2, sizeof(char));</span>
+<span class="lineNum">     416 </span><span class="lineCov">         12 :     if (0==buf) {</span>
+<span class="lineNum">     417 </span><span class="lineNoCov">          0 :         proj_log_error (P, &quot;Horner: No memory left&quot;);</span>
+<span class="lineNum">     418 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     419 </span>            :     }
+<span class="lineNum">     420 </span>            : 
+<span class="lineNum">     421 </span><span class="lineCov">         12 :     sprintf (buf, &quot;t%s&quot;, param);</span>
+<span class="lineNum">     422 </span><span class="lineCov">         12 :     if (0==pj_param (P-&gt;ctx, P-&gt;params, buf).i) {</span>
+<span class="lineNum">     423 </span><span class="lineNoCov">          0 :         pj_dealloc (buf);</span>
+<span class="lineNum">     424 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     425 </span>            :     }
+<span class="lineNum">     426 </span><span class="lineCov">         12 :     sprintf (buf, &quot;s%s&quot;, param);</span>
+<span class="lineNum">     427 </span><span class="lineCov">         12 :     init = pj_param(P-&gt;ctx, P-&gt;params, buf).s;</span>
+<span class="lineNum">     428 </span><span class="lineCov">         12 :     pj_dealloc (buf);</span>
+<span class="lineNum">     429 </span>            : 
+<span class="lineNum">     430 </span><span class="lineCov">         98 :     for (i = 0; i &lt; ncoefs; i++) {</span>
+<span class="lineNum">     431 </span><span class="lineCov">         86 :         if (i &gt; 0) {</span>
+<span class="lineNum">     432 </span><span class="lineCov">         74 :             if ( next == 0 || ','!=*next) {</span>
+<span class="lineNum">     433 </span><span class="lineNoCov">          0 :                 proj_log_error (P, &quot;Horner: Malformed polynomium set %s. need %d coefs&quot;, param, ncoefs);</span>
+<span class="lineNum">     434 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     435 </span>            :             }
+<span class="lineNum">     436 </span><span class="lineCov">         74 :             init = ++next;</span>
+<span class="lineNum">     437 </span>            :         }
+<span class="lineNum">     438 </span><span class="lineCov">         86 :         coefs[i] = pj_strtod (init, &amp;next);</span>
+<span class="lineNum">     439 </span>            :     }
+<span class="lineNum">     440 </span><span class="lineCov">         12 :     return 1;</span>
+<span class="lineNum">     441 </span>            : }
+<span class="lineNum">     442 </span>            : 
+<a name="443"><span class="lineNum">     443 </span>            : </a>
+<span class="lineNum">     444 </span>            : /*********************************************************************/
+<span class="lineNum">     445 </span><span class="lineCov">          6 : PJ *PROJECTION(horner) {</span>
+<span class="lineNum">     446 </span>            : /*********************************************************************/
+<span class="lineNum">     447 </span><span class="lineCov">          2 :     int   degree = 0, n, complex_polynomia = 0;</span>
+<span class="lineNum">     448 </span>            :     HORNER *Q;
+<span class="lineNum">     449 </span><span class="lineCov">          2 :     P-&gt;fwd4d  = horner_forward_4d;</span>
+<span class="lineNum">     450 </span><span class="lineCov">          2 :     P-&gt;inv4d  = horner_reverse_4d;</span>
+<span class="lineNum">     451 </span><span class="lineCov">          2 :     P-&gt;fwd3d  =  0;</span>
+<span class="lineNum">     452 </span><span class="lineCov">          2 :     P-&gt;inv3d  =  0;</span>
+<span class="lineNum">     453 </span><span class="lineCov">          2 :     P-&gt;fwd    =  0;</span>
+<span class="lineNum">     454 </span><span class="lineCov">          2 :     P-&gt;inv    =  0;</span>
+<span class="lineNum">     455 </span><span class="lineCov">          2 :     P-&gt;left   =  P-&gt;right  =  PJ_IO_UNITS_PROJECTED;</span>
+<span class="lineNum">     456 </span><span class="lineCov">          2 :     P-&gt;destructor = horner_freeup;</span>
+<span class="lineNum">     457 </span>            : 
+<span class="lineNum">     458 </span>            :     /* Polynomial degree specified? */
+<span class="lineNum">     459 </span><span class="lineCov">          2 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tdeg&quot;).i) { /* degree specified? */</span>
+<span class="lineNum">     460 </span><span class="lineCov">          2 :         degree = pj_param(P-&gt;ctx, P-&gt;params, &quot;ideg&quot;).i;</span>
+<span class="lineNum">     461 </span><span class="lineCov">          2 :         if (degree &lt; 0 || degree &gt; 10000) {</span>
+<span class="lineNum">     462 </span>            :             /* What are reasonable minimum and maximums for degree? */
+<span class="lineNum">     463 </span><span class="lineNoCov">          0 :             proj_log_debug (P, &quot;Horner: Degree is unreasonable: %d&quot;, degree);</span>
+<span class="lineNum">     464 </span><span class="lineNoCov">          0 :             return horner_freeup (P, PJD_ERR_INVALID_ARG);</span>
+<span class="lineNum">     465 </span>            :         }
+<span class="lineNum">     466 </span>            :     } else {
+<span class="lineNum">     467 </span><span class="lineNoCov">          0 :         proj_log_debug (P, &quot;Horner: Must specify polynomial degree, (+deg=n)&quot;);</span>
+<span class="lineNum">     468 </span><span class="lineNoCov">          0 :         return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     469 </span>            :     }
+<span class="lineNum">     470 </span>            : 
+<span class="lineNum">     471 </span><span class="lineCov">          2 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tfwd_c&quot;).i || pj_param (P-&gt;ctx, P-&gt;params, &quot;tinv_c&quot;).i) /* complex polynomium? */</span>
+<span class="lineNum">     472 </span><span class="lineCov">          1 :     complex_polynomia = 1;</span>
+<span class="lineNum">     473 </span>            : 
+<span class="lineNum">     474 </span><span class="lineCov">          2 :     Q = horner_alloc (degree, complex_polynomia);</span>
+<span class="lineNum">     475 </span><span class="lineCov">          2 :     if (Q == 0)</span>
+<span class="lineNum">     476 </span><span class="lineNoCov">          0 :         return horner_freeup (P, ENOMEM);</span>
+<span class="lineNum">     477 </span><span class="lineCov">          2 :     P-&gt;opaque = (void *) Q;</span>
+<span class="lineNum">     478 </span>            : 
+<span class="lineNum">     479 </span><span class="lineCov">          2 :     if (complex_polynomia) {</span>
+<span class="lineNum">     480 </span>            :         /* Westings and/or southings? */
+<span class="lineNum">     481 </span><span class="lineCov">          1 :         Q-&gt;uneg = pj_param_exists (P-&gt;params, &quot;uneg&quot;) ? 1 : 0;</span>
+<span class="lineNum">     482 </span><span class="lineCov">          1 :         Q-&gt;vneg = pj_param_exists (P-&gt;params, &quot;vneg&quot;) ? 1 : 0;</span>
+<span class="lineNum">     483 </span>            : 
+<span class="lineNum">     484 </span><span class="lineCov">          1 :         n = 2*degree + 2;</span>
+<span class="lineNum">     485 </span><span class="lineCov">          1 :         if (0==parse_coefs (P, Q-&gt;fwd_c, &quot;fwd_c&quot;, n))</span>
+<span class="lineNum">     486 </span><span class="lineNoCov">          0 :             return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     487 </span><span class="lineCov">          1 :         if (0==parse_coefs (P, Q-&gt;inv_c, &quot;inv_c&quot;, n))</span>
+<span class="lineNum">     488 </span><span class="lineNoCov">          0 :             return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     489 </span><span class="lineCov">          1 :         P-&gt;fwd4d = complex_horner_forward_4d;</span>
+<span class="lineNum">     490 </span><span class="lineCov">          1 :         P-&gt;inv4d = complex_horner_reverse_4d;</span>
+<span class="lineNum">     491 </span>            :     }
+<span class="lineNum">     492 </span>            : 
+<span class="lineNum">     493 </span>            :     else {
+<span class="lineNum">     494 </span><span class="lineCov">          1 :         n = horner_number_of_coefficients (degree);</span>
+<span class="lineNum">     495 </span><span class="lineCov">          1 :         if (0==parse_coefs (P, Q-&gt;fwd_u, &quot;fwd_u&quot;, n))</span>
+<span class="lineNum">     496 </span><span class="lineNoCov">          0 :             return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     497 </span><span class="lineCov">          1 :         if (0==parse_coefs (P, Q-&gt;fwd_v, &quot;fwd_v&quot;, n))</span>
+<span class="lineNum">     498 </span><span class="lineNoCov">          0 :             return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     499 </span><span class="lineCov">          1 :         if (0==parse_coefs (P, Q-&gt;inv_u, &quot;inv_u&quot;, n))</span>
+<span class="lineNum">     500 </span><span class="lineNoCov">          0 :             return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     501 </span><span class="lineCov">          1 :         if (0==parse_coefs (P, Q-&gt;inv_v, &quot;inv_v&quot;, n))</span>
+<span class="lineNum">     502 </span><span class="lineNoCov">          0 :             return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     503 </span>            :     }
+<span class="lineNum">     504 </span>            : 
+<span class="lineNum">     505 </span><span class="lineCov">          2 :     if (0==parse_coefs (P, (double *)(Q-&gt;fwd_origin), &quot;fwd_origin&quot;, 2))</span>
+<span class="lineNum">     506 </span><span class="lineNoCov">          0 :         return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     507 </span><span class="lineCov">          2 :     if (0==parse_coefs (P, (double *)(Q-&gt;inv_origin), &quot;inv_origin&quot;, 2))</span>
+<span class="lineNum">     508 </span><span class="lineNoCov">          0 :         return horner_freeup (P, PJD_ERR_MISSING_ARGS);</span>
+<span class="lineNum">     509 </span><span class="lineCov">          2 :     if (0==parse_coefs (P, &amp;Q-&gt;range, &quot;range&quot;, 1))</span>
+<span class="lineNum">     510 </span><span class="lineNoCov">          0 :         Q-&gt;range = 500000;</span>
+<span class="lineNum">     511 </span>            : 
+<span class="lineNum">     512 </span><span class="lineCov">          2 :     return P;</span>
+<span class="lineNum">     513 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

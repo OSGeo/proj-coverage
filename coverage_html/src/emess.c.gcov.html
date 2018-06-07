@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/emess.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - emess.c<span style="font-size: 80%;"> (source / <a href="emess.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">14</td>
+            <td class="headerCovTableEntry">21</td>
+            <td class="headerCovTableEntryLo">66.7 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Error message processing */</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            : #ifdef _MSC_VER
+<span class="lineNum">       4 </span>            : #  ifndef _CRT_SECURE_NO_DEPRECATE
+<span class="lineNum">       5 </span>            : #    define _CRT_SECURE_NO_DEPRECATE
+<span class="lineNum">       6 </span>            : #  endif
+<span class="lineNum">       7 </span>            : #  ifndef _CRT_NONSTDC_NO_DEPRECATE
+<span class="lineNum">       8 </span>            : #    define _CRT_NONSTDC_NO_DEPRECATE
+<span class="lineNum">       9 </span>            : #  endif
+<span class="lineNum">      10 </span>            : #endif
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      13 </span>            : #include &lt;stdarg.h&gt;
+<span class="lineNum">      14 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">      15 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      16 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #include &quot;proj_api.h&quot;
+<span class="lineNum">      19 </span>            : #define EMESS_ROUTINE
+<span class="lineNum">      20 </span>            : #include &quot;emess.h&quot;
+<a name="21"><span class="lineNum">      21 </span>            : </a>
+<span class="lineNum">      22 </span>            :   void
+<span class="lineNum">      23 </span><span class="lineCov">          4 : emess(int code, const char *fmt, ...) {</span>
+<span class="lineNum">      24 </span>            :   va_list args;
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span><span class="lineCov">          4 :   va_start(args, fmt);</span>
+<span class="lineNum">      27 </span>            :   /* prefix program name, if given */
+<span class="lineNum">      28 </span><span class="lineCov">          4 :   if (fmt != NULL)</span>
+<span class="lineNum">      29 </span><span class="lineCov">          4 :     (void)fprintf(stderr,&quot;%s\n&lt;%s&gt;: &quot;,pj_get_release(),</span>
+<span class="lineNum">      30 </span>            :                               emess_dat.Prog_name);
+<span class="lineNum">      31 </span>            :   /* print file name and line, if given */
+<span class="lineNum">      32 </span><span class="lineCov">          4 :   if (emess_dat.File_name != NULL &amp;&amp; *emess_dat.File_name) {</span>
+<span class="lineNum">      33 </span><span class="lineCov">          4 :     (void)fprintf(stderr,&quot;while processing file: %s&quot;, emess_dat.File_name);</span>
+<span class="lineNum">      34 </span><span class="lineCov">          8 :     if (emess_dat.File_line &gt; 0)</span>
+<span class="lineNum">      35 </span><span class="lineCov">          4 :       (void)fprintf(stderr,&quot;, line %d\n&quot;, emess_dat.File_line);</span>
+<span class="lineNum">      36 </span>            :     else
+<span class="lineNum">      37 </span><span class="lineNoCov">          0 :       (void)fputc('\n', stderr);</span>
+<span class="lineNum">      38 </span>            :   } else
+<span class="lineNum">      39 </span><span class="lineNoCov">          0 :     putc('\n', stderr);</span>
+<span class="lineNum">      40 </span>            :   /* if |code|==2, print errno code data */
+<span class="lineNum">      41 </span><span class="lineCov">          4 :   if (code == 2 || code == -2)</span>
+<span class="lineNum">      42 </span>            :         {
+<span class="lineNum">      43 </span><span class="lineNoCov">          0 :                 int my_errno = errno;</span>
+<span class="lineNum">      44 </span>            : #ifdef HAVE_STRERROR
+<span class="lineNum">      45 </span>            :                 const char* my_strerror = strerror(my_errno);
+<span class="lineNum">      46 </span>            : #endif
+<span class="lineNum">      47 </span>            : #ifndef HAVE_STRERROR
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 :                 const char* my_strerror = &quot;&lt;system mess. texts unavail.&gt;&quot;;</span>
+<span class="lineNum">      49 </span>            : #endif
+<span class="lineNum">      50 </span><span class="lineNoCov">          0 :     (void)fprintf(stderr, &quot;Sys errno: %d: %s\n&quot;,</span>
+<span class="lineNum">      51 </span>            :       my_errno, my_strerror);
+<span class="lineNum">      52 </span>            :         }
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            :   /* post remainder of call data */
+<span class="lineNum">      55 </span><span class="lineCov">          4 :   (void)vfprintf(stderr,fmt,args);</span>
+<span class="lineNum">      56 </span><span class="lineCov">          4 :   va_end(args);</span>
+<span class="lineNum">      57 </span>            :   /* die if code positive */
+<span class="lineNum">      58 </span><span class="lineCov">          4 :   if (code &gt; 0) {</span>
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :     (void)fputs(&quot;\nprogram abnormally terminated\n&quot;, stderr);</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :     exit(code);</span>
+<span class="lineNum">      61 </span>            :   }
+<span class="lineNum">      62 </span>            :   else
+<span class="lineNum">      63 </span><span class="lineCov">          4 :     putc('\n', stderr);</span>
+<span class="lineNum">      64 </span><span class="lineCov">          4 : }</span>
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

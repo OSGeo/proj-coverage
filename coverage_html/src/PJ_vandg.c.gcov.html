@@ -1,0 +1,182 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_vandg.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_vandg.c<span style="font-size: 80%;"> (source / <a href="PJ_vandg.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">50</td>
+            <td class="headerCovTableEntry">68</td>
+            <td class="headerCovTableEntryLo">73.5 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : #define PJ_LIB__</a>
+<span class="lineNum">       2 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">       3 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            : PROJ_HEAD(vandg, &quot;van der Grinten (I)&quot;) &quot;\n\tMisc Sph&quot;;
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : # define TOL        1.e-10
+<span class="lineNum">       8 </span>            : # define THIRD      .33333333333333333333
+<span class="lineNum">       9 </span>            : # define C2_27      .07407407407407407407
+<span class="lineNum">      10 </span>            : # define PI4_3      4.18879020478639098458
+<span class="lineNum">      11 </span>            : # define PISQ       9.86960440108935861869
+<span class="lineNum">      12 </span>            : # define TPISQ      19.73920880217871723738
+<span class="lineNum">      13 </span>            : # define HPISQ      4.93480220054467930934
+<a name="14"><span class="lineNum">      14 </span>            : </a>
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span><span class="lineCov">          4 : static XY s_forward (LP lp, PJ *P) {           /* Spheroidal, forward */</span>
+<span class="lineNum">      17 </span><span class="lineCov">          4 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">      18 </span>            :     double  al, al2, g, g2, p2;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span><span class="lineCov">          4 :     p2 = fabs(lp.phi / M_HALFPI);</span>
+<span class="lineNum">      21 </span><span class="lineCov">          4 :     if ((p2 - TOL) &gt; 1.) {</span>
+<span class="lineNum">      22 </span><span class="lineNoCov">          0 :         proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">      23 </span><span class="lineNoCov">          0 :         return xy;</span>
+<span class="lineNum">      24 </span>            :     }
+<span class="lineNum">      25 </span><span class="lineCov">          4 :     if (p2 &gt; 1.)</span>
+<span class="lineNum">      26 </span><span class="lineNoCov">          0 :         p2 = 1.;</span>
+<span class="lineNum">      27 </span><span class="lineCov">          4 :     if (fabs(lp.phi) &lt;= TOL) {</span>
+<span class="lineNum">      28 </span><span class="lineNoCov">          0 :         xy.x = lp.lam;</span>
+<span class="lineNum">      29 </span><span class="lineNoCov">          0 :         xy.y = 0.;</span>
+<span class="lineNum">      30 </span><span class="lineCov">          4 :     } else if (fabs(lp.lam) &lt;= TOL || fabs(p2 - 1.) &lt; TOL) {</span>
+<span class="lineNum">      31 </span><span class="lineNoCov">          0 :         xy.x = 0.;</span>
+<span class="lineNum">      32 </span><span class="lineNoCov">          0 :         xy.y = M_PI * tan(.5 * asin(p2));</span>
+<span class="lineNum">      33 </span><span class="lineNoCov">          0 :         if (lp.phi &lt; 0.) xy.y = -xy.y;</span>
+<span class="lineNum">      34 </span>            :     } else {
+<span class="lineNum">      35 </span><span class="lineCov">          4 :         al = .5 * fabs(M_PI / lp.lam - lp.lam / M_PI);</span>
+<span class="lineNum">      36 </span><span class="lineCov">          4 :         al2 = al * al;</span>
+<span class="lineNum">      37 </span><span class="lineCov">          4 :         g = sqrt(1. - p2 * p2);</span>
+<span class="lineNum">      38 </span><span class="lineCov">          4 :         g = g / (p2 + g - 1.);</span>
+<span class="lineNum">      39 </span><span class="lineCov">          4 :         g2 = g * g;</span>
+<span class="lineNum">      40 </span><span class="lineCov">          4 :         p2 = g * (2. / p2 - 1.);</span>
+<span class="lineNum">      41 </span><span class="lineCov">          4 :         p2 = p2 * p2;</span>
+<span class="lineNum">      42 </span><span class="lineCov">          4 :         xy.x = g - p2; g = p2 + al2;</span>
+<span class="lineNum">      43 </span><span class="lineCov">          4 :         xy.x = M_PI * (al * xy.x + sqrt(al2 * xy.x * xy.x - g * (g2 - p2))) / g;</span>
+<span class="lineNum">      44 </span><span class="lineCov">          4 :         if (lp.lam &lt; 0.) xy.x = -xy.x;</span>
+<span class="lineNum">      45 </span><span class="lineCov">          4 :         xy.y = fabs(xy.x / M_PI);</span>
+<span class="lineNum">      46 </span><span class="lineCov">          4 :         xy.y = 1. - xy.y * (xy.y + 2. * al);</span>
+<span class="lineNum">      47 </span><span class="lineCov">          4 :         if (xy.y &lt; -TOL) {</span>
+<span class="lineNum">      48 </span><span class="lineNoCov">          0 :             proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">      49 </span><span class="lineNoCov">          0 :             return xy;</span>
+<span class="lineNum">      50 </span>            :         }
+<span class="lineNum">      51 </span><span class="lineCov">          4 :         if (xy.y &lt; 0.)</span>
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :             xy.y = 0.;</span>
+<span class="lineNum">      53 </span>            :         else
+<span class="lineNum">      54 </span><span class="lineCov">          4 :             xy.y = sqrt(xy.y) * (lp.phi &lt; 0. ? -M_PI : M_PI);</span>
+<span class="lineNum">      55 </span>            :     }
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span><span class="lineCov">          4 :     return xy;</span>
+<span class="lineNum">      58 </span>            : }
+<a name="59"><span class="lineNum">      59 </span>            : </a>
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span><span class="lineCov">          4 : static LP s_inverse (XY xy, PJ *P) {           /* Spheroidal, inverse */</span>
+<span class="lineNum">      62 </span><span class="lineCov">          4 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">      63 </span>            :     double t, c0, c1, c2, c3, al, r2, r, m, d, ay, x2, y2;
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span><span class="lineCov">          4 :     x2 = xy.x * xy.x;</span>
+<span class="lineNum">      66 </span><span class="lineCov">          4 :     if ((ay = fabs(xy.y)) &lt; TOL) {</span>
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :         lp.phi = 0.;</span>
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 :         t = x2 * x2 + TPISQ * (x2 + HPISQ);</span>
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 :         lp.lam = fabs(xy.x) &lt;= TOL ? 0. :</span>
+<span class="lineNum">      70 </span><span class="lineNoCov">          0 :            .5 * (x2 - PISQ + sqrt(t)) / xy.x;</span>
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :         return (lp);</span>
+<span class="lineNum">      72 </span>            :     }
+<span class="lineNum">      73 </span><span class="lineCov">          4 :     y2 = xy.y * xy.y;</span>
+<span class="lineNum">      74 </span><span class="lineCov">          4 :     r = x2 + y2;    r2 = r * r;</span>
+<span class="lineNum">      75 </span><span class="lineCov">          4 :     c1 = - M_PI * ay * (r + PISQ);</span>
+<span class="lineNum">      76 </span><span class="lineCov">          4 :     c3 = r2 + M_TWOPI * (ay * r + M_PI * (y2 + M_PI * (ay + M_HALFPI)));</span>
+<span class="lineNum">      77 </span><span class="lineCov">          4 :     c2 = c1 + PISQ * (r - 3. *  y2);</span>
+<span class="lineNum">      78 </span><span class="lineCov">          4 :     c0 = M_PI * ay;</span>
+<span class="lineNum">      79 </span><span class="lineCov">          4 :     c2 /= c3;</span>
+<span class="lineNum">      80 </span><span class="lineCov">          4 :     al = c1 / c3 - THIRD * c2 * c2;</span>
+<span class="lineNum">      81 </span><span class="lineCov">          4 :     m = 2. * sqrt(-THIRD * al);</span>
+<span class="lineNum">      82 </span><span class="lineCov">          4 :     d = C2_27 * c2 * c2 * c2 + (c0 * c0 - THIRD * c2 * c1) / c3;</span>
+<span class="lineNum">      83 </span><span class="lineCov">          4 :     if (((t = fabs(d = 3. * d / (al * m))) - TOL) &lt;= 1.) {</span>
+<span class="lineNum">      84 </span><span class="lineCov">          4 :         d = t &gt; 1. ? (d &gt; 0. ? 0. : M_PI) : acos(d);</span>
+<span class="lineNum">      85 </span><span class="lineCov">          4 :         lp.phi = M_PI * (m * cos(d * THIRD + PI4_3) - THIRD * c2);</span>
+<span class="lineNum">      86 </span><span class="lineCov">          4 :         if (xy.y &lt; 0.) lp.phi = -lp.phi;</span>
+<span class="lineNum">      87 </span><span class="lineCov">          4 :         t = r2 + TPISQ * (x2 - y2 + HPISQ);</span>
+<span class="lineNum">      88 </span><span class="lineCov">          8 :         lp.lam = fabs(xy.x) &lt;= TOL ? 0. :</span>
+<span class="lineNum">      89 </span><span class="lineCov">          4 :            .5 * (r - PISQ + (t &lt;= 0. ? 0. : sqrt(t))) / xy.x;</span>
+<span class="lineNum">      90 </span>            :     } else {
+<span class="lineNum">      91 </span><span class="lineNoCov">          0 :         proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :         return lp;</span>
+<span class="lineNum">      93 </span>            :     }
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span><span class="lineCov">          4 :     return lp;</span>
+<span class="lineNum">      96 </span>            : }
+<a name="97"><span class="lineNum">      97 </span>            : </a>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineCov">          3 : PJ *PROJECTION(vandg) {</span>
+<span class="lineNum">     100 </span><span class="lineCov">          1 :     P-&gt;es = 0.;</span>
+<span class="lineNum">     101 </span><span class="lineCov">          1 :     P-&gt;inv = s_inverse;</span>
+<span class="lineNum">     102 </span><span class="lineCov">          1 :     P-&gt;fwd = s_forward;</span>
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span><span class="lineCov">          1 :     return P;</span>
+<span class="lineNum">     105 </span>            : }
+<span class="lineNum">     106 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

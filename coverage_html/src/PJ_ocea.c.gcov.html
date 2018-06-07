@@ -1,0 +1,176 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_ocea.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_ocea.c<span style="font-size: 80%;"> (source / <a href="PJ_ocea.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">48</td>
+            <td class="headerCovTableEntry">54</td>
+            <td class="headerCovTableEntryMed">88.9 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : #define PJ_LIB__</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">       4 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       7 </span>            : 
+<span class="lineNum">       8 </span>            : PROJ_HEAD(ocea, &quot;Oblique Cylindrical Equal Area&quot;) &quot;\n\tCyl, Sph&quot;
+<span class="lineNum">       9 </span>            :     &quot;lonc= alpha= or\n\tlat_1= lat_2= lon_1= lon_2=&quot;;
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            : struct pj_opaque {
+<span class="lineNum">      12 </span>            :     double  rok;
+<span class="lineNum">      13 </span>            :     double  rtk;
+<span class="lineNum">      14 </span>            :     double  sinphi;
+<span class="lineNum">      15 </span>            :     double  cosphi;
+<span class="lineNum">      16 </span>            :     double  singam;
+<span class="lineNum">      17 </span>            :     double  cosgam;
+<span class="lineNum">      18 </span>            : };
+<a name="19"><span class="lineNum">      19 </span>            : </a>
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span><span class="lineCov">          4 : static XY s_forward (LP lp, PJ *P) {           /* Spheroidal, forward */</span>
+<span class="lineNum">      22 </span><span class="lineCov">          4 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">      23 </span><span class="lineCov">          4 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      24 </span>            :     double t;
+<span class="lineNum">      25 </span><span class="lineCov">          4 :     xy.y = sin(lp.lam);</span>
+<span class="lineNum">      26 </span><span class="lineCov">          4 :     t = cos(lp.lam);</span>
+<span class="lineNum">      27 </span><span class="lineCov">          4 :     xy.x = atan((tan(lp.phi) * Q-&gt;cosphi + Q-&gt;sinphi * xy.y) / t);</span>
+<span class="lineNum">      28 </span><span class="lineCov">          4 :     if (t &lt; 0.)</span>
+<span class="lineNum">      29 </span><span class="lineCov">          4 :         xy.x += M_PI;</span>
+<span class="lineNum">      30 </span><span class="lineCov">          4 :     xy.x *= Q-&gt;rtk;</span>
+<span class="lineNum">      31 </span><span class="lineCov">          4 :     xy.y = Q-&gt;rok * (Q-&gt;sinphi * sin(lp.phi) - Q-&gt;cosphi * cos(lp.phi) * xy.y);</span>
+<span class="lineNum">      32 </span><span class="lineCov">          4 :     return xy;</span>
+<span class="lineNum">      33 </span>            : }
+<a name="34"><span class="lineNum">      34 </span>            : </a>
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span><span class="lineCov">          4 : static LP s_inverse (XY xy, PJ *P) {           /* Spheroidal, inverse */</span>
+<span class="lineNum">      37 </span><span class="lineCov">          4 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">      38 </span><span class="lineCov">          4 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      39 </span>            :     double t, s;
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span><span class="lineCov">          4 :     xy.y /= Q-&gt;rok;</span>
+<span class="lineNum">      42 </span><span class="lineCov">          4 :     xy.x /= Q-&gt;rtk;</span>
+<span class="lineNum">      43 </span><span class="lineCov">          4 :     t = sqrt(1. - xy.y * xy.y);</span>
+<span class="lineNum">      44 </span><span class="lineCov">          4 :     lp.phi = asin(xy.y * Q-&gt;sinphi + t * Q-&gt;cosphi * (s = sin(xy.x)));</span>
+<span class="lineNum">      45 </span><span class="lineCov">          4 :     lp.lam = atan2(t * Q-&gt;sinphi * s - xy.y * Q-&gt;cosphi,</span>
+<span class="lineNum">      46 </span><span class="lineCov">          4 :         t * cos(xy.x));</span>
+<span class="lineNum">      47 </span><span class="lineCov">          4 :     return lp;</span>
+<span class="lineNum">      48 </span>            : }
+<a name="49"><span class="lineNum">      49 </span>            : </a>
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span><span class="lineCov">          3 : PJ *PROJECTION(ocea) {</span>
+<span class="lineNum">      52 </span><span class="lineCov">          1 :     double phi_0=0.0, phi_1, phi_2, lam_1, lam_2, lonz, alpha;</span>
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span><span class="lineCov">          1 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">      55 </span><span class="lineCov">          1 :     if (0==Q)</span>
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">      57 </span><span class="lineCov">          1 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span><span class="lineCov">          1 :     Q-&gt;rok = 1. / P-&gt;k0;</span>
+<span class="lineNum">      60 </span><span class="lineCov">          1 :     Q-&gt;rtk = P-&gt;k0;</span>
+<span class="lineNum">      61 </span>            :     /*If the keyword &quot;alpha&quot; is found in the sentence then use 1point+1azimuth*/
+<span class="lineNum">      62 </span><span class="lineCov">          1 :     if ( pj_param(P-&gt;ctx, P-&gt;params, &quot;talpha&quot;).i) {</span>
+<span class="lineNum">      63 </span>            :         /*Define Pole of oblique transformation from 1 point &amp; 1 azimuth*/
+<span class="lineNum">      64 </span><span class="lineNoCov">          0 :         alpha   = pj_param(P-&gt;ctx, P-&gt;params, &quot;ralpha&quot;).f;</span>
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 :         lonz = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlonc&quot;).f;</span>
+<span class="lineNum">      66 </span>            :         /*Equation 9-8 page 80 (http://pubs.usgs.gov/pp/1395/report.pdf)*/
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :         Q-&gt;singam = atan(-cos(alpha)/(-sin(phi_0) * sin(alpha))) + lonz;</span>
+<span class="lineNum">      68 </span>            :         /*Equation 9-7 page 80 (http://pubs.usgs.gov/pp/1395/report.pdf)*/
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 :         Q-&gt;sinphi = asin(cos(phi_0) * sin(alpha));</span>
+<span class="lineNum">      70 </span>            :     /*If the keyword &quot;alpha&quot; is NOT found in the sentence then use 2points*/
+<span class="lineNum">      71 </span>            :     } else {
+<span class="lineNum">      72 </span>            :         /*Define Pole of oblique transformation from 2 points*/
+<span class="lineNum">      73 </span><span class="lineCov">          1 :         phi_1 = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlat_1&quot;).f;</span>
+<span class="lineNum">      74 </span><span class="lineCov">          1 :         phi_2 = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlat_2&quot;).f;</span>
+<span class="lineNum">      75 </span><span class="lineCov">          1 :         lam_1 = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlon_1&quot;).f;</span>
+<span class="lineNum">      76 </span><span class="lineCov">          1 :         lam_2 = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlon_2&quot;).f;</span>
+<span class="lineNum">      77 </span>            :         /*Equation 9-1 page 80 (http://pubs.usgs.gov/pp/1395/report.pdf)*/
+<span class="lineNum">      78 </span><span class="lineCov">          2 :         Q-&gt;singam = atan2(cos(phi_1) * sin(phi_2) * cos(lam_1) -</span>
+<span class="lineNum">      79 </span><span class="lineCov">          1 :             sin(phi_1) * cos(phi_2) * cos(lam_2),</span>
+<span class="lineNum">      80 </span><span class="lineCov">          1 :             sin(phi_1) * cos(phi_2) * sin(lam_2) -</span>
+<span class="lineNum">      81 </span><span class="lineCov">          1 :             cos(phi_1) * sin(phi_2) * sin(lam_1) );</span>
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            :         /* take care of P-&gt;lam0 wrap-around when +lam_1=-90*/
+<span class="lineNum">      84 </span><span class="lineCov">          1 :         if (lam_1 == -M_HALFPI)</span>
+<span class="lineNum">      85 </span><span class="lineNoCov">          0 :             Q-&gt;singam = -Q-&gt;singam;</span>
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            :         /*Equation 9-2 page 80 (http://pubs.usgs.gov/pp/1395/report.pdf)*/
+<span class="lineNum">      88 </span><span class="lineCov">          1 :         Q-&gt;sinphi = atan(-cos(Q-&gt;singam - lam_1) / tan(phi_1));</span>
+<span class="lineNum">      89 </span>            :     }
+<span class="lineNum">      90 </span><span class="lineCov">          1 :     P-&gt;lam0 = Q-&gt;singam + M_HALFPI;</span>
+<span class="lineNum">      91 </span><span class="lineCov">          1 :     Q-&gt;cosphi = cos(Q-&gt;sinphi);</span>
+<span class="lineNum">      92 </span><span class="lineCov">          1 :     Q-&gt;sinphi = sin(Q-&gt;sinphi);</span>
+<span class="lineNum">      93 </span><span class="lineCov">          1 :     Q-&gt;cosgam = cos(Q-&gt;singam);</span>
+<span class="lineNum">      94 </span><span class="lineCov">          1 :     Q-&gt;singam = sin(Q-&gt;singam);</span>
+<span class="lineNum">      95 </span><span class="lineCov">          1 :     P-&gt;inv = s_inverse;</span>
+<span class="lineNum">      96 </span><span class="lineCov">          1 :     P-&gt;fwd = s_forward;</span>
+<span class="lineNum">      97 </span><span class="lineCov">          1 :     P-&gt;es = 0.;</span>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineCov">          1 :     return P;</span>
+<span class="lineNum">     100 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

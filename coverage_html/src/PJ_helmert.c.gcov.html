@@ -1,0 +1,688 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_helmert.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_helmert.c<span style="font-size: 80%;"> (source / <a href="PJ_helmert.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">203</td>
+            <td class="headerCovTableEntry">233</td>
+            <td class="headerCovTableEntryMed">87.1 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">10</td>
+            <td class="headerCovTableEntry">10</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /***********************************************************************</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            :              3-, 4-and 7-parameter shifts, and their 6-, 8-
+<span class="lineNum">       4 </span>            :                 and 14-parameter kinematic counterparts.
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :                     Thomas Knudsen, 2016-05-24
+<span class="lineNum">       7 </span>            : 
+<span class="lineNum">       8 </span>            : ************************************************************************
+<span class="lineNum">       9 </span>            : 
+<span class="lineNum">      10 </span>            :   Implements 3(6)-, 4(8) and 7(14)-parameter Helmert transformations for
+<span class="lineNum">      11 </span>            :   3D data.
+<span class="lineNum">      12 </span>            : 
+<span class="lineNum">      13 </span>            :   Primarily useful for implementation of datum shifts in transformation
+<span class="lineNum">      14 </span>            :   pipelines.
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            : ************************************************************************
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : Thomas Knudsen, thokn@sdfe.dk, 2016-05-24/06-05
+<span class="lineNum">      19 </span>            : Kristian Evers, kreve@sdfe.dk, 2017-05-01
+<span class="lineNum">      20 </span>            : Last update: 2017-05-15
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : ************************************************************************
+<span class="lineNum">      23 </span>            : * Copyright (c) 2016, Thomas Knudsen / SDFE
+<span class="lineNum">      24 </span>            : *
+<span class="lineNum">      25 </span>            : * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      26 </span>            : * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      27 </span>            : * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      28 </span>            : * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      29 </span>            : * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      30 </span>            : * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      31 </span>            : *
+<span class="lineNum">      32 </span>            : * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      33 </span>            : * in all copies or substantial portions of the Software.
+<span class="lineNum">      34 </span>            : *
+<span class="lineNum">      35 </span>            : * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      36 </span>            : * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      37 </span>            : * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      38 </span>            : * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      39 </span>            : * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      40 </span>            : * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      41 </span>            : * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      42 </span>            : *
+<span class="lineNum">      43 </span>            : ***********************************************************************/
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : #define PJ_LIB__
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      48 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            : #include &quot;proj_internal.h&quot;
+<span class="lineNum">      51 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      52 </span>            : #include &quot;geocent.h&quot;
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            : PROJ_HEAD(helmert, &quot;3(6)-, 4(8)- and 7(14)-parameter Helmert shift&quot;);
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            : static XYZ helmert_forward_3d (LPZ lpz, PJ *P);
+<span class="lineNum">      57 </span>            : static LPZ helmert_reverse_3d (XYZ xyz, PJ *P);
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span>            : /***********************************************************************/
+<span class="lineNum">      62 </span>            : struct pj_opaque_helmert {
+<span class="lineNum">      63 </span>            : /************************************************************************
+<span class="lineNum">      64 </span>            :     Projection specific elements for the &quot;helmert&quot; PJ object
+<span class="lineNum">      65 </span>            : ************************************************************************/
+<span class="lineNum">      66 </span>            :     XYZ xyz;
+<span class="lineNum">      67 </span>            :     XYZ xyz_0;
+<span class="lineNum">      68 </span>            :     XYZ dxyz;
+<span class="lineNum">      69 </span>            :     PJ_OPK opk;
+<span class="lineNum">      70 </span>            :     PJ_OPK opk_0;
+<span class="lineNum">      71 </span>            :     PJ_OPK dopk;
+<span class="lineNum">      72 </span>            :     double scale;
+<span class="lineNum">      73 </span>            :     double scale_0;
+<span class="lineNum">      74 </span>            :     double dscale;
+<span class="lineNum">      75 </span>            :     double theta;
+<span class="lineNum">      76 </span>            :     double theta_0;
+<span class="lineNum">      77 </span>            :     double dtheta;
+<span class="lineNum">      78 </span>            :     double R[3][3];
+<span class="lineNum">      79 </span>            :     double t_epoch, t_obs;
+<span class="lineNum">      80 </span>            :     int no_rotation, exact, transpose, fourparam;
+<span class="lineNum">      81 </span>            : };
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            : /* Make the maths of the rotation operations somewhat more readable and textbook like */
+<span class="lineNum">      85 </span>            : #define R00 (Q-&gt;R[0][0])
+<span class="lineNum">      86 </span>            : #define R01 (Q-&gt;R[0][1])
+<span class="lineNum">      87 </span>            : #define R02 (Q-&gt;R[0][2])
+<span class="lineNum">      88 </span>            : 
+<span class="lineNum">      89 </span>            : #define R10 (Q-&gt;R[1][0])
+<span class="lineNum">      90 </span>            : #define R11 (Q-&gt;R[1][1])
+<span class="lineNum">      91 </span>            : #define R12 (Q-&gt;R[1][2])
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            : #define R20 (Q-&gt;R[2][0])
+<span class="lineNum">      94 </span>            : #define R21 (Q-&gt;R[2][1])
+<span class="lineNum">      95 </span>            : #define R22 (Q-&gt;R[2][2])
+<a name="96"><span class="lineNum">      96 </span>            : </a>
+<span class="lineNum">      97 </span>            : /**************************************************************************/
+<span class="lineNum">      98 </span><span class="lineCov">         25 : static void update_parameters(PJ *P) {</span>
+<span class="lineNum">      99 </span>            : /***************************************************************************
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            :     Update transformation parameters.
+<span class="lineNum">     102 </span>            :     ---------------------------------
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            :     The 14-parameter Helmert transformation is at it's core the same as the
+<span class="lineNum">     105 </span>            :     7-parameter transformation, since the transformation parameters are
+<span class="lineNum">     106 </span>            :     projected forward or backwards in time via the rate of changes of the
+<span class="lineNum">     107 </span>            :     parameters. The transformation parameters are calculated for a specific
+<span class="lineNum">     108 </span>            :     epoch before the actual Helmert transformation is carried out.
+<span class="lineNum">     109 </span>            : 
+<span class="lineNum">     110 </span>            :     The transformation parameters are updated with the following equation [0]:
+<span class="lineNum">     111 </span>            : 
+<span class="lineNum">     112 </span>            :                       .
+<span class="lineNum">     113 </span>            :     P(t) = P(EPOCH) + P * (t - EPOCH)
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span>            :                                                               .
+<span class="lineNum">     116 </span>            :     where EPOCH is the epoch indicated in the above table and P is the rate
+<span class="lineNum">     117 </span>            :     of that parameter.
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            :     [0] http://itrf.ign.fr/doc_ITRF/Transfo-ITRF2008_ITRFs.txt
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            : *******************************************************************************/
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span><span class="lineCov">         25 :     struct pj_opaque_helmert *Q = (struct pj_opaque_helmert *) P-&gt;opaque;</span>
+<span class="lineNum">     124 </span><span class="lineCov">         25 :     double dt = Q-&gt;t_obs - Q-&gt;t_epoch;</span>
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span><span class="lineCov">         25 :     Q-&gt;xyz.x = Q-&gt;xyz_0.x + Q-&gt;dxyz.x * dt;</span>
+<span class="lineNum">     127 </span><span class="lineCov">         25 :     Q-&gt;xyz.y = Q-&gt;xyz_0.y + Q-&gt;dxyz.y * dt;</span>
+<span class="lineNum">     128 </span><span class="lineCov">         25 :     Q-&gt;xyz.z = Q-&gt;xyz_0.z + Q-&gt;dxyz.z * dt;</span>
+<span class="lineNum">     129 </span>            : 
+<span class="lineNum">     130 </span><span class="lineCov">         25 :     Q-&gt;opk.o = Q-&gt;opk_0.o + Q-&gt;dopk.o * dt;</span>
+<span class="lineNum">     131 </span><span class="lineCov">         25 :     Q-&gt;opk.p = Q-&gt;opk_0.p + Q-&gt;dopk.p * dt;</span>
+<span class="lineNum">     132 </span><span class="lineCov">         25 :     Q-&gt;opk.k = Q-&gt;opk_0.k + Q-&gt;dopk.k * dt;</span>
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span><span class="lineCov">         25 :     Q-&gt;scale = Q-&gt;scale_0 + Q-&gt;dscale * dt;</span>
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span><span class="lineCov">         25 :     Q-&gt;theta = Q-&gt;theta_0 + Q-&gt;dtheta * dt;</span>
+<span class="lineNum">     137 </span>            : 
+<span class="lineNum">     138 </span>            :     /* debugging output */
+<span class="lineNum">     139 </span><span class="lineCov">         25 :     if (proj_log_level(P-&gt;ctx, PJ_LOG_TELL) &gt;= PJ_LOG_TRACE) {</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;Transformation parameters for observation &quot;</span>
+<span class="lineNum">     141 </span>            :                        &quot;t_obs=%g (t_epoch=%g):&quot;, Q-&gt;t_obs, Q-&gt;t_epoch);
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;x: %g&quot;, Q-&gt;xyz.x);</span>
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;y: %g&quot;, Q-&gt;xyz.y);</span>
+<span class="lineNum">     144 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;z: %g&quot;, Q-&gt;xyz.z);</span>
+<span class="lineNum">     145 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;s: %g&quot;, Q-&gt;scale*1e-6);</span>
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;rx: %g&quot;, Q-&gt;opk.o);</span>
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;ry: %g&quot;, Q-&gt;opk.p);</span>
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;rz: %g&quot;, Q-&gt;opk.k);</span>
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;theta: %g&quot;, Q-&gt;theta);</span>
+<span class="lineNum">     150 </span>            :     }
+<span class="lineNum">     151 </span><span class="lineCov">         25 : }</span>
+<a name="152"><span class="lineNum">     152 </span>            : </a>
+<span class="lineNum">     153 </span>            : /**************************************************************************/
+<span class="lineNum">     154 </span><span class="lineCov">         25 : static void build_rot_matrix(PJ *P) {</span>
+<span class="lineNum">     155 </span>            : /***************************************************************************
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            :     Build rotation matrix.
+<span class="lineNum">     158 </span>            :     ----------------------
+<span class="lineNum">     159 </span>            : 
+<span class="lineNum">     160 </span>            :     Here we rename rotation indices from omega, phi, kappa (opk), to
+<span class="lineNum">     161 </span>            :     fi (i.e. phi), theta, psi (ftp), in order to reduce the mental agility
+<span class="lineNum">     162 </span>            :     needed to implement the expression for the rotation matrix derived over
+<span class="lineNum">     163 </span>            :     at https://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions
+<span class="lineNum">     164 </span>            :     The relevant section is Euler angles ( z-’-x&quot; intrinsic) -&gt; Rotation matrix
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span>            :     By default small angle approximations are used:
+<span class="lineNum">     167 </span>            :     The matrix elements are approximated by expanding the trigonometric
+<span class="lineNum">     168 </span>            :     functions to linear order (i.e. cos(x) = 1, sin(x) = x), and discarding
+<span class="lineNum">     169 </span>            :     products of second order.
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span>            :     This was a useful hack when calculating by hand was the only option,
+<span class="lineNum">     172 </span>            :     but in general, today, should be avoided because:
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span>            :     1. It does not save much computation time, as the rotation matrix
+<span class="lineNum">     175 </span>            :        is built only once and probably used many times (except when
+<span class="lineNum">     176 </span>            :        transforming spatio-temporal coordinates).
+<span class="lineNum">     177 </span>            : 
+<span class="lineNum">     178 </span>            :     2. The error induced may be too large for ultra high accuracy
+<span class="lineNum">     179 </span>            :        applications: the Earth is huge and the linear error is
+<span class="lineNum">     180 </span>            :        approximately the angular error multiplied by the Earth radius.
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            :     However, in many cases the approximation is necessary, since it has
+<span class="lineNum">     183 </span>            :     been used historically: Rotation angles from older published datum
+<span class="lineNum">     184 </span>            :     shifts may actually be a least squares fit to the linearized rotation
+<span class="lineNum">     185 </span>            :     approximation, hence not being strictly valid for deriving the exact
+<span class="lineNum">     186 </span>            :     rotation matrix. In fact, most publicly available transformation
+<span class="lineNum">     187 </span>            :     parameters are based on the approximate Helmert transform, which is why
+<span class="lineNum">     188 </span>            :     we use that as the default setting, even though it is more correct to
+<span class="lineNum">     189 </span>            :     use the exact form of the equations.
+<span class="lineNum">     190 </span>            : 
+<span class="lineNum">     191 </span>            :     So in order to fit historically derived coordinates, the access to
+<span class="lineNum">     192 </span>            :     the approximate rotation matrix is necessary - at least in principle.
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span>            :     Also, when using any published datum transformation information, one
+<span class="lineNum">     195 </span>            :     should always check which convention (exact or approximate rotation
+<span class="lineNum">     196 </span>            :     matrix) is expected, and whether the induced error for selecting
+<span class="lineNum">     197 </span>            :     the opposite convention is acceptable (which it often is).
+<span class="lineNum">     198 </span>            : 
+<span class="lineNum">     199 </span>            : 
+<span class="lineNum">     200 </span>            :     Sign conventions
+<span class="lineNum">     201 </span>            :     ----------------
+<span class="lineNum">     202 </span>            : 
+<span class="lineNum">     203 </span>            :     Take care: Two different sign conventions exist.
+<span class="lineNum">     204 </span>            : 
+<span class="lineNum">     205 </span>            :     Conceptually they relate to whether we rotate the coordinate system
+<span class="lineNum">     206 </span>            :     or the &quot;position vector&quot; (the vector going from the coordinate system
+<span class="lineNum">     207 </span>            :     origin to the point being transformed, i.e. the point coordinates
+<span class="lineNum">     208 </span>            :     interpreted as vector coordinates).
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span>            :     Switching between the &quot;position vector&quot; and &quot;coordinate system&quot;
+<span class="lineNum">     211 </span>            :     conventions is simply a matter of switching the sign of the rotation
+<span class="lineNum">     212 </span>            :     angles, which algebraically also translates into a transposition of
+<span class="lineNum">     213 </span>            :     the rotation matrix.
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span>            :     Hence, as geodetic constants should preferably be referred to exactly
+<span class="lineNum">     216 </span>            :     as published, the &quot;transpose&quot; option provides the ability to switch
+<span class="lineNum">     217 </span>            :     between the conventions.
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span>            : ***************************************************************************/
+<span class="lineNum">     220 </span><span class="lineCov">         25 :     struct pj_opaque_helmert *Q = (struct pj_opaque_helmert *) P-&gt;opaque;</span>
+<span class="lineNum">     221 </span>            : 
+<span class="lineNum">     222 </span>            :     double  f,  t,  p;    /* phi/fi , theta, psi  */
+<span class="lineNum">     223 </span>            :     double cf, ct, cp;    /* cos (fi, theta, psi) */
+<span class="lineNum">     224 </span>            :     double sf, st, sp;    /* sin (fi, theta, psi) */
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span>            :     /* rename   (omega, phi, kappa)   to   (fi, theta, psi)   */
+<span class="lineNum">     227 </span><span class="lineCov">         25 :     f = Q-&gt;opk.o;</span>
+<span class="lineNum">     228 </span><span class="lineCov">         25 :     t = Q-&gt;opk.p;</span>
+<span class="lineNum">     229 </span><span class="lineCov">         25 :     p = Q-&gt;opk.k;</span>
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span><span class="lineCov">         25 :     if (Q-&gt;exact) {</span>
+<span class="lineNum">     232 </span><span class="lineCov">         15 :         cf = cos(f);</span>
+<span class="lineNum">     233 </span><span class="lineCov">         15 :         sf = sin(f);</span>
+<span class="lineNum">     234 </span><span class="lineCov">         15 :         ct = cos(t);</span>
+<span class="lineNum">     235 </span><span class="lineCov">         15 :         st = sin(t);</span>
+<span class="lineNum">     236 </span><span class="lineCov">         15 :         cp = cos(p);</span>
+<span class="lineNum">     237 </span><span class="lineCov">         15 :         sp = sin(p);</span>
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span>            : 
+<span class="lineNum">     240 </span><span class="lineCov">         15 :         R00 = ct*cp;</span>
+<span class="lineNum">     241 </span><span class="lineCov">         15 :         R01 = cf*sp + sf*st*cp;</span>
+<span class="lineNum">     242 </span><span class="lineCov">         15 :         R02 = sf*sp - cf*st*cp;</span>
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span><span class="lineCov">         15 :         R10 = -ct*sp;</span>
+<span class="lineNum">     245 </span><span class="lineCov">         15 :         R11 =  cf*cp - sf*st*sp;</span>
+<span class="lineNum">     246 </span><span class="lineCov">         15 :         R12 =  sf*cp + cf*st*sp;</span>
+<span class="lineNum">     247 </span>            : 
+<span class="lineNum">     248 </span><span class="lineCov">         15 :         R20 =  st;</span>
+<span class="lineNum">     249 </span><span class="lineCov">         15 :         R21 = -sf*ct;</span>
+<span class="lineNum">     250 </span><span class="lineCov">         15 :         R22 =  cf*ct;</span>
+<span class="lineNum">     251 </span>            :     } else{
+<span class="lineNum">     252 </span><span class="lineCov">         10 :         R00 =  1;</span>
+<span class="lineNum">     253 </span><span class="lineCov">         10 :         R01 =  p;</span>
+<span class="lineNum">     254 </span><span class="lineCov">         10 :         R02 = -t;</span>
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span><span class="lineCov">         10 :         R10 = -p;</span>
+<span class="lineNum">     257 </span><span class="lineCov">         10 :         R11 =  1;</span>
+<span class="lineNum">     258 </span><span class="lineCov">         10 :         R12 =  f;</span>
+<span class="lineNum">     259 </span>            : 
+<span class="lineNum">     260 </span><span class="lineCov">         10 :         R20 =  t;</span>
+<span class="lineNum">     261 </span><span class="lineCov">         10 :         R21 = -f;</span>
+<span class="lineNum">     262 </span><span class="lineCov">         10 :         R22 =  1;</span>
+<span class="lineNum">     263 </span>            :     }
+<span class="lineNum">     264 </span>            : 
+<span class="lineNum">     265 </span>            : 
+<span class="lineNum">     266 </span>            :     /*
+<span class="lineNum">     267 </span>            :         For comparison: Description from Engsager/Poder implementation
+<span class="lineNum">     268 </span>            :         in set_dtm_1.c (trlib)
+<span class="lineNum">     269 </span>            : 
+<span class="lineNum">     270 </span>            :         DATUM SHIFT:
+<span class="lineNum">     271 </span>            :         TO = scale * ROTZ * ROTY * ROTX * FROM + TRANSLA
+<span class="lineNum">     272 </span>            : 
+<span class="lineNum">     273 </span>            :              ( cz sz 0)         (cy 0 -sy)         (1   0  0)
+<span class="lineNum">     274 </span>            :         ROTZ=(-sz cz 0),   ROTY=(0  1   0),   ROTX=(0  cx sx)
+<span class="lineNum">     275 </span>            :              (  0  0 1)         (sy 0  cy)         (0 -sx cx)
+<span class="lineNum">     276 </span>            : 
+<span class="lineNum">     277 </span>            :         trp-&gt;r11  =  cos_ry*cos_rz;
+<span class="lineNum">     278 </span>            :         trp-&gt;r12  =  cos_rx*sin_rz + sin_rx*sin_ry*cos_rz;
+<span class="lineNum">     279 </span>            :         trp-&gt;r13  =  sin_rx*sin_rz - cos_rx*sin_ry*cos_rz;
+<span class="lineNum">     280 </span>            : 
+<span class="lineNum">     281 </span>            :         trp-&gt;r21  = -cos_ry*sin_rz;
+<span class="lineNum">     282 </span>            :         trp-&gt;r22  =  cos_rx*cos_rz - sin_rx*sin_ry*sin_rz;
+<span class="lineNum">     283 </span>            :         trp-&gt;r23  =  sin_rx*cos_rz + cos_rx*sin_ry*sin_rz;
+<span class="lineNum">     284 </span>            : 
+<span class="lineNum">     285 </span>            :         trp-&gt;r31  =  sin_ry;
+<span class="lineNum">     286 </span>            :         trp-&gt;r32  = -sin_rx*cos_ry;
+<span class="lineNum">     287 </span>            :         trp-&gt;r33  =  cos_rx*cos_ry;
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span>            :         trp-&gt;scale = 1.0 + scale;
+<span class="lineNum">     290 </span>            :     */
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span><span class="lineCov">         25 :     if (Q-&gt;transpose) {</span>
+<span class="lineNum">     294 </span>            :         double r;
+<span class="lineNum">     295 </span><span class="lineCov">         18 :         r = R01;    R01 = R10;    R10 = r;</span>
+<span class="lineNum">     296 </span><span class="lineCov">         18 :         r = R02;    R02 = R20;    R20 = r;</span>
+<span class="lineNum">     297 </span><span class="lineCov">         18 :         r = R12;    R12 = R21;    R21 = r;</span>
+<span class="lineNum">     298 </span>            :     }
+<span class="lineNum">     299 </span>            : 
+<span class="lineNum">     300 </span>            :     /* some debugging output */
+<span class="lineNum">     301 </span><span class="lineCov">         25 :     if (proj_log_level(P-&gt;ctx, PJ_LOG_TELL) &gt;= PJ_LOG_TRACE) {</span>
+<span class="lineNum">     302 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;Rotation Matrix:&quot;);</span>
+<span class="lineNum">     303 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;  | % 6.6g  % 6.6g  % 6.6g |&quot;, R00, R01, R02);</span>
+<span class="lineNum">     304 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;  | % 6.6g  % 6.6g  % 6.6g |&quot;, R10, R11, R12);</span>
+<span class="lineNum">     305 </span><span class="lineNoCov">          0 :         proj_log_trace(P, &quot;  | % 6.6g  % 6.6g  % 6.6g |&quot;, R20, R21, R22);</span>
+<span class="lineNum">     306 </span>            :     }
+<span class="lineNum">     307 </span><span class="lineCov">         25 : }</span>
+<span class="lineNum">     308 </span>            : 
+<span class="lineNum">     309 </span>            : 
+<span class="lineNum">     310 </span>            : 
+<a name="311"><span class="lineNum">     311 </span>            : </a>
+<span class="lineNum">     312 </span>            : /***********************************************************************/
+<span class="lineNum">     313 </span><span class="lineCov">          1 : static XY helmert_forward (LP lp, PJ *P) {</span>
+<span class="lineNum">     314 </span>            : /***********************************************************************/
+<span class="lineNum">     315 </span><span class="lineCov">          1 :     struct pj_opaque_helmert *Q = (struct pj_opaque_helmert *) P-&gt;opaque;</span>
+<span class="lineNum">     316 </span><span class="lineCov">          1 :     PJ_COORD point = {{0,0,0,0}};</span>
+<span class="lineNum">     317 </span>            :     double x, y, cr, sr;
+<span class="lineNum">     318 </span><span class="lineCov">          1 :     point.lp = lp;</span>
+<span class="lineNum">     319 </span>            : 
+<span class="lineNum">     320 </span><span class="lineCov">          1 :     cr = cos(Q-&gt;theta) * Q-&gt;scale;</span>
+<span class="lineNum">     321 </span><span class="lineCov">          1 :     sr = sin(Q-&gt;theta) * Q-&gt;scale;</span>
+<span class="lineNum">     322 </span><span class="lineCov">          1 :     x = point.xy.x;</span>
+<span class="lineNum">     323 </span><span class="lineCov">          1 :     y = point.xy.y;</span>
+<span class="lineNum">     324 </span>            : 
+<span class="lineNum">     325 </span><span class="lineCov">          1 :     point.xy.x =  cr*x + sr*y + Q-&gt;xyz_0.x;</span>
+<span class="lineNum">     326 </span><span class="lineCov">          1 :     point.xy.y = -sr*x + cr*y + Q-&gt;xyz_0.y;</span>
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span><span class="lineCov">          1 :     return point.xy;</span>
+<span class="lineNum">     329 </span>            : }
+<span class="lineNum">     330 </span>            : 
+<a name="331"><span class="lineNum">     331 </span>            : </a>
+<span class="lineNum">     332 </span>            : /***********************************************************************/
+<span class="lineNum">     333 </span><span class="lineCov">          2 : static LP helmert_reverse (XY xy, PJ *P) {</span>
+<span class="lineNum">     334 </span>            : /***********************************************************************/
+<span class="lineNum">     335 </span><span class="lineCov">          2 :     struct pj_opaque_helmert *Q = (struct pj_opaque_helmert *) P-&gt;opaque;</span>
+<span class="lineNum">     336 </span><span class="lineCov">          2 :     PJ_COORD point = {{0,0,0,0}};</span>
+<span class="lineNum">     337 </span>            :     double x, y, sr, cr;
+<span class="lineNum">     338 </span><span class="lineCov">          2 :     point.xy = xy;</span>
+<span class="lineNum">     339 </span>            : 
+<span class="lineNum">     340 </span><span class="lineCov">          2 :     cr = cos(Q-&gt;theta) / Q-&gt;scale;</span>
+<span class="lineNum">     341 </span><span class="lineCov">          2 :     sr = sin(Q-&gt;theta) / Q-&gt;scale;</span>
+<span class="lineNum">     342 </span><span class="lineCov">          2 :     x = point.xy.x - Q-&gt;xyz_0.x;</span>
+<span class="lineNum">     343 </span><span class="lineCov">          2 :     y = point.xy.y - Q-&gt;xyz_0.y;</span>
+<span class="lineNum">     344 </span>            : 
+<span class="lineNum">     345 </span><span class="lineCov">          2 :     point.xy.x =  x*cr - y*sr;</span>
+<span class="lineNum">     346 </span><span class="lineCov">          2 :     point.xy.y =  x*sr + y*cr;</span>
+<span class="lineNum">     347 </span>            : 
+<span class="lineNum">     348 </span><span class="lineCov">          2 :     return point.lp;</span>
+<span class="lineNum">     349 </span>            : }
+<span class="lineNum">     350 </span>            : 
+<a name="351"><span class="lineNum">     351 </span>            : </a>
+<span class="lineNum">     352 </span>            : /***********************************************************************/
+<span class="lineNum">     353 </span><span class="lineCov">      90151 : static XYZ helmert_forward_3d (LPZ lpz, PJ *P) {</span>
+<span class="lineNum">     354 </span>            : /***********************************************************************/
+<span class="lineNum">     355 </span><span class="lineCov">      90151 :     struct pj_opaque_helmert *Q = (struct pj_opaque_helmert *) P-&gt;opaque;</span>
+<span class="lineNum">     356 </span><span class="lineCov">      90151 :     PJ_COORD point = {{0,0,0,0}};</span>
+<span class="lineNum">     357 </span>            :     double X, Y, Z, scale;
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span><span class="lineCov">      90151 :     point.lpz = lpz;</span>
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span><span class="lineCov">      90151 :     if (Q-&gt;fourparam) {</span>
+<span class="lineNum">     362 </span><span class="lineCov">          1 :         point.xy = helmert_forward(point.lp, P);</span>
+<span class="lineNum">     363 </span><span class="lineCov">          1 :         return point.xyz;</span>
+<span class="lineNum">     364 </span>            :     }
+<span class="lineNum">     365 </span>            : 
+<span class="lineNum">     366 </span><span class="lineCov">      90150 :     if (Q-&gt;no_rotation) {</span>
+<span class="lineNum">     367 </span><span class="lineCov">      90090 :         point.xyz.x = lpz.lam + Q-&gt;xyz.x;</span>
+<span class="lineNum">     368 </span><span class="lineCov">      90090 :         point.xyz.y = lpz.phi + Q-&gt;xyz.y;</span>
+<span class="lineNum">     369 </span><span class="lineCov">      90090 :         point.xyz.z = lpz.z   + Q-&gt;xyz.z;</span>
+<span class="lineNum">     370 </span><span class="lineCov">      90090 :         return point.xyz;</span>
+<span class="lineNum">     371 </span>            :     }
+<span class="lineNum">     372 </span>            : 
+<span class="lineNum">     373 </span><span class="lineCov">         60 :     scale = 1 + Q-&gt;scale * 1e-6;</span>
+<span class="lineNum">     374 </span>            : 
+<span class="lineNum">     375 </span><span class="lineCov">         60 :     X = lpz.lam;</span>
+<span class="lineNum">     376 </span><span class="lineCov">         60 :     Y = lpz.phi;</span>
+<span class="lineNum">     377 </span><span class="lineCov">         60 :     Z = lpz.z;</span>
+<span class="lineNum">     378 </span>            : 
+<span class="lineNum">     379 </span>            : 
+<span class="lineNum">     380 </span><span class="lineCov">         60 :     point.xyz.x = scale * ( R00 * X  +   R01 * Y   +   R02 * Z);</span>
+<span class="lineNum">     381 </span><span class="lineCov">         60 :     point.xyz.y = scale * ( R10 * X  +   R11 * Y   +   R12 * Z);</span>
+<span class="lineNum">     382 </span><span class="lineCov">         60 :     point.xyz.z = scale * ( R20 * X  +   R21 * Y   +   R22 * Z);</span>
+<span class="lineNum">     383 </span>            : 
+<span class="lineNum">     384 </span><span class="lineCov">         60 :     point.xyz.x += Q-&gt;xyz.x;</span>
+<span class="lineNum">     385 </span><span class="lineCov">         60 :     point.xyz.y += Q-&gt;xyz.y;</span>
+<span class="lineNum">     386 </span><span class="lineCov">         60 :     point.xyz.z += Q-&gt;xyz.z;</span>
+<span class="lineNum">     387 </span>            : 
+<span class="lineNum">     388 </span><span class="lineCov">         60 :     return point.xyz;</span>
+<span class="lineNum">     389 </span>            : }
+<span class="lineNum">     390 </span>            : 
+<a name="391"><span class="lineNum">     391 </span>            : </a>
+<span class="lineNum">     392 </span>            : /***********************************************************************/
+<span class="lineNum">     393 </span><span class="lineCov">      90144 : static LPZ helmert_reverse_3d (XYZ xyz, PJ *P) {</span>
+<span class="lineNum">     394 </span>            : /***********************************************************************/
+<span class="lineNum">     395 </span><span class="lineCov">      90144 :     struct pj_opaque_helmert *Q = (struct pj_opaque_helmert *) P-&gt;opaque;</span>
+<span class="lineNum">     396 </span><span class="lineCov">      90144 :     PJ_COORD point = {{0,0,0,0}};</span>
+<span class="lineNum">     397 </span>            :     double X, Y, Z, scale;
+<span class="lineNum">     398 </span>            : 
+<span class="lineNum">     399 </span><span class="lineCov">      90144 :     point.xyz = xyz;</span>
+<span class="lineNum">     400 </span>            : 
+<span class="lineNum">     401 </span><span class="lineCov">      90144 :     if (Q-&gt;fourparam) {</span>
+<span class="lineNum">     402 </span><span class="lineNoCov">          0 :         point.lp = helmert_reverse(point.xy, P);</span>
+<span class="lineNum">     403 </span><span class="lineNoCov">          0 :         return point.lpz;</span>
+<span class="lineNum">     404 </span>            :     }
+<span class="lineNum">     405 </span>            : 
+<span class="lineNum">     406 </span><span class="lineCov">      90144 :     if (Q-&gt;no_rotation) {</span>
+<span class="lineNum">     407 </span><span class="lineCov">      90092 :         point.xyz.x  =  xyz.x - Q-&gt;xyz.x;</span>
+<span class="lineNum">     408 </span><span class="lineCov">      90092 :         point.xyz.y  =  xyz.y - Q-&gt;xyz.y;</span>
+<span class="lineNum">     409 </span><span class="lineCov">      90092 :         point.xyz.z  =  xyz.z - Q-&gt;xyz.z;</span>
+<span class="lineNum">     410 </span><span class="lineCov">      90092 :         return point.lpz;</span>
+<span class="lineNum">     411 </span>            :     }
+<span class="lineNum">     412 </span>            : 
+<span class="lineNum">     413 </span><span class="lineCov">         52 :     scale = 1 + Q-&gt;scale * 1e-6;</span>
+<span class="lineNum">     414 </span>            : 
+<span class="lineNum">     415 </span>            :     /* Unscale and deoffset */
+<span class="lineNum">     416 </span><span class="lineCov">         52 :     X = (xyz.x - Q-&gt;xyz.x) / scale;</span>
+<span class="lineNum">     417 </span><span class="lineCov">         52 :     Y = (xyz.y - Q-&gt;xyz.y) / scale;</span>
+<span class="lineNum">     418 </span><span class="lineCov">         52 :     Z = (xyz.z - Q-&gt;xyz.z) / scale;</span>
+<span class="lineNum">     419 </span>            : 
+<span class="lineNum">     420 </span>            :     /* Inverse rotation through transpose multiplication */
+<span class="lineNum">     421 </span><span class="lineCov">         52 :     point.xyz.x  =  ( R00 * X   +   R10 * Y   +   R20 * Z);</span>
+<span class="lineNum">     422 </span><span class="lineCov">         52 :     point.xyz.y  =  ( R01 * X   +   R11 * Y   +   R21 * Z);</span>
+<span class="lineNum">     423 </span><span class="lineCov">         52 :     point.xyz.z  =  ( R02 * X   +   R12 * Y   +   R22 * Z);</span>
+<span class="lineNum">     424 </span>            : 
+<span class="lineNum">     425 </span><span class="lineCov">         52 :     return point.lpz;</span>
+<span class="lineNum">     426 </span>            : }
+<a name="427"><span class="lineNum">     427 </span>            : </a>
+<span class="lineNum">     428 </span>            : 
+<span class="lineNum">     429 </span><span class="lineCov">      90147 : static PJ_COORD helmert_forward_4d (PJ_COORD point, PJ *P) {</span>
+<span class="lineNum">     430 </span><span class="lineCov">      90147 :     struct pj_opaque_helmert *Q = (struct pj_opaque_helmert *) P-&gt;opaque;</span>
+<span class="lineNum">     431 </span>            : 
+<span class="lineNum">     432 </span>            :     /* We only need to rebuild the rotation matrix if the
+<span class="lineNum">     433 </span>            :      * observation time is different from the last call */
+<span class="lineNum">     434 </span><span class="lineCov">      90147 :     if (point.xyzt.t != Q-&gt;t_obs) {</span>
+<span class="lineNum">     435 </span><span class="lineCov">          4 :         Q-&gt;t_obs = point.xyzt.t;</span>
+<span class="lineNum">     436 </span><span class="lineCov">          4 :         update_parameters(P);</span>
+<span class="lineNum">     437 </span><span class="lineCov">          4 :         build_rot_matrix(P);</span>
+<span class="lineNum">     438 </span>            :     }
+<span class="lineNum">     439 </span>            : 
+<span class="lineNum">     440 </span><span class="lineCov">      90147 :     point.xyz = helmert_forward_3d (point.lpz, P);</span>
+<span class="lineNum">     441 </span>            : 
+<span class="lineNum">     442 </span><span class="lineCov">      90147 :     return point;</span>
+<span class="lineNum">     443 </span>            : }
+<a name="444"><span class="lineNum">     444 </span>            : </a>
+<span class="lineNum">     445 </span>            : 
+<span class="lineNum">     446 </span><span class="lineCov">      90144 : static PJ_COORD helmert_reverse_4d (PJ_COORD point, PJ *P) {</span>
+<span class="lineNum">     447 </span><span class="lineCov">      90144 :     struct pj_opaque_helmert *Q = (struct pj_opaque_helmert *) P-&gt;opaque;</span>
+<span class="lineNum">     448 </span>            : 
+<span class="lineNum">     449 </span>            :     /* We only need to rebuild the rotation matrix if the
+<span class="lineNum">     450 </span>            :      * observation time is different from the last call */
+<span class="lineNum">     451 </span><span class="lineCov">      90144 :     if (point.xyzt.t != Q-&gt;t_obs) {</span>
+<span class="lineNum">     452 </span><span class="lineNoCov">          0 :         Q-&gt;t_obs = point.xyzt.t;</span>
+<span class="lineNum">     453 </span><span class="lineNoCov">          0 :         update_parameters(P);</span>
+<span class="lineNum">     454 </span><span class="lineNoCov">          0 :         build_rot_matrix(P);</span>
+<span class="lineNum">     455 </span>            :     }
+<span class="lineNum">     456 </span>            : 
+<span class="lineNum">     457 </span><span class="lineCov">      90144 :     point.lpz = helmert_reverse_3d (point.xyz, P);</span>
+<span class="lineNum">     458 </span>            : 
+<span class="lineNum">     459 </span><span class="lineCov">      90144 :     return point;</span>
+<span class="lineNum">     460 </span>            : }
+<span class="lineNum">     461 </span>            : 
+<span class="lineNum">     462 </span>            : 
+<span class="lineNum">     463 </span>            : /* Arcsecond to radians */
+<span class="lineNum">     464 </span>            : #define ARCSEC_TO_RAD (DEG_TO_RAD / 3600.0)
+<a name="465"><span class="lineNum">     465 </span>            : </a>
+<span class="lineNum">     466 </span>            : /***********************************************************************/
+<span class="lineNum">     467 </span><span class="lineCov">        132 : PJ *TRANSFORMATION(helmert, 0) {</span>
+<span class="lineNum">     468 </span>            : /***********************************************************************/
+<span class="lineNum">     469 </span><span class="lineCov">         44 :     struct pj_opaque_helmert *Q = pj_calloc (1, sizeof (struct pj_opaque_helmert));</span>
+<span class="lineNum">     470 </span><span class="lineCov">         44 :     if (0==Q)</span>
+<span class="lineNum">     471 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">     472 </span><span class="lineCov">         44 :     P-&gt;opaque = (void *) Q;</span>
+<span class="lineNum">     473 </span>            : 
+<span class="lineNum">     474 </span><span class="lineCov">         44 :     P-&gt;fwd4d  = helmert_forward_4d;</span>
+<span class="lineNum">     475 </span><span class="lineCov">         44 :     P-&gt;inv4d  = helmert_reverse_4d;</span>
+<span class="lineNum">     476 </span><span class="lineCov">         44 :     P-&gt;fwd3d  = helmert_forward_3d;</span>
+<span class="lineNum">     477 </span><span class="lineCov">         44 :     P-&gt;inv3d  = helmert_reverse_3d;</span>
+<span class="lineNum">     478 </span><span class="lineCov">         44 :     P-&gt;fwd    = helmert_forward;</span>
+<span class="lineNum">     479 </span><span class="lineCov">         44 :     P-&gt;inv    = helmert_reverse;</span>
+<span class="lineNum">     480 </span>            : 
+<span class="lineNum">     481 </span>            :     /* In most cases, we work on 3D cartesian coordinates */
+<span class="lineNum">     482 </span><span class="lineCov">         44 :     P-&gt;left  = PJ_IO_UNITS_CARTESIAN;</span>
+<span class="lineNum">     483 </span><span class="lineCov">         44 :     P-&gt;right = PJ_IO_UNITS_CARTESIAN;</span>
+<span class="lineNum">     484 </span>            :     /* But in the 2D case, the coordinates are projected */
+<span class="lineNum">     485 </span><span class="lineCov">         44 :     if (pj_param_exists (P-&gt;params, &quot;theta&quot;)) {</span>
+<span class="lineNum">     486 </span><span class="lineCov">          1 :         P-&gt;left  = PJ_IO_UNITS_PROJECTED;</span>
+<span class="lineNum">     487 </span><span class="lineCov">          1 :         P-&gt;right = PJ_IO_UNITS_PROJECTED;</span>
+<span class="lineNum">     488 </span>            :     }
+<span class="lineNum">     489 </span>            : 
+<span class="lineNum">     490 </span>            :     /* Support the classic PROJ towgs84 parameter, but allow later overrides.*/
+<span class="lineNum">     491 </span>            :     /* Note that if towgs84 is specified, the datum_params array is set up   */
+<span class="lineNum">     492 </span>            :     /* for us automagically by the pj_datum_set call in pj_init_ctx */
+<span class="lineNum">     493 </span><span class="lineCov">         44 :     if (pj_param_exists (P-&gt;params, &quot;towgs84&quot;)) {</span>
+<span class="lineNum">     494 </span><span class="lineCov">         32 :         Q-&gt;xyz_0.x = P-&gt;datum_params[0];</span>
+<span class="lineNum">     495 </span><span class="lineCov">         32 :         Q-&gt;xyz_0.y = P-&gt;datum_params[1];</span>
+<span class="lineNum">     496 </span><span class="lineCov">         32 :         Q-&gt;xyz_0.z = P-&gt;datum_params[2];</span>
+<span class="lineNum">     497 </span>            : 
+<span class="lineNum">     498 </span><span class="lineCov">         32 :         Q-&gt;opk_0.o = P-&gt;datum_params[3];</span>
+<span class="lineNum">     499 </span><span class="lineCov">         32 :         Q-&gt;opk_0.p = P-&gt;datum_params[4];</span>
+<span class="lineNum">     500 </span><span class="lineCov">         32 :         Q-&gt;opk_0.k = P-&gt;datum_params[5];</span>
+<span class="lineNum">     501 </span>            : 
+<span class="lineNum">     502 </span>            :         /* We must undo conversion to absolute scale from pj_datum_set */
+<span class="lineNum">     503 </span><span class="lineCov">         32 :         if (0==P-&gt;datum_params[6])</span>
+<span class="lineNum">     504 </span><span class="lineCov">         20 :             Q-&gt;scale_0 = 0;</span>
+<span class="lineNum">     505 </span>            :         else
+<span class="lineNum">     506 </span><span class="lineCov">         12 :             Q-&gt;scale_0 = (P-&gt;datum_params[6] - 1) * 1e6;</span>
+<span class="lineNum">     507 </span>            :     }
+<span class="lineNum">     508 </span>            : 
+<span class="lineNum">     509 </span>            :     /* Translations */
+<span class="lineNum">     510 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tx&quot;).i)</span>
+<span class="lineNum">     511 </span><span class="lineCov">         12 :         Q-&gt;xyz_0.x = pj_param (P-&gt;ctx, P-&gt;params, &quot;dx&quot;).f;</span>
+<span class="lineNum">     512 </span>            : 
+<span class="lineNum">     513 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;ty&quot;).i)</span>
+<span class="lineNum">     514 </span><span class="lineCov">         12 :         Q-&gt;xyz_0.y = pj_param (P-&gt;ctx, P-&gt;params, &quot;dy&quot;).f;</span>
+<span class="lineNum">     515 </span>            : 
+<span class="lineNum">     516 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tz&quot;).i)</span>
+<span class="lineNum">     517 </span><span class="lineCov">         10 :         Q-&gt;xyz_0.z = pj_param (P-&gt;ctx, P-&gt;params, &quot;dz&quot;).f;</span>
+<span class="lineNum">     518 </span>            : 
+<span class="lineNum">     519 </span>            :     /* Rotations */
+<span class="lineNum">     520 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;trx&quot;).i)</span>
+<span class="lineNum">     521 </span><span class="lineCov">          8 :         Q-&gt;opk_0.o = pj_param (P-&gt;ctx, P-&gt;params, &quot;drx&quot;).f * ARCSEC_TO_RAD;</span>
+<span class="lineNum">     522 </span>            : 
+<span class="lineNum">     523 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;try&quot;).i)</span>
+<span class="lineNum">     524 </span><span class="lineCov">          8 :         Q-&gt;opk_0.p = pj_param (P-&gt;ctx, P-&gt;params, &quot;dry&quot;).f * ARCSEC_TO_RAD;</span>
+<span class="lineNum">     525 </span>            : 
+<span class="lineNum">     526 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;trz&quot;).i)</span>
+<span class="lineNum">     527 </span><span class="lineCov">          8 :         Q-&gt;opk_0.k = pj_param (P-&gt;ctx, P-&gt;params, &quot;drz&quot;).f * ARCSEC_TO_RAD;</span>
+<span class="lineNum">     528 </span>            : 
+<span class="lineNum">     529 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;ttheta&quot;).i) {</span>
+<span class="lineNum">     530 </span><span class="lineCov">          1 :         Q-&gt;theta_0 = pj_param (P-&gt;ctx, P-&gt;params, &quot;dtheta&quot;).f * ARCSEC_TO_RAD;</span>
+<span class="lineNum">     531 </span><span class="lineCov">          1 :         Q-&gt;fourparam = 1;</span>
+<span class="lineNum">     532 </span><span class="lineCov">          1 :         Q-&gt;scale_0 = 1.0; /* default scale for the 4-param shift */</span>
+<span class="lineNum">     533 </span>            :     }
+<span class="lineNum">     534 </span>            : 
+<span class="lineNum">     535 </span>            :     /* Scale */
+<span class="lineNum">     536 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;ts&quot;).i) {</span>
+<span class="lineNum">     537 </span><span class="lineCov">          9 :         Q-&gt;scale_0 = pj_param (P-&gt;ctx, P-&gt;params, &quot;ds&quot;).f;</span>
+<span class="lineNum">     538 </span><span class="lineCov">          9 :         if (pj_param (P-&gt;ctx, P-&gt;params, &quot;ttheta&quot;).i &amp;&amp; Q-&gt;scale_0 == 0.0)</span>
+<span class="lineNum">     539 </span><span class="lineNoCov">          0 :             return pj_default_destructor (P, PJD_ERR_INVALID_SCALE);</span>
+<span class="lineNum">     540 </span>            :     }
+<span class="lineNum">     541 </span>            : 
+<span class="lineNum">     542 </span>            :     /* Translation rates */
+<span class="lineNum">     543 </span><span class="lineCov">         44 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tdx&quot;).i)</span>
+<span class="lineNum">     544 </span><span class="lineCov">          4 :         Q-&gt;dxyz.x = pj_param (P-&gt;ctx, P-&gt;params, &quot;ddx&quot;).f;</span>
+<span class="lineNum">     545 </span>            : 
+<span class="lineNum">     546 </span><span class="lineCov">         44 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tdy&quot;).i)</span>
+<span class="lineNum">     547 </span><span class="lineCov">          4 :         Q-&gt;dxyz.y = pj_param (P-&gt;ctx, P-&gt;params, &quot;ddy&quot;).f;</span>
+<span class="lineNum">     548 </span>            : 
+<span class="lineNum">     549 </span><span class="lineCov">         44 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tdz&quot;).i)</span>
+<span class="lineNum">     550 </span><span class="lineCov">          4 :         Q-&gt;dxyz.z = pj_param (P-&gt;ctx, P-&gt;params, &quot;ddz&quot;).f;</span>
+<span class="lineNum">     551 </span>            : 
+<span class="lineNum">     552 </span>            :     /* Rotations rates */
+<span class="lineNum">     553 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tdrx&quot;).i)</span>
+<span class="lineNum">     554 </span><span class="lineCov">          4 :         Q-&gt;dopk.o = pj_param (P-&gt;ctx, P-&gt;params, &quot;ddrx&quot;).f * ARCSEC_TO_RAD;</span>
+<span class="lineNum">     555 </span>            : 
+<span class="lineNum">     556 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tdry&quot;).i)</span>
+<span class="lineNum">     557 </span><span class="lineCov">          4 :         Q-&gt;dopk.p = pj_param (P-&gt;ctx, P-&gt;params, &quot;ddry&quot;).f * ARCSEC_TO_RAD;</span>
+<span class="lineNum">     558 </span>            : 
+<span class="lineNum">     559 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tdrz&quot;).i)</span>
+<span class="lineNum">     560 </span><span class="lineCov">          4 :         Q-&gt;dopk.k = pj_param (P-&gt;ctx, P-&gt;params, &quot;ddrz&quot;).f * ARCSEC_TO_RAD;</span>
+<span class="lineNum">     561 </span>            : 
+<span class="lineNum">     562 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tdtheta&quot;).i)</span>
+<span class="lineNum">     563 </span><span class="lineNoCov">          0 :         Q-&gt;dtheta = pj_param (P-&gt;ctx, P-&gt;params, &quot;ddtheta&quot;).f * ARCSEC_TO_RAD;</span>
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span>            :     /* Scale rate */
+<span class="lineNum">     566 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;tds&quot;).i)</span>
+<span class="lineNum">     567 </span><span class="lineCov">          4 :         Q-&gt;dscale = pj_param (P-&gt;ctx, P-&gt;params, &quot;dds&quot;).f;</span>
+<span class="lineNum">     568 </span>            : 
+<span class="lineNum">     569 </span>            : 
+<span class="lineNum">     570 </span>            :     /* Epoch */
+<span class="lineNum">     571 </span><span class="lineCov">         44 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tt_epoch&quot;).i)</span>
+<span class="lineNum">     572 </span><span class="lineCov">          4 :         Q-&gt;t_epoch = pj_param (P-&gt;ctx, P-&gt;params, &quot;dt_epoch&quot;).f;</span>
+<span class="lineNum">     573 </span>            : 
+<span class="lineNum">     574 </span><span class="lineCov">         44 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tt_obs&quot;).i)</span>
+<span class="lineNum">     575 </span><span class="lineNoCov">          0 :         Q-&gt;t_obs = pj_param (P-&gt;ctx, P-&gt;params, &quot;dt_obs&quot;).f;</span>
+<span class="lineNum">     576 </span>            : 
+<span class="lineNum">     577 </span>            :     /* Use small angle approximations? */
+<span class="lineNum">     578 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;bexact&quot;).i)</span>
+<span class="lineNum">     579 </span><span class="lineCov">         34 :         Q-&gt;exact = 1;</span>
+<span class="lineNum">     580 </span>            : 
+<span class="lineNum">     581 </span>            :     /* Use &quot;other&quot; rotation sign convention? */
+<span class="lineNum">     582 </span><span class="lineCov">         44 :     if (pj_param (P-&gt;ctx, P-&gt;params, &quot;ttranspose&quot;).i)</span>
+<span class="lineNum">     583 </span><span class="lineCov">         35 :         Q-&gt;transpose = 1;</span>
+<span class="lineNum">     584 </span>            : 
+<span class="lineNum">     585 </span><span class="lineCov">         44 :     Q-&gt;xyz    =  Q-&gt;xyz_0;</span>
+<span class="lineNum">     586 </span><span class="lineCov">         44 :     Q-&gt;opk    =  Q-&gt;opk_0;</span>
+<span class="lineNum">     587 </span><span class="lineCov">         44 :     Q-&gt;scale  =  Q-&gt;scale_0;</span>
+<span class="lineNum">     588 </span><span class="lineCov">         44 :     Q-&gt;theta  =  Q-&gt;theta_0;</span>
+<span class="lineNum">     589 </span>            : 
+<span class="lineNum">     590 </span>            :     /* Let's help with debugging */
+<span class="lineNum">     591 </span><span class="lineCov">         44 :     if (proj_log_level(P-&gt;ctx, PJ_LOG_TELL) &gt;= PJ_LOG_DEBUG) {</span>
+<span class="lineNum">     592 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;Helmert parameters:&quot;);</span>
+<span class="lineNum">     593 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;x=  %8.5f  y=  %8.5f  z=  %8.5f&quot;, Q-&gt;xyz.x, Q-&gt;xyz.y, Q-&gt;xyz.z);</span>
+<span class="lineNum">     594 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;rx= %8.5f  ry= %8.5f  rz= %8.5f&quot;,</span>
+<span class="lineNum">     595 </span><span class="lineNoCov">          0 :                 Q-&gt;opk.o / ARCSEC_TO_RAD, Q-&gt;opk.p / ARCSEC_TO_RAD, Q-&gt;opk.k / ARCSEC_TO_RAD);</span>
+<span class="lineNum">     596 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;s=  %8.5f  exact=%d  transpose=%d&quot;, Q-&gt;scale, Q-&gt;exact, Q-&gt;transpose);</span>
+<span class="lineNum">     597 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;dx= %8.5f  dy= %8.5f  dz= %8.5f&quot;,   Q-&gt;dxyz.x, Q-&gt;dxyz.y, Q-&gt;dxyz.z);</span>
+<span class="lineNum">     598 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;drx=%8.5f  dry=%8.5f  drz=%8.5f&quot;,   Q-&gt;dopk.o, Q-&gt;dopk.p, Q-&gt;dopk.k);</span>
+<span class="lineNum">     599 </span><span class="lineNoCov">          0 :         proj_log_debug(P, &quot;ds= %8.5f  t_epoch=%8.5f  t_obs=%8.5f&quot;, Q-&gt;dscale, Q-&gt;t_epoch, Q-&gt;t_obs);</span>
+<span class="lineNum">     600 </span>            :     }
+<span class="lineNum">     601 </span>            : 
+<span class="lineNum">     602 </span><span class="lineCov">         68 :     if ((Q-&gt;opk.o==0)  &amp;&amp; (Q-&gt;opk.p==0)  &amp;&amp; (Q-&gt;opk.k==0) &amp;&amp; (Q-&gt;scale==0) &amp;&amp;</span>
+<span class="lineNum">     603 </span><span class="lineCov">         47 :         (Q-&gt;dopk.o==0) &amp;&amp; (Q-&gt;dopk.p==0) &amp;&amp; (Q-&gt;dopk.k==0)) {</span>
+<span class="lineNum">     604 </span><span class="lineCov">         23 :         Q-&gt;no_rotation = 1;</span>
+<span class="lineNum">     605 </span><span class="lineCov">         23 :         return P;</span>
+<span class="lineNum">     606 </span>            :     }
+<span class="lineNum">     607 </span>            : 
+<span class="lineNum">     608 </span><span class="lineCov">         21 :     update_parameters(P);</span>
+<span class="lineNum">     609 </span><span class="lineCov">         21 :     build_rot_matrix(P);</span>
+<span class="lineNum">     610 </span>            : 
+<span class="lineNum">     611 </span><span class="lineCov">         21 :     return P;</span>
+<span class="lineNum">     612 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

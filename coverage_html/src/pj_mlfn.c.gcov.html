@@ -1,0 +1,140 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/pj_mlfn.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - pj_mlfn.c<span style="font-size: 80%;"> (source / <a href="pj_mlfn.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">23</td>
+            <td class="headerCovTableEntry">26</td>
+            <td class="headerCovTableEntryMed">88.5 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : #include &lt;math.h&gt;</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            : /* meridional distance for ellipsoid and inverse
+<span class="lineNum">       6 </span>            : **  8th degree - accurate to &lt; 1e-5 meters when used in conjunction
+<span class="lineNum">       7 </span>            : **    with typical major axis values.
+<span class="lineNum">       8 </span>            : **  Inverse determines phi to EPS (1e-11) radians, about 1e-6 seconds.
+<span class="lineNum">       9 </span>            : */
+<span class="lineNum">      10 </span>            : #define C00 1.
+<span class="lineNum">      11 </span>            : #define C02 .25
+<span class="lineNum">      12 </span>            : #define C04 .046875
+<span class="lineNum">      13 </span>            : #define C06 .01953125
+<span class="lineNum">      14 </span>            : #define C08 .01068115234375
+<span class="lineNum">      15 </span>            : #define C22 .75
+<span class="lineNum">      16 </span>            : #define C44 .46875
+<span class="lineNum">      17 </span>            : #define C46 .01302083333333333333
+<span class="lineNum">      18 </span>            : #define C48 .00712076822916666666
+<span class="lineNum">      19 </span>            : #define C66 .36458333333333333333
+<span class="lineNum">      20 </span>            : #define C68 .00569661458333333333
+<span class="lineNum">      21 </span>            : #define C88 .3076171875
+<span class="lineNum">      22 </span>            : #define EPS 1e-11
+<span class="lineNum">      23 </span>            : #define MAX_ITER 10
+<a name="24"><span class="lineNum">      24 </span>            : #define EN_SIZE 5</a>
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span><span class="lineCov">        442 : double *pj_enfn(double es) {</span>
+<span class="lineNum">      27 </span>            :     double t, *en;
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span><span class="lineCov">        442 :   en = (double *) pj_malloc(EN_SIZE * sizeof (double));</span>
+<span class="lineNum">      30 </span><span class="lineCov">        442 :   if (0==en)</span>
+<span class="lineNum">      31 </span><span class="lineNoCov">          0 :       return 0;</span>
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span><span class="lineCov">        442 :     en[0] = C00 - es * (C02 + es * (C04 + es * (C06 + es * C08)));</span>
+<span class="lineNum">      34 </span><span class="lineCov">        442 :     en[1] = es * (C22 - es * (C04 + es * (C06 + es * C08)));</span>
+<span class="lineNum">      35 </span><span class="lineCov">        442 :     en[2] = (t = es * es) * (C44 - es * (C46 + es * C48));</span>
+<span class="lineNum">      36 </span><span class="lineCov">        442 :     en[3] = (t *= es) * (C66 - es * C68);</span>
+<span class="lineNum">      37 </span><span class="lineCov">        442 :   en[4] = t * es * C88;</span>
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span><span class="lineCov">        442 :     return en;</span>
+<span class="lineNum">      40 </span>            : }
+<a name="41"><span class="lineNum">      41 </span>            : </a>
+<span class="lineNum">      42 </span>            :   double
+<span class="lineNum">      43 </span><span class="lineCov">      84669 : pj_mlfn(double phi, double sphi, double cphi, double *en) {</span>
+<span class="lineNum">      44 </span><span class="lineCov">      84669 :   cphi *= sphi;</span>
+<span class="lineNum">      45 </span><span class="lineCov">      84669 :   sphi *= sphi;</span>
+<span class="lineNum">      46 </span><span class="lineCov">     169338 :   return(en[0] * phi - cphi * (en[1] + sphi*(en[2]</span>
+<span class="lineNum">      47 </span><span class="lineCov">      84669 :     + sphi*(en[3] + sphi*en[4]))));</span>
+<a name="48"><span class="lineNum">      48 </span>            : }</a>
+<span class="lineNum">      49 </span>            :   double
+<span class="lineNum">      50 </span><span class="lineCov">       5942 : pj_inv_mlfn(projCtx ctx, double arg, double es, double *en) {</span>
+<span class="lineNum">      51 </span><span class="lineCov">       5942 :   double s, t, phi, k = 1./(1.-es);</span>
+<span class="lineNum">      52 </span>            :   int i;
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span><span class="lineCov">       5942 :   phi = arg;</span>
+<span class="lineNum">      55 </span><span class="lineCov">      15796 :   for (i = MAX_ITER; i ; --i) { /* rarely goes over 2 iterations */</span>
+<span class="lineNum">      56 </span><span class="lineCov">      15796 :     s = sin(phi);</span>
+<span class="lineNum">      57 </span><span class="lineCov">      15796 :     t = 1. - es * s * s;</span>
+<span class="lineNum">      58 </span><span class="lineCov">      15796 :     phi -= t = (pj_mlfn(phi, s, cos(phi), en) - arg) * (t * sqrt(t)) * k;</span>
+<span class="lineNum">      59 </span><span class="lineCov">      15796 :     if (fabs(t) &lt; EPS)</span>
+<span class="lineNum">      60 </span><span class="lineCov">       5942 :       return phi;</span>
+<span class="lineNum">      61 </span>            :   }
+<span class="lineNum">      62 </span><span class="lineNoCov">          0 :   pj_ctx_set_errno( ctx, PJD_ERR_NON_CONV_INV_MERI_DIST );</span>
+<span class="lineNum">      63 </span><span class="lineNoCov">          0 :   return phi;</span>
+<span class="lineNum">      64 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

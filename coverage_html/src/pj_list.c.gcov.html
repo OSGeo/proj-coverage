@@ -1,0 +1,113 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/pj_list.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - pj_list.c<span style="font-size: 80%;"> (source / <a href="pj_list.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryLo">50.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryLo">50.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /* Projection System: default list of projections</a>
+<span class="lineNum">       2 </span>            : ** Use local definition of PJ_LIST_H for subset.
+<span class="lineNum">       3 </span>            : */
+<span class="lineNum">       4 </span>            : 
+<span class="lineNum">       5 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">       6 </span>            : 
+<span class="lineNum">       7 </span>            : #define USE_PJ_LIST_H 1
+<span class="lineNum">       8 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">       9 </span>            : 
+<span class="lineNum">      10 </span>            : 
+<span class="lineNum">      11 </span>            : /* Generate prototypes for projection functions */
+<span class="lineNum">      12 </span>            : #define PROJ_HEAD(id, name) struct PJconsts *pj_##id(struct PJconsts*);
+<span class="lineNum">      13 </span>            : #include &quot;pj_list.h&quot;
+<span class="lineNum">      14 </span>            : #undef PROJ_HEAD
+<span class="lineNum">      15 </span>            : 
+<span class="lineNum">      16 </span>            : /* Generate extern declarations for description strings */
+<span class="lineNum">      17 </span>            : #define PROJ_HEAD(id, name) extern char * const pj_s_##id;
+<span class="lineNum">      18 </span>            : #include &quot;pj_list.h&quot;
+<span class="lineNum">      19 </span>            : #undef PROJ_HEAD
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : /* Generate the null-terminated list of projection functions with associated mnemonics and descriptions */
+<span class="lineNum">      22 </span>            : #define PROJ_HEAD(id, name) {#id, pj_##id, &amp;pj_s_##id},
+<span class="lineNum">      23 </span>            : const struct PJ_LIST pj_list[] = {
+<span class="lineNum">      24 </span>            : #include &quot;pj_list.h&quot;
+<span class="lineNum">      25 </span>            :     {0,     0,  0},
+<span class="lineNum">      26 </span>            :   };
+<span class="lineNum">      27 </span>            : #undef PROJ_HEAD
+<a name="28"><span class="lineNum">      28 </span>            : </a>
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span><span class="lineNoCov">          0 : struct PJ_LIST *pj_get_list_ref()</span>
+<span class="lineNum">      31 </span>            : {
+<span class="lineNum">      32 </span><span class="lineNoCov">          0 :     return (struct PJ_LIST *)pj_list;</span>
+<a name="33"><span class="lineNum">      33 </span>            : }</a>
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span><span class="lineCov">          1 : const PJ_OPERATIONS *proj_list_operations(void) {</span>
+<span class="lineNum">      36 </span><span class="lineCov">          1 :     return pj_list;</span>
+<span class="lineNum">      37 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

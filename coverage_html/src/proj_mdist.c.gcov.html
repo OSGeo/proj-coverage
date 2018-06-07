@@ -1,0 +1,203 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/proj_mdist.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - proj_mdist.c<span style="font-size: 80%;"> (source / <a href="proj_mdist.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">54</td>
+            <td class="headerCovTableEntry">57</td>
+            <td class="headerCovTableEntryHi">94.7 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            : ** libproj -- library of cartographic projections
+<span class="lineNum">       3 </span>            : **
+<span class="lineNum">       4 </span>            : ** Copyright (c) 2003, 2006   Gerald I. Evenden
+<span class="lineNum">       5 </span>            : */
+<span class="lineNum">       6 </span>            : /*
+<span class="lineNum">       7 </span>            : ** Permission is hereby granted, free of charge, to any person obtaining
+<span class="lineNum">       8 </span>            : ** a copy of this software and associated documentation files (the
+<span class="lineNum">       9 </span>            : ** &quot;Software&quot;), to deal in the Software without restriction, including
+<span class="lineNum">      10 </span>            : ** without limitation the rights to use, copy, modify, merge, publish,
+<span class="lineNum">      11 </span>            : ** distribute, sublicense, and/or sell copies of the Software, and to
+<span class="lineNum">      12 </span>            : ** permit persons to whom the Software is furnished to do so, subject to
+<span class="lineNum">      13 </span>            : ** the following conditions:
+<span class="lineNum">      14 </span>            : **
+<span class="lineNum">      15 </span>            : ** The above copyright notice and this permission notice shall be
+<span class="lineNum">      16 </span>            : ** included in all copies or substantial portions of the Software.
+<span class="lineNum">      17 </span>            : **
+<span class="lineNum">      18 </span>            : ** THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+<span class="lineNum">      19 </span>            : ** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+<span class="lineNum">      20 </span>            : ** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+<span class="lineNum">      21 </span>            : ** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+<span class="lineNum">      22 </span>            : ** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+<span class="lineNum">      23 </span>            : ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+<span class="lineNum">      24 </span>            : ** SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      25 </span>            : */
+<span class="lineNum">      26 </span>            : /* Computes distance from equator along the meridian to latitude phi
+<span class="lineNum">      27 </span>            : ** and inverse on unit ellipsoid.
+<span class="lineNum">      28 </span>            : ** Precision commensurate with double precision.
+<span class="lineNum">      29 </span>            : */
+<span class="lineNum">      30 </span>            : #define PJ_LIB__
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      33 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            : #define MAX_ITER 20
+<span class="lineNum">      38 </span>            : #define TOL 1e-14
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            : struct MDIST {
+<span class="lineNum">      41 </span>            :   int nb;
+<span class="lineNum">      42 </span>            :   double es;
+<span class="lineNum">      43 </span>            :   double E;
+<span class="lineNum">      44 </span>            :   double b[1];
+<a name="45"><span class="lineNum">      45 </span>            : };</a>
+<span class="lineNum">      46 </span>            :   void *
+<span class="lineNum">      47 </span><span class="lineCov">          1 : proj_mdist_ini(double es) {</span>
+<span class="lineNum">      48 </span>            :   double numf, numfi, twon1, denf, denfi, ens, T, twon;
+<span class="lineNum">      49 </span>            :   double den, El, Es;
+<span class="lineNum">      50 </span>            :   double E[MAX_ITER];
+<span class="lineNum">      51 </span>            :   struct MDIST *b;
+<span class="lineNum">      52 </span>            :   int i, j;
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            : /* generate E(e^2) and its terms E[] */
+<span class="lineNum">      55 </span><span class="lineCov">          1 :   ens = es;</span>
+<span class="lineNum">      56 </span><span class="lineCov">          1 :   numf = twon1 = denfi = 1.;</span>
+<span class="lineNum">      57 </span><span class="lineCov">          1 :   denf = 1.;</span>
+<span class="lineNum">      58 </span><span class="lineCov">          1 :   twon = 4.;</span>
+<span class="lineNum">      59 </span><span class="lineCov">          1 :   Es = El = E[0] = 1.;</span>
+<span class="lineNum">      60 </span><span class="lineCov">          7 :   for (i = 1; i &lt; MAX_ITER ; ++i) {</span>
+<span class="lineNum">      61 </span><span class="lineCov">          7 :     numf *= (twon1 * twon1);</span>
+<span class="lineNum">      62 </span><span class="lineCov">          7 :     den = twon * denf * denf * twon1;</span>
+<span class="lineNum">      63 </span><span class="lineCov">          7 :     T = numf/den;</span>
+<span class="lineNum">      64 </span><span class="lineCov">          7 :     Es -= (E[i] = T * ens);</span>
+<span class="lineNum">      65 </span><span class="lineCov">          7 :     ens *= es;</span>
+<span class="lineNum">      66 </span><span class="lineCov">          7 :     twon *= 4.;</span>
+<span class="lineNum">      67 </span><span class="lineCov">          7 :     denf *= ++denfi;</span>
+<span class="lineNum">      68 </span><span class="lineCov">          7 :     twon1 += 2.;</span>
+<span class="lineNum">      69 </span><span class="lineCov">          7 :     if (Es == El) /* jump out if no change */</span>
+<span class="lineNum">      70 </span><span class="lineCov">          1 :       break;</span>
+<span class="lineNum">      71 </span><span class="lineCov">          6 :     El = Es;</span>
+<span class="lineNum">      72 </span>            :   }
+<span class="lineNum">      73 </span><span class="lineCov">          1 :   if ((b = (struct MDIST *)malloc(sizeof(struct MDIST)+</span>
+<span class="lineNum">      74 </span>            :     (i*sizeof(double)))) == NULL)
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 :     return(NULL);</span>
+<span class="lineNum">      76 </span><span class="lineCov">          1 :   b-&gt;nb = i - 1;</span>
+<span class="lineNum">      77 </span><span class="lineCov">          1 :   b-&gt;es = es;</span>
+<span class="lineNum">      78 </span><span class="lineCov">          1 :   b-&gt;E = Es;</span>
+<span class="lineNum">      79 </span>            :   /* generate b_n coefficients--note: collapse with prefix ratios */
+<span class="lineNum">      80 </span><span class="lineCov">          1 :   b-&gt;b[0] = Es = 1. - Es;</span>
+<span class="lineNum">      81 </span><span class="lineCov">          1 :   numf = denf = 1.;</span>
+<span class="lineNum">      82 </span><span class="lineCov">          1 :   numfi = 2.;</span>
+<span class="lineNum">      83 </span><span class="lineCov">          1 :   denfi = 3.;</span>
+<span class="lineNum">      84 </span><span class="lineCov">          7 :   for (j = 1; j &lt; i; ++j) {</span>
+<span class="lineNum">      85 </span><span class="lineCov">          6 :     Es -= E[j];</span>
+<span class="lineNum">      86 </span><span class="lineCov">          6 :     numf *= numfi;</span>
+<span class="lineNum">      87 </span><span class="lineCov">          6 :     denf *= denfi;</span>
+<span class="lineNum">      88 </span><span class="lineCov">          6 :     b-&gt;b[j] = Es * numf / denf;</span>
+<span class="lineNum">      89 </span><span class="lineCov">          6 :     numfi += 2.;</span>
+<span class="lineNum">      90 </span><span class="lineCov">          6 :     denfi += 2.;</span>
+<span class="lineNum">      91 </span>            :   }
+<span class="lineNum">      92 </span><span class="lineCov">          1 :   return (b);</span>
+<a name="93"><span class="lineNum">      93 </span>            : }</a>
+<span class="lineNum">      94 </span>            :   double
+<span class="lineNum">      95 </span><span class="lineCov">         13 : proj_mdist(double phi, double sphi, double cphi, const void *data) {</span>
+<span class="lineNum">      96 </span><span class="lineCov">         13 :   const struct MDIST *b = (const struct MDIST *)data;</span>
+<span class="lineNum">      97 </span>            :   double sc, sum, sphi2, D;
+<span class="lineNum">      98 </span>            :   int i;
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span><span class="lineCov">         13 :   sc = sphi * cphi;</span>
+<span class="lineNum">     101 </span><span class="lineCov">         13 :   sphi2 = sphi * sphi;</span>
+<span class="lineNum">     102 </span><span class="lineCov">         13 :   D = phi * b-&gt;E - b-&gt;es * sc / sqrt(1. - b-&gt;es * sphi2);</span>
+<span class="lineNum">     103 </span><span class="lineCov">         13 :   sum = b-&gt;b[i = b-&gt;nb];</span>
+<span class="lineNum">     104 </span><span class="lineCov">         13 :   while (i) sum = b-&gt;b[--i] + sphi2 * sum;</span>
+<span class="lineNum">     105 </span><span class="lineCov">         13 :   return(D + sc * sum);</span>
+<a name="106"><span class="lineNum">     106 </span>            : }</a>
+<span class="lineNum">     107 </span>            :   double
+<span class="lineNum">     108 </span><span class="lineCov">          4 : proj_inv_mdist(projCtx ctx, double dist, const void *data) {</span>
+<span class="lineNum">     109 </span><span class="lineCov">          4 :   const struct MDIST *b = (const struct MDIST *)data;</span>
+<span class="lineNum">     110 </span>            :   double s, t, phi, k;
+<span class="lineNum">     111 </span>            :   int i;
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span><span class="lineCov">          4 :   k = 1./(1.- b-&gt;es);</span>
+<span class="lineNum">     114 </span><span class="lineCov">          4 :   i = MAX_ITER;</span>
+<span class="lineNum">     115 </span><span class="lineCov">          4 :   phi = dist;</span>
+<span class="lineNum">     116 </span><span class="lineCov">         12 :   while ( i-- ) {</span>
+<span class="lineNum">     117 </span><span class="lineCov">          8 :     s = sin(phi);</span>
+<span class="lineNum">     118 </span><span class="lineCov">          8 :     t = 1. - b-&gt;es * s * s;</span>
+<span class="lineNum">     119 </span><span class="lineCov">         16 :     phi -= t = (proj_mdist(phi, s, cos(phi), b) - dist) *</span>
+<span class="lineNum">     120 </span><span class="lineCov">          8 :       (t * sqrt(t)) * k;</span>
+<span class="lineNum">     121 </span><span class="lineCov">          8 :     if (fabs(t) &lt; TOL) /* that is no change */</span>
+<span class="lineNum">     122 </span><span class="lineCov">          4 :       return phi;</span>
+<span class="lineNum">     123 </span>            :   }
+<span class="lineNum">     124 </span>            :     /* convergence failed */
+<span class="lineNum">     125 </span><span class="lineNoCov">          0 :   pj_ctx_set_errno(ctx, PJD_ERR_NON_CONV_INV_MERI_DIST);</span>
+<span class="lineNum">     126 </span><span class="lineNoCov">          0 :   return phi;</span>
+<span class="lineNum">     127 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

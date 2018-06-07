@@ -1,0 +1,1145 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/geodtest.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - geodtest.c<span style="font-size: 80%;"> (source / <a href="geodtest.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">662</td>
+            <td class="headerCovTableEntry">668</td>
+            <td class="headerCovTableEntryHi">99.1 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">45</td>
+            <td class="headerCovTableEntry">45</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /**</a>
+<span class="lineNum">       2 </span>            :  * \file geodtest.c
+<span class="lineNum">       3 </span>            :  * \brief Test suite for the geodesic routines in C
+<span class="lineNum">       4 </span>            :  *
+<span class="lineNum">       5 </span>            :  * Run these tests by configuring with cmake and running &quot;make test&quot;.
+<span class="lineNum">       6 </span>            :  *
+<span class="lineNum">       7 </span>            :  * Copyright (c) Charles Karney (2015-2018) &lt;charles@karney.com&gt; and licensed
+<span class="lineNum">       8 </span>            :  * under the MIT/X11 License.  For more information, see
+<span class="lineNum">       9 </span>            :  * https://geographiclib.sourceforge.io/
+<span class="lineNum">      10 </span>            :  **********************************************************************/
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            : /** @cond SKIP */
+<span class="lineNum">      13 </span>            : 
+<span class="lineNum">      14 </span>            : #include &quot;geodesic.h&quot;
+<span class="lineNum">      15 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">      16 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #if defined(_MSC_VER)
+<span class="lineNum">      19 </span>            : /* Squelch warnings about assignment within conditional expression */
+<span class="lineNum">      20 </span>            : #  pragma warning (disable: 4706)
+<span class="lineNum">      21 </span>            : #endif
+<span class="lineNum">      22 </span>            : 
+<a name="23"><span class="lineNum">      23 </span>            : static const double wgs84_a = 6378137, wgs84_f = 1/298.257223563; /* WGS84 */</a>
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span><span class="lineCov">       1358 : static int checkEquals(double x, double y, double d) {</span>
+<span class="lineNum">      26 </span><span class="lineCov">       1358 :   if (fabs(x - y) &lt;= d)</span>
+<span class="lineNum">      27 </span><span class="lineCov">       1358 :     return 0;</span>
+<span class="lineNum">      28 </span><span class="lineNoCov">          0 :   printf(&quot;checkEquals fails: %.7g != %.7g +/- %.7g\n&quot;, x, y, d);</span>
+<span class="lineNum">      29 </span><span class="lineNoCov">          0 :   return 1;</span>
+<a name="30"><span class="lineNum">      30 </span>            : }</a>
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span><span class="lineCov">         32 : static int checkNaN(double x) {</span>
+<span class="lineNum">      33 </span><span class="lineCov">         32 :   if (x != x)</span>
+<span class="lineNum">      34 </span><span class="lineCov">         32 :     return 0;</span>
+<span class="lineNum">      35 </span><span class="lineNoCov">          0 :   printf(&quot;checkNaN fails: %.7g\n&quot;, x);</span>
+<span class="lineNum">      36 </span><span class="lineNoCov">          0 :   return 1;</span>
+<span class="lineNum">      37 </span>            : }
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : static const int ncases = 20;
+<span class="lineNum">      40 </span>            : static const double testcases[20][12] = {
+<span class="lineNum">      41 </span>            :   {35.60777, -139.44815, 111.098748429560326,
+<span class="lineNum">      42 </span>            :    -11.17491, -69.95921, 129.289270889708762,
+<span class="lineNum">      43 </span>            :    8935244.5604818305, 80.50729714281974, 6273170.2055303837,
+<span class="lineNum">      44 </span>            :    0.16606318447386067, 0.16479116945612937, 12841384694976.432},
+<span class="lineNum">      45 </span>            :   {55.52454, 106.05087, 22.020059880982801,
+<span class="lineNum">      46 </span>            :    77.03196, 197.18234, 109.112041110671519,
+<span class="lineNum">      47 </span>            :    4105086.1713924406, 36.892740690445894, 3828869.3344387607,
+<span class="lineNum">      48 </span>            :    0.80076349608092607, 0.80101006984201008, 61674961290615.615},
+<span class="lineNum">      49 </span>            :   {-21.97856, 142.59065, -32.44456876433189,
+<span class="lineNum">      50 </span>            :    41.84138, 98.56635, -41.84359951440466,
+<span class="lineNum">      51 </span>            :    8394328.894657671, 75.62930491011522, 6161154.5773110616,
+<span class="lineNum">      52 </span>            :    0.24816339233950381, 0.24930251203627892, -6637997720646.717},
+<span class="lineNum">      53 </span>            :   {-66.99028, 112.2363, 173.73491240878403,
+<span class="lineNum">      54 </span>            :    -12.70631, 285.90344, 2.512956620913668,
+<span class="lineNum">      55 </span>            :    11150344.2312080241, 100.278634181155759, 6289939.5670446687,
+<span class="lineNum">      56 </span>            :    -0.17199490274700385, -0.17722569526345708, -121287239862139.744},
+<span class="lineNum">      57 </span>            :   {-17.42761, 173.34268, -159.033557661192928,
+<span class="lineNum">      58 </span>            :    -15.84784, 5.93557, -20.787484651536988,
+<span class="lineNum">      59 </span>            :    16076603.1631180673, 144.640108810286253, 3732902.1583877189,
+<span class="lineNum">      60 </span>            :    -0.81273638700070476, -0.81299800519154474, 97825992354058.708},
+<span class="lineNum">      61 </span>            :   {32.84994, 48.28919, 150.492927788121982,
+<span class="lineNum">      62 </span>            :    -56.28556, 202.29132, 48.113449399816759,
+<span class="lineNum">      63 </span>            :    16727068.9438164461, 150.565799985466607, 3147838.1910180939,
+<span class="lineNum">      64 </span>            :    -0.87334918086923126, -0.86505036767110637, -72445258525585.010},
+<span class="lineNum">      65 </span>            :   {6.96833, 52.74123, 92.581585386317712,
+<span class="lineNum">      66 </span>            :    -7.39675, 206.17291, 90.721692165923907,
+<span class="lineNum">      67 </span>            :    17102477.2496958388, 154.147366239113561, 2772035.6169917581,
+<span class="lineNum">      68 </span>            :    -0.89991282520302447, -0.89986892177110739, -1311796973197.995},
+<span class="lineNum">      69 </span>            :   {-50.56724, -16.30485, -105.439679907590164,
+<span class="lineNum">      70 </span>            :    -33.56571, -94.97412, -47.348547835650331,
+<span class="lineNum">      71 </span>            :    6455670.5118668696, 58.083719495371259, 5409150.7979815838,
+<span class="lineNum">      72 </span>            :    0.53053508035997263, 0.52988722644436602, 41071447902810.047},
+<span class="lineNum">      73 </span>            :   {-58.93002, -8.90775, 140.965397902500679,
+<span class="lineNum">      74 </span>            :    -8.91104, 133.13503, 19.255429433416599,
+<span class="lineNum">      75 </span>            :    11756066.0219864627, 105.755691241406877, 6151101.2270708536,
+<span class="lineNum">      76 </span>            :    -0.26548622269867183, -0.27068483874510741, -86143460552774.735},
+<span class="lineNum">      77 </span>            :   {-68.82867, -74.28391, 93.774347763114881,
+<span class="lineNum">      78 </span>            :    -50.63005, -8.36685, 34.65564085411343,
+<span class="lineNum">      79 </span>            :    3956936.926063544, 35.572254987389284, 3708890.9544062657,
+<span class="lineNum">      80 </span>            :    0.81443963736383502, 0.81420859815358342, -41845309450093.787},
+<span class="lineNum">      81 </span>            :   {-10.62672, -32.0898, -86.426713286747751,
+<span class="lineNum">      82 </span>            :    5.883, -134.31681, -80.473780971034875,
+<span class="lineNum">      83 </span>            :    11470869.3864563009, 103.387395634504061, 6184411.6622659713,
+<span class="lineNum">      84 </span>            :    -0.23138683500430237, -0.23155097622286792, 4198803992123.548},
+<span class="lineNum">      85 </span>            :   {-21.76221, 166.90563, 29.319421206936428,
+<span class="lineNum">      86 </span>            :    48.72884, 213.97627, 43.508671946410168,
+<span class="lineNum">      87 </span>            :    9098627.3986554915, 81.963476716121964, 6299240.9166992283,
+<span class="lineNum">      88 </span>            :    0.13965943368590333, 0.14152969707656796, 10024709850277.476},
+<span class="lineNum">      89 </span>            :   {-19.79938, -174.47484, 71.167275780171533,
+<span class="lineNum">      90 </span>            :    -11.99349, -154.35109, 65.589099775199228,
+<span class="lineNum">      91 </span>            :    2319004.8601169389, 20.896611684802389, 2267960.8703918325,
+<span class="lineNum">      92 </span>            :    0.93427001867125849, 0.93424887135032789, -3935477535005.785},
+<span class="lineNum">      93 </span>            :   {-11.95887, -116.94513, 92.712619830452549,
+<span class="lineNum">      94 </span>            :    4.57352, 7.16501, 78.64960934409585,
+<span class="lineNum">      95 </span>            :    13834722.5801401374, 124.688684161089762, 5228093.177931598,
+<span class="lineNum">      96 </span>            :    -0.56879356755666463, -0.56918731952397221, -9919582785894.853},
+<span class="lineNum">      97 </span>            :   {-87.85331, 85.66836, -65.120313040242748,
+<span class="lineNum">      98 </span>            :    66.48646, 16.09921, -4.888658719272296,
+<span class="lineNum">      99 </span>            :    17286615.3147144645, 155.58592449699137, 2635887.4729110181,
+<span class="lineNum">     100 </span>            :    -0.90697975771398578, -0.91095608883042767, 42667211366919.534},
+<span class="lineNum">     101 </span>            :   {1.74708, 128.32011, -101.584843631173858,
+<span class="lineNum">     102 </span>            :    -11.16617, 11.87109, -86.325793296437476,
+<span class="lineNum">     103 </span>            :    12942901.1241347408, 116.650512484301857, 5682744.8413270572,
+<span class="lineNum">     104 </span>            :    -0.44857868222697644, -0.44824490340007729, 10763055294345.653},
+<span class="lineNum">     105 </span>            :   {-25.72959, -144.90758, -153.647468693117198,
+<span class="lineNum">     106 </span>            :    -57.70581, -269.17879, -48.343983158876487,
+<span class="lineNum">     107 </span>            :    9413446.7452453107, 84.664533838404295, 6356176.6898881281,
+<span class="lineNum">     108 </span>            :    0.09492245755254703, 0.09737058264766572, 74515122850712.444},
+<span class="lineNum">     109 </span>            :   {-41.22777, 122.32875, 14.285113402275739,
+<span class="lineNum">     110 </span>            :    -7.57291, 130.37946, 10.805303085187369,
+<span class="lineNum">     111 </span>            :    3812686.035106021, 34.34330804743883, 3588703.8812128856,
+<span class="lineNum">     112 </span>            :    0.82605222593217889, 0.82572158200920196, -2456961531057.857},
+<span class="lineNum">     113 </span>            :   {11.01307, 138.25278, 79.43682622782374,
+<span class="lineNum">     114 </span>            :    6.62726, 247.05981, 103.708090215522657,
+<span class="lineNum">     115 </span>            :    11911190.819018408, 107.341669954114577, 6070904.722786735,
+<span class="lineNum">     116 </span>            :    -0.29767608923657404, -0.29785143390252321, 17121631423099.696},
+<span class="lineNum">     117 </span>            :   {-29.47124, 95.14681, -163.779130441688382,
+<span class="lineNum">     118 </span>            :    -27.46601, -69.15955, -15.909335945554969,
+<span class="lineNum">     119 </span>            :    13487015.8381145492, 121.294026715742277, 5481428.9945736388,
+<a name="120"><span class="lineNum">     120 </span>            :    -0.51527225545373252, -0.51556587964721788, 104679964020340.318}};</a>
+<span class="lineNum">     121 </span>            : 
+<span class="lineNum">     122 </span><span class="lineCov">          2 : static int testinverse() {</span>
+<span class="lineNum">     123 </span>            :   double lat1, lon1, azi1, lat2, lon2, azi2, s12, a12, m12, M12, M21, S12;
+<span class="lineNum">     124 </span>            :   double azi1a, azi2a, s12a, a12a, m12a, M12a, M21a, S12a;
+<span class="lineNum">     125 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     126 </span><span class="lineCov">          2 :   int i, result = 0;</span>
+<span class="lineNum">     127 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     128 </span><span class="lineCov">         42 :   for (i = 0; i &lt; ncases; ++i) {</span>
+<span class="lineNum">     129 </span><span class="lineCov">         40 :     lat1 = testcases[i][0]; lon1 = testcases[i][1]; azi1 = testcases[i][2];</span>
+<span class="lineNum">     130 </span><span class="lineCov">         40 :     lat2 = testcases[i][3]; lon2 = testcases[i][4]; azi2 = testcases[i][5];</span>
+<span class="lineNum">     131 </span><span class="lineCov">         40 :     s12 = testcases[i][6]; a12 = testcases[i][7]; m12 = testcases[i][8];</span>
+<span class="lineNum">     132 </span><span class="lineCov">         40 :     M12 = testcases[i][9]; M21 = testcases[i][10]; S12 = testcases[i][11];</span>
+<span class="lineNum">     133 </span><span class="lineCov">         40 :     a12a = geod_geninverse(&amp;g, lat1, lon1, lat2, lon2, &amp;s12a, &amp;azi1a, &amp;azi2a,</span>
+<span class="lineNum">     134 </span>            :                &amp;m12a, &amp;M12a, &amp;M21a, &amp;S12a);
+<span class="lineNum">     135 </span><span class="lineCov">         40 :     result += checkEquals(azi1, azi1a, 1e-13);</span>
+<span class="lineNum">     136 </span><span class="lineCov">         40 :     result += checkEquals(azi2, azi2a, 1e-13);</span>
+<span class="lineNum">     137 </span><span class="lineCov">         40 :     result += checkEquals(s12, s12a, 1e-8);</span>
+<span class="lineNum">     138 </span><span class="lineCov">         40 :     result += checkEquals(a12, a12a, 1e-13);</span>
+<span class="lineNum">     139 </span><span class="lineCov">         40 :     result += checkEquals(m12, m12a, 1e-8);</span>
+<span class="lineNum">     140 </span><span class="lineCov">         40 :     result += checkEquals(M12, M12a, 1e-15);</span>
+<span class="lineNum">     141 </span><span class="lineCov">         40 :     result += checkEquals(M21, M21a, 1e-15);</span>
+<span class="lineNum">     142 </span><span class="lineCov">         40 :     result += checkEquals(S12, S12a, 0.1);</span>
+<span class="lineNum">     143 </span>            :   }
+<span class="lineNum">     144 </span><span class="lineCov">          2 :   return result;</span>
+<a name="145"><span class="lineNum">     145 </span>            : }</a>
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span><span class="lineCov">          2 : static int testdirect() {</span>
+<span class="lineNum">     148 </span>            :   double lat1, lon1, azi1, lat2, lon2, azi2, s12, a12, m12, M12, M21, S12;
+<span class="lineNum">     149 </span>            :   double lat2a, lon2a, azi2a, a12a, m12a, M12a, M21a, S12a;
+<span class="lineNum">     150 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     151 </span><span class="lineCov">          2 :   int i, result = 0;</span>
+<span class="lineNum">     152 </span><span class="lineCov">          2 :   unsigned flags = GEOD_LONG_UNROLL;</span>
+<span class="lineNum">     153 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     154 </span><span class="lineCov">         42 :   for (i = 0; i &lt; ncases; ++i) {</span>
+<span class="lineNum">     155 </span><span class="lineCov">         40 :     lat1 = testcases[i][0]; lon1 = testcases[i][1]; azi1 = testcases[i][2];</span>
+<span class="lineNum">     156 </span><span class="lineCov">         40 :     lat2 = testcases[i][3]; lon2 = testcases[i][4]; azi2 = testcases[i][5];</span>
+<span class="lineNum">     157 </span><span class="lineCov">         40 :     s12 = testcases[i][6]; a12 = testcases[i][7]; m12 = testcases[i][8];</span>
+<span class="lineNum">     158 </span><span class="lineCov">         40 :     M12 = testcases[i][9]; M21 = testcases[i][10]; S12 = testcases[i][11];</span>
+<span class="lineNum">     159 </span><span class="lineCov">         40 :     a12a = geod_gendirect(&amp;g, lat1, lon1, azi1, flags, s12,</span>
+<span class="lineNum">     160 </span>            :               &amp;lat2a, &amp;lon2a, &amp;azi2a, 0,
+<span class="lineNum">     161 </span>            :               &amp;m12a, &amp;M12a, &amp;M21a, &amp;S12a);
+<span class="lineNum">     162 </span><span class="lineCov">         40 :     result += checkEquals(lat2, lat2a, 1e-13);</span>
+<span class="lineNum">     163 </span><span class="lineCov">         40 :     result += checkEquals(lon2, lon2a, 1e-13);</span>
+<span class="lineNum">     164 </span><span class="lineCov">         40 :     result += checkEquals(azi2, azi2a, 1e-13);</span>
+<span class="lineNum">     165 </span><span class="lineCov">         40 :     result += checkEquals(a12, a12a, 1e-13);</span>
+<span class="lineNum">     166 </span><span class="lineCov">         40 :     result += checkEquals(m12, m12a, 1e-8);</span>
+<span class="lineNum">     167 </span><span class="lineCov">         40 :     result += checkEquals(M12, M12a, 1e-15);</span>
+<span class="lineNum">     168 </span><span class="lineCov">         40 :     result += checkEquals(M21, M21a, 1e-15);</span>
+<span class="lineNum">     169 </span><span class="lineCov">         40 :     result += checkEquals(S12, S12a, 0.1);</span>
+<span class="lineNum">     170 </span>            :   }
+<span class="lineNum">     171 </span><span class="lineCov">          2 :   return result;</span>
+<a name="172"><span class="lineNum">     172 </span>            : }</a>
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span><span class="lineCov">          2 : static int testarcdirect() {</span>
+<span class="lineNum">     175 </span>            :   double lat1, lon1, azi1, lat2, lon2, azi2, s12, a12, m12, M12, M21, S12;
+<span class="lineNum">     176 </span>            :   double lat2a, lon2a, azi2a, s12a, m12a, M12a, M21a, S12a;
+<span class="lineNum">     177 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     178 </span><span class="lineCov">          2 :   int i, result = 0;</span>
+<span class="lineNum">     179 </span><span class="lineCov">          2 :   unsigned flags = GEOD_ARCMODE | GEOD_LONG_UNROLL;</span>
+<span class="lineNum">     180 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     181 </span><span class="lineCov">         42 :   for (i = 0; i &lt; ncases; ++i) {</span>
+<span class="lineNum">     182 </span><span class="lineCov">         40 :     lat1 = testcases[i][0]; lon1 = testcases[i][1]; azi1 = testcases[i][2];</span>
+<span class="lineNum">     183 </span><span class="lineCov">         40 :     lat2 = testcases[i][3]; lon2 = testcases[i][4]; azi2 = testcases[i][5];</span>
+<span class="lineNum">     184 </span><span class="lineCov">         40 :     s12 = testcases[i][6]; a12 = testcases[i][7]; m12 = testcases[i][8];</span>
+<span class="lineNum">     185 </span><span class="lineCov">         40 :     M12 = testcases[i][9]; M21 = testcases[i][10]; S12 = testcases[i][11];</span>
+<span class="lineNum">     186 </span><span class="lineCov">         40 :     geod_gendirect(&amp;g, lat1, lon1, azi1, flags, a12,</span>
+<span class="lineNum">     187 </span>            :                    &amp;lat2a, &amp;lon2a, &amp;azi2a, &amp;s12a, &amp;m12a, &amp;M12a, &amp;M21a, &amp;S12a);
+<span class="lineNum">     188 </span><span class="lineCov">         40 :     result += checkEquals(lat2, lat2a, 1e-13);</span>
+<span class="lineNum">     189 </span><span class="lineCov">         40 :     result += checkEquals(lon2, lon2a, 1e-13);</span>
+<span class="lineNum">     190 </span><span class="lineCov">         40 :     result += checkEquals(azi2, azi2a, 1e-13);</span>
+<span class="lineNum">     191 </span><span class="lineCov">         40 :     result += checkEquals(s12, s12a, 1e-8);</span>
+<span class="lineNum">     192 </span><span class="lineCov">         40 :     result += checkEquals(m12, m12a, 1e-8);</span>
+<span class="lineNum">     193 </span><span class="lineCov">         40 :     result += checkEquals(M12, M12a, 1e-15);</span>
+<span class="lineNum">     194 </span><span class="lineCov">         40 :     result += checkEquals(M21, M21a, 1e-15);</span>
+<span class="lineNum">     195 </span><span class="lineCov">         40 :     result += checkEquals(S12, S12a, 0.1);</span>
+<span class="lineNum">     196 </span>            :   }
+<span class="lineNum">     197 </span><span class="lineCov">          2 :   return result;</span>
+<a name="198"><span class="lineNum">     198 </span>            : }</a>
+<span class="lineNum">     199 </span>            : 
+<span class="lineNum">     200 </span><span class="lineCov">          2 : static int GeodSolve0() {</span>
+<span class="lineNum">     201 </span>            :   double azi1, azi2, s12;
+<span class="lineNum">     202 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     203 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     204 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     205 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 40.6, -73.8, 49.01666667, 2.55, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     206 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 53.47022, 0.5e-5);</span>
+<span class="lineNum">     207 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 111.59367, 0.5e-5);</span>
+<span class="lineNum">     208 </span><span class="lineCov">          2 :   result += checkEquals(s12, 5853226, 0.5);</span>
+<span class="lineNum">     209 </span><span class="lineCov">          2 :   return result;</span>
+<a name="210"><span class="lineNum">     210 </span>            : }</a>
+<span class="lineNum">     211 </span>            : 
+<span class="lineNum">     212 </span><span class="lineCov">          2 : static int GeodSolve1() {</span>
+<span class="lineNum">     213 </span>            :   double lat2, lon2, azi2;
+<span class="lineNum">     214 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     215 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     216 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     217 </span><span class="lineCov">          2 :   geod_direct(&amp;g, 40.63972222, -73.77888889, 53.5, 5850e3,</span>
+<span class="lineNum">     218 </span>            :               &amp;lat2, &amp;lon2, &amp;azi2);
+<span class="lineNum">     219 </span><span class="lineCov">          2 :   result += checkEquals(lat2, 49.01467, 0.5e-5);</span>
+<span class="lineNum">     220 </span><span class="lineCov">          2 :   result += checkEquals(lon2, 2.56106, 0.5e-5);</span>
+<span class="lineNum">     221 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 111.62947, 0.5e-5);</span>
+<span class="lineNum">     222 </span><span class="lineCov">          2 :   return result;</span>
+<a name="223"><span class="lineNum">     223 </span>            : }</a>
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span><span class="lineCov">          2 : static int GeodSolve2() {</span>
+<span class="lineNum">     226 </span>            :   /* Check fix for antipodal prolate bug found 2010-09-04 */
+<span class="lineNum">     227 </span>            :   double azi1, azi2, s12;
+<span class="lineNum">     228 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     229 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     230 </span><span class="lineCov">          2 :   geod_init(&amp;g, 6.4e6, -1/150.0);</span>
+<span class="lineNum">     231 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0.07476, 0, -0.07476, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     232 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 90.00078, 0.5e-5);</span>
+<span class="lineNum">     233 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 90.00078, 0.5e-5);</span>
+<span class="lineNum">     234 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20106193, 0.5);</span>
+<span class="lineNum">     235 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0.1, 0, -0.1, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     236 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 90.00105, 0.5e-5);</span>
+<span class="lineNum">     237 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 90.00105, 0.5e-5);</span>
+<span class="lineNum">     238 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20106193, 0.5);</span>
+<span class="lineNum">     239 </span><span class="lineCov">          2 :   return result;</span>
+<a name="240"><span class="lineNum">     240 </span>            : }</a>
+<span class="lineNum">     241 </span>            : 
+<span class="lineNum">     242 </span><span class="lineCov">          2 : static int GeodSolve4() {</span>
+<span class="lineNum">     243 </span>            :   /* Check fix for short line bug found 2010-05-21 */
+<span class="lineNum">     244 </span>            :   double s12;
+<span class="lineNum">     245 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     246 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     247 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     248 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 36.493349428792, 0, 36.49334942879201, .0000008,</span>
+<span class="lineNum">     249 </span>            :                &amp;s12, 0, 0);
+<span class="lineNum">     250 </span><span class="lineCov">          2 :   result += checkEquals(s12, 0.072, 0.5e-3);</span>
+<span class="lineNum">     251 </span><span class="lineCov">          2 :   return result;</span>
+<a name="252"><span class="lineNum">     252 </span>            : }</a>
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span><span class="lineCov">          2 : static int GeodSolve5() {</span>
+<span class="lineNum">     255 </span>            :   /* Check fix for point2=pole bug found 2010-05-03 */
+<span class="lineNum">     256 </span>            :   double lat2, lon2, azi2;
+<span class="lineNum">     257 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     258 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     259 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     260 </span><span class="lineCov">          2 :   geod_direct(&amp;g, 0.01777745589997, 30, 0, 10e6, &amp;lat2, &amp;lon2, &amp;azi2);</span>
+<span class="lineNum">     261 </span><span class="lineCov">          2 :   result += checkEquals(lat2, 90, 0.5e-5);</span>
+<span class="lineNum">     262 </span><span class="lineCov">          2 :   if (lon2 &lt; 0) {</span>
+<span class="lineNum">     263 </span><span class="lineCov">          2 :     result += checkEquals(lon2, -150, 0.5e-5);</span>
+<span class="lineNum">     264 </span><span class="lineCov">          2 :     result += checkEquals(fabs(azi2), 180, 0.5e-5);</span>
+<span class="lineNum">     265 </span>            :   } else {
+<span class="lineNum">     266 </span><span class="lineNoCov">          0 :     result += checkEquals(lon2, 30, 0.5e-5);</span>
+<span class="lineNum">     267 </span><span class="lineNoCov">          0 :     result += checkEquals(azi2, 0, 0.5e-5);</span>
+<span class="lineNum">     268 </span>            :   }
+<span class="lineNum">     269 </span><span class="lineCov">          2 :   return result;</span>
+<a name="270"><span class="lineNum">     270 </span>            : }</a>
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span><span class="lineCov">          2 : static int GeodSolve6() {</span>
+<span class="lineNum">     273 </span>            :   /* Check fix for volatile sbet12a bug found 2011-06-25 (gcc 4.4.4
+<span class="lineNum">     274 </span>            :    * x86 -O3).  Found again on 2012-03-27 with tdm-mingw32 (g++ 4.6.1). */
+<span class="lineNum">     275 </span>            :   double s12;
+<span class="lineNum">     276 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     277 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     278 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     279 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 88.202499451857, 0,</span>
+<span class="lineNum">     280 </span>            :                -88.202499451857, 179.981022032992859592, &amp;s12, 0, 0);
+<span class="lineNum">     281 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20003898.214, 0.5e-3);</span>
+<span class="lineNum">     282 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 89.262080389218, 0,</span>
+<span class="lineNum">     283 </span>            :                -89.262080389218, 179.992207982775375662, &amp;s12, 0, 0);
+<span class="lineNum">     284 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20003925.854, 0.5e-3);</span>
+<span class="lineNum">     285 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 89.333123580033, 0,</span>
+<span class="lineNum">     286 </span>            :                -89.333123580032997687, 179.99295812360148422, &amp;s12, 0, 0);
+<span class="lineNum">     287 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20003926.881, 0.5e-3);</span>
+<span class="lineNum">     288 </span><span class="lineCov">          2 :   return result;</span>
+<a name="289"><span class="lineNum">     289 </span>            : }</a>
+<span class="lineNum">     290 </span>            : 
+<span class="lineNum">     291 </span><span class="lineCov">          2 : static int GeodSolve9() {</span>
+<span class="lineNum">     292 </span>            :   /* Check fix for volatile x bug found 2011-06-25 (gcc 4.4.4 x86 -O3) */
+<span class="lineNum">     293 </span>            :   double s12;
+<span class="lineNum">     294 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     295 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     296 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     297 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 56.320923501171, 0,</span>
+<span class="lineNum">     298 </span>            :                -56.320923501171, 179.664747671772880215, &amp;s12, 0, 0);
+<span class="lineNum">     299 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19993558.287, 0.5e-3);</span>
+<span class="lineNum">     300 </span><span class="lineCov">          2 :   return result;</span>
+<a name="301"><span class="lineNum">     301 </span>            : }</a>
+<span class="lineNum">     302 </span>            : 
+<span class="lineNum">     303 </span><span class="lineCov">          2 : static int GeodSolve10() {</span>
+<span class="lineNum">     304 </span>            :   /* Check fix for adjust tol1_ bug found 2011-06-25 (Visual Studio
+<span class="lineNum">     305 </span>            :    * 10 rel + debug) */
+<span class="lineNum">     306 </span>            :   double s12;
+<span class="lineNum">     307 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     308 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     309 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     310 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 52.784459512564, 0,</span>
+<span class="lineNum">     311 </span>            :                -52.784459512563990912, 179.634407464943777557, &amp;s12, 0, 0);
+<span class="lineNum">     312 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19991596.095, 0.5e-3);</span>
+<span class="lineNum">     313 </span><span class="lineCov">          2 :   return result;</span>
+<a name="314"><span class="lineNum">     314 </span>            : }</a>
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span><span class="lineCov">          2 : static int GeodSolve11() {</span>
+<span class="lineNum">     317 </span>            :   /* Check fix for bet2 = -bet1 bug found 2011-06-25 (Visual Studio
+<span class="lineNum">     318 </span>            :    * 10 rel + debug) */
+<span class="lineNum">     319 </span>            :   double s12;
+<span class="lineNum">     320 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     321 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     322 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     323 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 48.522876735459, 0,</span>
+<span class="lineNum">     324 </span>            :                -48.52287673545898293, 179.599720456223079643, &amp;s12, 0, 0);
+<span class="lineNum">     325 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19989144.774, 0.5e-3);</span>
+<span class="lineNum">     326 </span><span class="lineCov">          2 :   return result;</span>
+<a name="327"><span class="lineNum">     327 </span>            : }</a>
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span><span class="lineCov">          2 : static int GeodSolve12() {</span>
+<span class="lineNum">     330 </span>            :   /* Check fix for inverse geodesics on extreme prolate/oblate
+<span class="lineNum">     331 </span>            :    * ellipsoids Reported 2012-08-29 Stefan Guenther
+<span class="lineNum">     332 </span>            :    * &lt;stefan.gunther@embl.de&gt;; fixed 2012-10-07 */
+<span class="lineNum">     333 </span>            :   double azi1, azi2, s12;
+<span class="lineNum">     334 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     335 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     336 </span><span class="lineCov">          2 :   geod_init(&amp;g, 89.8, -1.83);</span>
+<span class="lineNum">     337 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, -10, 160, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     338 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 120.27, 1e-2);</span>
+<span class="lineNum">     339 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 105.15, 1e-2);</span>
+<span class="lineNum">     340 </span><span class="lineCov">          2 :   result += checkEquals(s12, 266.7, 1e-1);</span>
+<span class="lineNum">     341 </span><span class="lineCov">          2 :   return result;</span>
+<a name="342"><span class="lineNum">     342 </span>            : }</a>
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span><span class="lineCov">          2 : static int GeodSolve14() {</span>
+<span class="lineNum">     345 </span>            :   /* Check fix for inverse ignoring lon12 = nan */
+<span class="lineNum">     346 </span>            :   double azi1, azi2, s12, nan;
+<span class="lineNum">     347 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     348 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     349 </span>            :   {
+<span class="lineNum">     350 </span><span class="lineCov">          2 :     double minus1 = -1;</span>
+<span class="lineNum">     351 </span>            :     /* cppcheck-suppress wrongmathcall */
+<span class="lineNum">     352 </span><span class="lineCov">          2 :     nan = sqrt(minus1);</span>
+<span class="lineNum">     353 </span>            :   }
+<span class="lineNum">     354 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     355 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 1, nan, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     356 </span><span class="lineCov">          2 :   result += checkNaN(azi1);</span>
+<span class="lineNum">     357 </span><span class="lineCov">          2 :   result += checkNaN(azi2);</span>
+<span class="lineNum">     358 </span><span class="lineCov">          2 :   result += checkNaN(s12);</span>
+<span class="lineNum">     359 </span><span class="lineCov">          2 :   return result;</span>
+<a name="360"><span class="lineNum">     360 </span>            : }</a>
+<span class="lineNum">     361 </span>            : 
+<span class="lineNum">     362 </span><span class="lineCov">          2 : static int GeodSolve15() {</span>
+<span class="lineNum">     363 </span>            :   /* Initial implementation of Math::eatanhe was wrong for e^2 &lt; 0.  This
+<span class="lineNum">     364 </span>            :    * checks that this is fixed. */
+<span class="lineNum">     365 </span>            :   double S12;
+<span class="lineNum">     366 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     367 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     368 </span><span class="lineCov">          2 :   geod_init(&amp;g, 6.4e6, -1/150.0);</span>
+<span class="lineNum">     369 </span><span class="lineCov">          2 :   geod_gendirect(&amp;g, 1, 2, 3, 0, 4,</span>
+<span class="lineNum">     370 </span>            :                  0, 0, 0, 0, 0, 0, 0, &amp;S12);
+<span class="lineNum">     371 </span><span class="lineCov">          2 :   result += checkEquals(S12, 23700, 0.5);</span>
+<span class="lineNum">     372 </span><span class="lineCov">          2 :   return result;</span>
+<a name="373"><span class="lineNum">     373 </span>            : }</a>
+<span class="lineNum">     374 </span>            : 
+<span class="lineNum">     375 </span><span class="lineCov">          2 : static int GeodSolve17() {</span>
+<span class="lineNum">     376 </span>            :   /* Check fix for LONG_UNROLL bug found on 2015-05-07 */
+<span class="lineNum">     377 </span>            :   double lat2, lon2, azi2;
+<span class="lineNum">     378 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     379 </span>            :   struct geod_geodesicline l;
+<span class="lineNum">     380 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     381 </span><span class="lineCov">          2 :   unsigned flags = GEOD_LONG_UNROLL;</span>
+<span class="lineNum">     382 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     383 </span><span class="lineCov">          2 :   geod_gendirect(&amp;g, 40, -75, -10, flags, 2e7,</span>
+<span class="lineNum">     384 </span>            :                  &amp;lat2, &amp;lon2, &amp;azi2, 0, 0, 0, 0, 0);
+<span class="lineNum">     385 </span><span class="lineCov">          2 :   result += checkEquals(lat2, -39, 1);</span>
+<span class="lineNum">     386 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -254, 1);</span>
+<span class="lineNum">     387 </span><span class="lineCov">          2 :   result += checkEquals(azi2, -170, 1);</span>
+<span class="lineNum">     388 </span><span class="lineCov">          2 :   geod_lineinit(&amp;l, &amp;g, 40, -75, -10, 0);</span>
+<span class="lineNum">     389 </span><span class="lineCov">          2 :   geod_genposition(&amp;l, flags, 2e7, &amp;lat2, &amp;lon2, &amp;azi2, 0, 0, 0, 0, 0);</span>
+<span class="lineNum">     390 </span><span class="lineCov">          2 :   result += checkEquals(lat2, -39, 1);</span>
+<span class="lineNum">     391 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -254, 1);</span>
+<span class="lineNum">     392 </span><span class="lineCov">          2 :   result += checkEquals(azi2, -170, 1);</span>
+<span class="lineNum">     393 </span><span class="lineCov">          2 :   geod_direct(&amp;g, 40, -75, -10, 2e7, &amp;lat2, &amp;lon2, &amp;azi2);</span>
+<span class="lineNum">     394 </span><span class="lineCov">          2 :   result += checkEquals(lat2, -39, 1);</span>
+<span class="lineNum">     395 </span><span class="lineCov">          2 :   result += checkEquals(lon2, 105, 1);</span>
+<span class="lineNum">     396 </span><span class="lineCov">          2 :   result += checkEquals(azi2, -170, 1);</span>
+<span class="lineNum">     397 </span><span class="lineCov">          2 :   geod_position(&amp;l, 2e7, &amp;lat2, &amp;lon2, &amp;azi2);</span>
+<span class="lineNum">     398 </span><span class="lineCov">          2 :   result += checkEquals(lat2, -39, 1);</span>
+<span class="lineNum">     399 </span><span class="lineCov">          2 :   result += checkEquals(lon2, 105, 1);</span>
+<span class="lineNum">     400 </span><span class="lineCov">          2 :   result += checkEquals(azi2, -170, 1);</span>
+<span class="lineNum">     401 </span><span class="lineCov">          2 :   return result;</span>
+<a name="402"><span class="lineNum">     402 </span>            : }</a>
+<span class="lineNum">     403 </span>            : 
+<span class="lineNum">     404 </span><span class="lineCov">          2 : static int GeodSolve26() {</span>
+<span class="lineNum">     405 </span>            :   /* Check 0/0 problem with area calculation on sphere 2015-09-08 */
+<span class="lineNum">     406 </span>            :   double S12;
+<span class="lineNum">     407 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     408 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     409 </span><span class="lineCov">          2 :   geod_init(&amp;g, 6.4e6, 0);</span>
+<span class="lineNum">     410 </span><span class="lineCov">          2 :   geod_geninverse(&amp;g, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, &amp;S12);</span>
+<span class="lineNum">     411 </span><span class="lineCov">          2 :   result += checkEquals(S12, 49911046115.0, 0.5);</span>
+<span class="lineNum">     412 </span><span class="lineCov">          2 :   return result;</span>
+<a name="413"><span class="lineNum">     413 </span>            : }</a>
+<span class="lineNum">     414 </span>            : 
+<span class="lineNum">     415 </span><span class="lineCov">          2 : static int GeodSolve28() {</span>
+<span class="lineNum">     416 </span>            :   /* Check for bad placement of assignment of r.a12 with |f| &gt; 0.01 (bug in
+<span class="lineNum">     417 </span>            :    * Java implementation fixed on 2015-05-19). */
+<span class="lineNum">     418 </span>            :   double a12;
+<span class="lineNum">     419 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     420 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     421 </span><span class="lineCov">          2 :   geod_init(&amp;g, 6.4e6, 0.1);</span>
+<span class="lineNum">     422 </span><span class="lineCov">          2 :   a12 = geod_gendirect(&amp;g, 1, 2, 10, 0, 5e6, 0, 0, 0, 0, 0, 0, 0, 0);</span>
+<span class="lineNum">     423 </span><span class="lineCov">          2 :   result += checkEquals(a12, 48.55570690, 0.5e-8);</span>
+<span class="lineNum">     424 </span><span class="lineCov">          2 :   return result;</span>
+<a name="425"><span class="lineNum">     425 </span>            : }</a>
+<span class="lineNum">     426 </span>            : 
+<span class="lineNum">     427 </span><span class="lineCov">          2 : static int GeodSolve33() {</span>
+<span class="lineNum">     428 </span>            :   /* Check max(-0.0,+0.0) issues 2015-08-22 (triggered by bugs in Octave --
+<span class="lineNum">     429 </span>            :    * sind(-0.0) = +0.0 -- and in some version of Visual Studio --
+<span class="lineNum">     430 </span>            :    * fmod(-0.0, 360.0) = +0.0. */
+<span class="lineNum">     431 </span>            :   double azi1, azi2, s12;
+<span class="lineNum">     432 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     433 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     434 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     435 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 0, 179, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     436 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 90.00000, 0.5e-5);</span>
+<span class="lineNum">     437 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 90.00000, 0.5e-5);</span>
+<span class="lineNum">     438 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19926189, 0.5);</span>
+<span class="lineNum">     439 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 0, 179.5, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     440 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 55.96650, 0.5e-5);</span>
+<span class="lineNum">     441 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 124.03350, 0.5e-5);</span>
+<span class="lineNum">     442 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19980862, 0.5);</span>
+<span class="lineNum">     443 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 0, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     444 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 0.00000, 0.5e-5);</span>
+<span class="lineNum">     445 </span><span class="lineCov">          2 :   result += checkEquals(fabs(azi2), 180.00000, 0.5e-5);</span>
+<span class="lineNum">     446 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20003931, 0.5);</span>
+<span class="lineNum">     447 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 1, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     448 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 0.00000, 0.5e-5);</span>
+<span class="lineNum">     449 </span><span class="lineCov">          2 :   result += checkEquals(fabs(azi2), 180.00000, 0.5e-5);</span>
+<span class="lineNum">     450 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19893357, 0.5);</span>
+<span class="lineNum">     451 </span><span class="lineCov">          2 :   geod_init(&amp;g, 6.4e6, 0);</span>
+<span class="lineNum">     452 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 0, 179, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     453 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 90.00000, 0.5e-5);</span>
+<span class="lineNum">     454 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 90.00000, 0.5e-5);</span>
+<span class="lineNum">     455 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19994492, 0.5);</span>
+<span class="lineNum">     456 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 0, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     457 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 0.00000, 0.5e-5);</span>
+<span class="lineNum">     458 </span><span class="lineCov">          2 :   result += checkEquals(fabs(azi2), 180.00000, 0.5e-5);</span>
+<span class="lineNum">     459 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20106193, 0.5);</span>
+<span class="lineNum">     460 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 1, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     461 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 0.00000, 0.5e-5);</span>
+<span class="lineNum">     462 </span><span class="lineCov">          2 :   result += checkEquals(fabs(azi2), 180.00000, 0.5e-5);</span>
+<span class="lineNum">     463 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19994492, 0.5);</span>
+<span class="lineNum">     464 </span><span class="lineCov">          2 :   geod_init(&amp;g, 6.4e6, -1/300.0);</span>
+<span class="lineNum">     465 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 0, 179, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     466 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 90.00000, 0.5e-5);</span>
+<span class="lineNum">     467 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 90.00000, 0.5e-5);</span>
+<span class="lineNum">     468 </span><span class="lineCov">          2 :   result += checkEquals(s12, 19994492, 0.5);</span>
+<span class="lineNum">     469 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 0, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     470 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 90.00000, 0.5e-5);</span>
+<span class="lineNum">     471 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 90.00000, 0.5e-5);</span>
+<span class="lineNum">     472 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20106193, 0.5);</span>
+<span class="lineNum">     473 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 0.5, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     474 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 33.02493, 0.5e-5);</span>
+<span class="lineNum">     475 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 146.97364, 0.5e-5);</span>
+<span class="lineNum">     476 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20082617, 0.5);</span>
+<span class="lineNum">     477 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 0, 0, 1, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     478 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 0.00000, 0.5e-5);</span>
+<span class="lineNum">     479 </span><span class="lineCov">          2 :   result += checkEquals(fabs(azi2), 180.00000, 0.5e-5);</span>
+<span class="lineNum">     480 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20027270, 0.5);</span>
+<span class="lineNum">     481 </span>            : 
+<span class="lineNum">     482 </span><span class="lineCov">          2 :   return result;</span>
+<a name="483"><span class="lineNum">     483 </span>            : }</a>
+<span class="lineNum">     484 </span>            : 
+<span class="lineNum">     485 </span><span class="lineCov">          2 : static int GeodSolve55() {</span>
+<span class="lineNum">     486 </span>            :   /* Check fix for nan + point on equator or pole not returning all nans in
+<span class="lineNum">     487 </span>            :    * Geodesic::Inverse, found 2015-09-23. */
+<span class="lineNum">     488 </span>            :   double azi1, azi2, s12, nan;
+<span class="lineNum">     489 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     490 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     491 </span>            :   {
+<span class="lineNum">     492 </span><span class="lineCov">          2 :     double minus1 = -1;</span>
+<span class="lineNum">     493 </span>            :     /* cppcheck-suppress wrongmathcall */
+<span class="lineNum">     494 </span><span class="lineCov">          2 :     nan = sqrt(minus1);</span>
+<span class="lineNum">     495 </span>            :   }
+<span class="lineNum">     496 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     497 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, nan, 0, 0, 90, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     498 </span><span class="lineCov">          2 :   result += checkNaN(azi1);</span>
+<span class="lineNum">     499 </span><span class="lineCov">          2 :   result += checkNaN(azi2);</span>
+<span class="lineNum">     500 </span><span class="lineCov">          2 :   result += checkNaN(s12);</span>
+<span class="lineNum">     501 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, nan, 0, 90, 9, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     502 </span><span class="lineCov">          2 :   result += checkNaN(azi1);</span>
+<span class="lineNum">     503 </span><span class="lineCov">          2 :   result += checkNaN(azi2);</span>
+<span class="lineNum">     504 </span><span class="lineCov">          2 :   result += checkNaN(s12);</span>
+<span class="lineNum">     505 </span><span class="lineCov">          2 :   return result;</span>
+<a name="506"><span class="lineNum">     506 </span>            : }</a>
+<span class="lineNum">     507 </span>            : 
+<span class="lineNum">     508 </span><span class="lineCov">          2 : static int GeodSolve59() {</span>
+<span class="lineNum">     509 </span>            :   /* Check for points close with longitudes close to 180 deg apart. */
+<span class="lineNum">     510 </span>            :   double azi1, azi2, s12;
+<span class="lineNum">     511 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     512 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     513 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     514 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 5, 0.00000000000001, 10, 180, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     515 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 0.000000000000035, 1.5e-14);</span>
+<span class="lineNum">     516 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 179.99999999999996, 1.5e-14);</span>
+<span class="lineNum">     517 </span><span class="lineCov">          2 :   result += checkEquals(s12, 18345191.174332713, 5e-9);</span>
+<span class="lineNum">     518 </span><span class="lineCov">          2 :   return result;</span>
+<a name="519"><span class="lineNum">     519 </span>            : }</a>
+<span class="lineNum">     520 </span>            : 
+<span class="lineNum">     521 </span><span class="lineCov">          2 : static int GeodSolve61() {</span>
+<span class="lineNum">     522 </span>            :   /* Make sure small negative azimuths are west-going */
+<span class="lineNum">     523 </span>            :   double lat2, lon2, azi2;
+<span class="lineNum">     524 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     525 </span>            :   struct geod_geodesicline l;
+<span class="lineNum">     526 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     527 </span><span class="lineCov">          2 :   unsigned flags = GEOD_LONG_UNROLL;</span>
+<span class="lineNum">     528 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     529 </span><span class="lineCov">          2 :   geod_gendirect(&amp;g, 45, 0, -0.000000000000000003, flags, 1e7,</span>
+<span class="lineNum">     530 </span>            :                  &amp;lat2, &amp;lon2, &amp;azi2, 0, 0, 0, 0, 0);
+<span class="lineNum">     531 </span><span class="lineCov">          2 :   result += checkEquals(lat2, 45.30632, 0.5e-5);</span>
+<span class="lineNum">     532 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -180, 0.5e-5);</span>
+<span class="lineNum">     533 </span><span class="lineCov">          2 :   result += checkEquals(fabs(azi2), 180, 0.5e-5);</span>
+<span class="lineNum">     534 </span><span class="lineCov">          2 :   geod_inverseline(&amp;l, &amp;g, 45, 0, 80, -0.000000000000000003, 0);</span>
+<span class="lineNum">     535 </span><span class="lineCov">          2 :   geod_genposition(&amp;l, flags, 1e7, &amp;lat2, &amp;lon2, &amp;azi2, 0, 0, 0, 0, 0);</span>
+<span class="lineNum">     536 </span><span class="lineCov">          2 :   result += checkEquals(lat2, 45.30632, 0.5e-5);</span>
+<span class="lineNum">     537 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -180, 0.5e-5);</span>
+<span class="lineNum">     538 </span><span class="lineCov">          2 :   result += checkEquals(fabs(azi2), 180, 0.5e-5);</span>
+<span class="lineNum">     539 </span><span class="lineCov">          2 :   return result;</span>
+<a name="540"><span class="lineNum">     540 </span>            : }</a>
+<span class="lineNum">     541 </span>            : 
+<span class="lineNum">     542 </span><span class="lineCov">          2 : static int GeodSolve65() {</span>
+<span class="lineNum">     543 </span>            :   /* Check for bug in east-going check in GeodesicLine (needed to check for
+<span class="lineNum">     544 </span>            :    * sign of 0) and sign error in area calculation due to a bogus override of
+<span class="lineNum">     545 </span>            :    * the code for alp12.  Found/fixed on 2015-12-19. */
+<span class="lineNum">     546 </span>            :   double lat2, lon2, azi2, s12, a12, m12, M12, M21, S12;
+<span class="lineNum">     547 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     548 </span>            :   struct geod_geodesicline l;
+<span class="lineNum">     549 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     550 </span><span class="lineCov">          2 :   unsigned flags = GEOD_LONG_UNROLL, caps = GEOD_ALL;</span>
+<span class="lineNum">     551 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     552 </span><span class="lineCov">          2 :   geod_inverseline(&amp;l, &amp;g, 30, -0.000000000000000001, -31, 180, caps);</span>
+<span class="lineNum">     553 </span><span class="lineCov">          2 :   a12 = geod_genposition(&amp;l, flags, 1e7,</span>
+<span class="lineNum">     554 </span>            :                          &amp;lat2, &amp;lon2, &amp;azi2, &amp;s12, &amp;m12, &amp;M12, &amp;M21, &amp;S12);
+<span class="lineNum">     555 </span><span class="lineCov">          2 :   result += checkEquals(lat2, -60.23169, 0.5e-5);</span>
+<span class="lineNum">     556 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -0.00000, 0.5e-5);</span>
+<span class="lineNum">     557 </span><span class="lineCov">          2 :   result += checkEquals(fabs(azi2), 180.00000, 0.5e-5);</span>
+<span class="lineNum">     558 </span><span class="lineCov">          2 :   result += checkEquals(s12, 10000000, 0.5);</span>
+<span class="lineNum">     559 </span><span class="lineCov">          2 :   result += checkEquals(a12, 90.06544, 0.5e-5);</span>
+<span class="lineNum">     560 </span><span class="lineCov">          2 :   result += checkEquals(m12, 6363636, 0.5);</span>
+<span class="lineNum">     561 </span><span class="lineCov">          2 :   result += checkEquals(M12, -0.0012834, 0.5e-7);</span>
+<span class="lineNum">     562 </span><span class="lineCov">          2 :   result += checkEquals(M21, 0.0013749, 0.5e-7);</span>
+<span class="lineNum">     563 </span><span class="lineCov">          2 :   result += checkEquals(S12, 0, 0.5);</span>
+<span class="lineNum">     564 </span><span class="lineCov">          2 :   a12 = geod_genposition(&amp;l, flags, 2e7,</span>
+<span class="lineNum">     565 </span>            :                          &amp;lat2, &amp;lon2, &amp;azi2, &amp;s12, &amp;m12, &amp;M12, &amp;M21, &amp;S12);
+<span class="lineNum">     566 </span><span class="lineCov">          2 :   result += checkEquals(lat2, -30.03547, 0.5e-5);</span>
+<span class="lineNum">     567 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -180.00000, 0.5e-5);</span>
+<span class="lineNum">     568 </span><span class="lineCov">          2 :   result += checkEquals(azi2, -0.00000, 0.5e-5);</span>
+<span class="lineNum">     569 </span><span class="lineCov">          2 :   result += checkEquals(s12, 20000000, 0.5);</span>
+<span class="lineNum">     570 </span><span class="lineCov">          2 :   result += checkEquals(a12, 179.96459, 0.5e-5);</span>
+<span class="lineNum">     571 </span><span class="lineCov">          2 :   result += checkEquals(m12, 54342, 0.5);</span>
+<span class="lineNum">     572 </span><span class="lineCov">          2 :   result += checkEquals(M12, -1.0045592, 0.5e-7);</span>
+<span class="lineNum">     573 </span><span class="lineCov">          2 :   result += checkEquals(M21, -0.9954339, 0.5e-7);</span>
+<span class="lineNum">     574 </span><span class="lineCov">          2 :   result += checkEquals(S12, 127516405431022.0, 0.5);</span>
+<span class="lineNum">     575 </span><span class="lineCov">          2 :   return result;</span>
+<a name="576"><span class="lineNum">     576 </span>            : }</a>
+<span class="lineNum">     577 </span>            : 
+<span class="lineNum">     578 </span><span class="lineCov">          2 : static int GeodSolve67() {</span>
+<span class="lineNum">     579 </span>            :   /* Check for InverseLine if line is slightly west of S and that s13 is
+<span class="lineNum">     580 </span>            :      correctly set. */
+<span class="lineNum">     581 </span>            :   double lat2, lon2, azi2;
+<span class="lineNum">     582 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     583 </span>            :   struct geod_geodesicline l;
+<span class="lineNum">     584 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     585 </span><span class="lineCov">          2 :   unsigned flags = GEOD_LONG_UNROLL;</span>
+<span class="lineNum">     586 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     587 </span><span class="lineCov">          2 :   geod_inverseline(&amp;l, &amp;g, -5, -0.000000000000002, -10, 180, 0);</span>
+<span class="lineNum">     588 </span><span class="lineCov">          2 :   geod_genposition(&amp;l, flags, 2e7, &amp;lat2, &amp;lon2, &amp;azi2, 0, 0, 0, 0, 0);</span>
+<span class="lineNum">     589 </span><span class="lineCov">          2 :   result += checkEquals(lat2, 4.96445, 0.5e-5);</span>
+<span class="lineNum">     590 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -180.00000, 0.5e-5);</span>
+<span class="lineNum">     591 </span><span class="lineCov">          2 :   result += checkEquals(azi2, -0.00000, 0.5e-5);</span>
+<span class="lineNum">     592 </span><span class="lineCov">          2 :   geod_genposition(&amp;l, flags, 0.5 * l.s13, &amp;lat2, &amp;lon2, &amp;azi2, 0, 0, 0, 0, 0);</span>
+<span class="lineNum">     593 </span><span class="lineCov">          2 :   result += checkEquals(lat2, -87.52461, 0.5e-5);</span>
+<span class="lineNum">     594 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -0.00000, 0.5e-5);</span>
+<span class="lineNum">     595 </span><span class="lineCov">          2 :   result += checkEquals(azi2, -180.00000, 0.5e-5);</span>
+<span class="lineNum">     596 </span><span class="lineCov">          2 :   return result;</span>
+<a name="597"><span class="lineNum">     597 </span>            : }</a>
+<span class="lineNum">     598 </span>            : 
+<span class="lineNum">     599 </span><span class="lineCov">          2 : static int GeodSolve71() {</span>
+<span class="lineNum">     600 </span>            :   /* Check that DirectLine sets s13. */
+<span class="lineNum">     601 </span>            :   double lat2, lon2, azi2;
+<span class="lineNum">     602 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     603 </span>            :   struct geod_geodesicline l;
+<span class="lineNum">     604 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     605 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     606 </span><span class="lineCov">          2 :   geod_directline(&amp;l, &amp;g, 1, 2, 45, 1e7, 0);</span>
+<span class="lineNum">     607 </span><span class="lineCov">          2 :   geod_position(&amp;l, 0.5 * l.s13, &amp;lat2, &amp;lon2, &amp;azi2);</span>
+<span class="lineNum">     608 </span><span class="lineCov">          2 :   result += checkEquals(lat2, 30.92625, 0.5e-5);</span>
+<span class="lineNum">     609 </span><span class="lineCov">          2 :   result += checkEquals(lon2, 37.54640, 0.5e-5);</span>
+<span class="lineNum">     610 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 55.43104, 0.5e-5);</span>
+<span class="lineNum">     611 </span><span class="lineCov">          2 :   return result;</span>
+<a name="612"><span class="lineNum">     612 </span>            : }</a>
+<span class="lineNum">     613 </span>            : 
+<span class="lineNum">     614 </span><span class="lineCov">          2 : static int GeodSolve73() {</span>
+<span class="lineNum">     615 </span>            :   /* Check for backwards from the pole bug reported by Anon on 2016-02-13.
+<span class="lineNum">     616 </span>            :    * This only affected the Java implementation.  It was introduced in Java
+<span class="lineNum">     617 </span>            :    * version 1.44 and fixed in 1.46-SNAPSHOT on 2016-01-17. */
+<span class="lineNum">     618 </span>            :   double lat2, lon2, azi2;
+<span class="lineNum">     619 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     620 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     621 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     622 </span><span class="lineCov">          2 :   geod_direct(&amp;g, 90, 10, 180, -1e6,</span>
+<span class="lineNum">     623 </span>            :               &amp;lat2, &amp;lon2, &amp;azi2);
+<span class="lineNum">     624 </span><span class="lineCov">          2 :   result += checkEquals(lat2, 81.04623, 0.5e-5);</span>
+<span class="lineNum">     625 </span><span class="lineCov">          2 :   result += checkEquals(lon2, -170, 0.5e-5);</span>
+<span class="lineNum">     626 </span><span class="lineCov">          2 :   result += azi2 == 0 ? 0 : 1;</span>
+<span class="lineNum">     627 </span><span class="lineCov">          2 :   result += 1/azi2 &gt; 0 ? 0 : 1; /* Check that azi2 = +0.0 not -0.0 */</span>
+<span class="lineNum">     628 </span><span class="lineCov">          2 :   return result;</span>
+<a name="629"><span class="lineNum">     629 </span>            : }</a>
+<span class="lineNum">     630 </span>            : 
+<span class="lineNum">     631 </span><span class="lineCov">         22 : static void planimeter(const struct geod_geodesic* g,</span>
+<span class="lineNum">     632 </span>            :                        double points[][2], int N,
+<span class="lineNum">     633 </span>            :                        double* perimeter, double* area) {
+<span class="lineNum">     634 </span>            :   struct geod_polygon p;
+<span class="lineNum">     635 </span>            :   int i;
+<span class="lineNum">     636 </span><span class="lineCov">         22 :   geod_polygon_init(&amp;p, 0);</span>
+<span class="lineNum">     637 </span><span class="lineCov">         98 :   for (i = 0; i &lt; N; ++i)</span>
+<span class="lineNum">     638 </span><span class="lineCov">         76 :     geod_polygon_addpoint(g, &amp;p, points[i][0], points[i][1]);</span>
+<span class="lineNum">     639 </span><span class="lineCov">         22 :   geod_polygon_compute(g, &amp;p, 0, 1, area, perimeter);</span>
+<a name="640"><span class="lineNum">     640 </span><span class="lineCov">         22 : }</span></a>
+<span class="lineNum">     641 </span>            : 
+<span class="lineNum">     642 </span><span class="lineCov">          2 : static void polylength(const struct geod_geodesic* g,</span>
+<span class="lineNum">     643 </span>            :                        double points[][2], int N,
+<span class="lineNum">     644 </span>            :                        double* perimeter) {
+<span class="lineNum">     645 </span>            :   struct geod_polygon p;
+<span class="lineNum">     646 </span>            :   int i;
+<span class="lineNum">     647 </span><span class="lineCov">          2 :   geod_polygon_init(&amp;p, 1);</span>
+<span class="lineNum">     648 </span><span class="lineCov">          8 :   for (i = 0; i &lt; N; ++i)</span>
+<span class="lineNum">     649 </span><span class="lineCov">          6 :     geod_polygon_addpoint(g, &amp;p, points[i][0], points[i][1]);</span>
+<span class="lineNum">     650 </span><span class="lineCov">          2 :   geod_polygon_compute(g, &amp;p, 0, 1, 0, perimeter);</span>
+<a name="651"><span class="lineNum">     651 </span><span class="lineCov">          2 : }</span></a>
+<span class="lineNum">     652 </span>            : 
+<span class="lineNum">     653 </span><span class="lineCov">          2 : static int GeodSolve74() {</span>
+<span class="lineNum">     654 </span>            :   /* Check fix for inaccurate areas, bug introduced in v1.46, fixed
+<span class="lineNum">     655 </span>            :      2015-10-16. */
+<span class="lineNum">     656 </span>            :   double a12, s12, azi1, azi2, m12, M12, M21, S12;
+<span class="lineNum">     657 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     658 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     659 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     660 </span><span class="lineCov">          2 :   a12 = geod_geninverse(&amp;g, 54.1589, 15.3872, 54.1591, 15.3877,</span>
+<span class="lineNum">     661 </span>            :                         &amp;s12, &amp;azi1, &amp;azi2, &amp;m12, &amp;M12, &amp;M21, &amp;S12);
+<span class="lineNum">     662 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 55.723110355, 5e-9);</span>
+<span class="lineNum">     663 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 55.723515675, 5e-9);</span>
+<span class="lineNum">     664 </span><span class="lineCov">          2 :   result += checkEquals(s12,  39.527686385, 5e-9);</span>
+<span class="lineNum">     665 </span><span class="lineCov">          2 :   result += checkEquals(a12,   0.000355495, 5e-9);</span>
+<span class="lineNum">     666 </span><span class="lineCov">          2 :   result += checkEquals(m12,  39.527686385, 5e-9);</span>
+<span class="lineNum">     667 </span><span class="lineCov">          2 :   result += checkEquals(M12,   0.999999995, 5e-9);</span>
+<span class="lineNum">     668 </span><span class="lineCov">          2 :   result += checkEquals(M21,   0.999999995, 5e-9);</span>
+<span class="lineNum">     669 </span><span class="lineCov">          2 :   result += checkEquals(S12, 286698586.30197, 5e-4);</span>
+<span class="lineNum">     670 </span><span class="lineCov">          2 :   return result;</span>
+<a name="671"><span class="lineNum">     671 </span>            : }</a>
+<span class="lineNum">     672 </span>            : 
+<span class="lineNum">     673 </span><span class="lineCov">          2 : static int GeodSolve76() {</span>
+<span class="lineNum">     674 </span>            :   /* The distance from Wellington and Salamanca (a classic failure of
+<span class="lineNum">     675 </span>            :      Vincenty) */
+<span class="lineNum">     676 </span>            :   double azi1, azi2, s12;
+<span class="lineNum">     677 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     678 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     679 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     680 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, -(41+19/60.0), 174+49/60.0, 40+58/60.0, -(5+30/60.0),</span>
+<span class="lineNum">     681 </span>            :                &amp;s12, &amp;azi1, &amp;azi2);
+<span class="lineNum">     682 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 160.39137649664, 0.5e-11);</span>
+<span class="lineNum">     683 </span><span class="lineCov">          2 :   result += checkEquals(azi2,  19.50042925176, 0.5e-11);</span>
+<span class="lineNum">     684 </span><span class="lineCov">          2 :   result += checkEquals(s12,  19960543.857179, 0.5e-6);</span>
+<span class="lineNum">     685 </span><span class="lineCov">          2 :   return result;</span>
+<a name="686"><span class="lineNum">     686 </span>            : }</a>
+<span class="lineNum">     687 </span>            : 
+<span class="lineNum">     688 </span><span class="lineCov">          2 : static int GeodSolve78() {</span>
+<span class="lineNum">     689 </span>            :   /* An example where the NGS calculator fails to converge */
+<span class="lineNum">     690 </span>            :   double azi1, azi2, s12;
+<span class="lineNum">     691 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     692 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     693 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     694 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, 27.2, 0.0, -27.1, 179.5, &amp;s12, &amp;azi1, &amp;azi2);</span>
+<span class="lineNum">     695 </span><span class="lineCov">          2 :   result += checkEquals(azi1,  45.82468716758, 0.5e-11);</span>
+<span class="lineNum">     696 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 134.22776532670, 0.5e-11);</span>
+<span class="lineNum">     697 </span><span class="lineCov">          2 :   result += checkEquals(s12,  19974354.765767, 0.5e-6);</span>
+<span class="lineNum">     698 </span><span class="lineCov">          2 :   return result;</span>
+<a name="699"><span class="lineNum">     699 </span>            : }</a>
+<span class="lineNum">     700 </span>            : 
+<span class="lineNum">     701 </span><span class="lineCov">          2 : static int GeodSolve80() {</span>
+<span class="lineNum">     702 </span>            :   /* Some tests to add code coverage: computing scale in special cases + zero
+<span class="lineNum">     703 </span>            :      length geodesic (includes GeodSolve80 - GeodSolve83) + using an incapable
+<span class="lineNum">     704 </span>            :      line. */
+<span class="lineNum">     705 </span>            :   double a12, s12, azi1, azi2, m12, M12, M21, S12;
+<span class="lineNum">     706 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     707 </span>            :   struct geod_geodesicline l;
+<span class="lineNum">     708 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     709 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     710 </span><span class="lineCov">          2 :   geod_geninverse(&amp;g, 0, 0, 0, 90, 0, 0, 0, 0, &amp;M12, &amp;M21, 0);</span>
+<span class="lineNum">     711 </span><span class="lineCov">          2 :   result += checkEquals(M12, -0.00528427534, 0.5e-10);</span>
+<span class="lineNum">     712 </span><span class="lineCov">          2 :   result += checkEquals(M21, -0.00528427534, 0.5e-10);</span>
+<span class="lineNum">     713 </span><span class="lineCov">          2 :   geod_geninverse(&amp;g, 0, 0, 1e-6, 1e-6, 0, 0, 0, 0, &amp;M12, &amp;M21, 0);</span>
+<span class="lineNum">     714 </span><span class="lineCov">          2 :   result += checkEquals(M12, 1, 0.5e-10);</span>
+<span class="lineNum">     715 </span><span class="lineCov">          2 :   result += checkEquals(M21, 1, 0.5e-10);</span>
+<span class="lineNum">     716 </span><span class="lineCov">          2 :   a12 = geod_geninverse(&amp;g, 20.001, 0, 20.001, 0,</span>
+<span class="lineNum">     717 </span>            :                         &amp;s12, &amp;azi1, &amp;azi2, &amp;m12, &amp;M12, &amp;M21, &amp;S12);
+<span class="lineNum">     718 </span><span class="lineCov">          2 :   result += checkEquals(a12, 0, 1e-13);</span>
+<span class="lineNum">     719 </span><span class="lineCov">          2 :   result += checkEquals(s12, 0, 1e-8);</span>
+<span class="lineNum">     720 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 180, 1e-13);</span>
+<span class="lineNum">     721 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 180, 1e-13);</span>
+<span class="lineNum">     722 </span><span class="lineCov">          2 :   result += checkEquals(m12, 0,  1e-8);</span>
+<span class="lineNum">     723 </span><span class="lineCov">          2 :   result += checkEquals(M12, 1, 1e-15);</span>
+<span class="lineNum">     724 </span><span class="lineCov">          2 :   result += checkEquals(M21, 1, 1e-15);</span>
+<span class="lineNum">     725 </span><span class="lineCov">          2 :   result += checkEquals(S12, 0, 1e-10);</span>
+<span class="lineNum">     726 </span><span class="lineCov">          2 :   a12 = geod_geninverse(&amp;g, 90, 0, 90, 180,</span>
+<span class="lineNum">     727 </span>            :                         &amp;s12, &amp;azi1, &amp;azi2, &amp;m12, &amp;M12, &amp;M21, &amp;S12);
+<span class="lineNum">     728 </span><span class="lineCov">          2 :   result += checkEquals(a12, 0, 1e-13);</span>
+<span class="lineNum">     729 </span><span class="lineCov">          2 :   result += checkEquals(s12, 0, 1e-8);</span>
+<span class="lineNum">     730 </span><span class="lineCov">          2 :   result += checkEquals(azi1, 0, 1e-13);</span>
+<span class="lineNum">     731 </span><span class="lineCov">          2 :   result += checkEquals(azi2, 180, 1e-13);</span>
+<span class="lineNum">     732 </span><span class="lineCov">          2 :   result += checkEquals(m12, 0, 1e-8);</span>
+<span class="lineNum">     733 </span><span class="lineCov">          2 :   result += checkEquals(M12, 1, 1e-15);</span>
+<span class="lineNum">     734 </span><span class="lineCov">          2 :   result += checkEquals(M21, 1, 1e-15);</span>
+<span class="lineNum">     735 </span><span class="lineCov">          2 :   result += checkEquals(S12, 127516405431022, 0.5);</span>
+<span class="lineNum">     736 </span>            :   /* An incapable line which can't take distance as input */
+<span class="lineNum">     737 </span><span class="lineCov">          2 :   geod_lineinit(&amp;l, &amp;g, 1, 2, 90, GEOD_LATITUDE);</span>
+<span class="lineNum">     738 </span><span class="lineCov">          2 :   a12 = geod_genposition(&amp;l, 0, 1000, 0, 0, 0, 0, 0, 0, 0, 0);</span>
+<span class="lineNum">     739 </span><span class="lineCov">          2 :   result += checkNaN(a12);</span>
+<span class="lineNum">     740 </span><span class="lineCov">          2 :   return result;</span>
+<a name="741"><span class="lineNum">     741 </span>            : }</a>
+<span class="lineNum">     742 </span>            : 
+<span class="lineNum">     743 </span><span class="lineCov">          2 : static int Planimeter0() {</span>
+<span class="lineNum">     744 </span>            :   /* Check fix for pole-encircling bug found 2011-03-16 */
+<span class="lineNum">     745 </span><span class="lineCov">          2 :   double pa[4][2] = {{89, 0}, {89, 90}, {89, 180}, {89, 270}};</span>
+<span class="lineNum">     746 </span><span class="lineCov">          2 :   double pb[4][2] = {{-89, 0}, {-89, 90}, {-89, 180}, {-89, 270}};</span>
+<span class="lineNum">     747 </span><span class="lineCov">          2 :   double pc[4][2] = {{0, -1}, {-1, 0}, {0, 1}, {1, 0}};</span>
+<span class="lineNum">     748 </span><span class="lineCov">          2 :   double pd[3][2] = {{90, 0}, {0, 0}, {0, 90}};</span>
+<span class="lineNum">     749 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     750 </span>            :   double perimeter, area;
+<span class="lineNum">     751 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     752 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     753 </span>            : 
+<span class="lineNum">     754 </span><span class="lineCov">          2 :   planimeter(&amp;g, pa, 4, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     755 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 631819.8745, 1e-4);</span>
+<span class="lineNum">     756 </span><span class="lineCov">          2 :   result += checkEquals(area, 24952305678.0, 1);</span>
+<span class="lineNum">     757 </span>            : 
+<span class="lineNum">     758 </span><span class="lineCov">          2 :   planimeter(&amp;g, pb, 4, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     759 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 631819.8745, 1e-4);</span>
+<span class="lineNum">     760 </span><span class="lineCov">          2 :   result += checkEquals(area, -24952305678.0, 1);</span>
+<span class="lineNum">     761 </span>            : 
+<span class="lineNum">     762 </span><span class="lineCov">          2 :   planimeter(&amp;g, pc, 4, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     763 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 627598.2731, 1e-4);</span>
+<span class="lineNum">     764 </span><span class="lineCov">          2 :   result += checkEquals(area, 24619419146.0, 1);</span>
+<span class="lineNum">     765 </span>            : 
+<span class="lineNum">     766 </span><span class="lineCov">          2 :   planimeter(&amp;g, pd, 3, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     767 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 30022685, 1);</span>
+<span class="lineNum">     768 </span><span class="lineCov">          2 :   result += checkEquals(area, 63758202715511.0, 1);</span>
+<span class="lineNum">     769 </span>            : 
+<span class="lineNum">     770 </span><span class="lineCov">          2 :   polylength(&amp;g, pd, 3, &amp;perimeter);</span>
+<span class="lineNum">     771 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 20020719, 1);</span>
+<span class="lineNum">     772 </span>            : 
+<span class="lineNum">     773 </span><span class="lineCov">          2 :   return result;</span>
+<a name="774"><span class="lineNum">     774 </span>            : }</a>
+<span class="lineNum">     775 </span>            : 
+<span class="lineNum">     776 </span><span class="lineCov">          2 : static int Planimeter5() {</span>
+<span class="lineNum">     777 </span>            :   /* Check fix for Planimeter pole crossing bug found 2011-06-24 */
+<span class="lineNum">     778 </span><span class="lineCov">          2 :   double points[3][2] = {{89, 0.1}, {89, 90.1}, {89, -179.9}};</span>
+<span class="lineNum">     779 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     780 </span>            :   double perimeter, area;
+<span class="lineNum">     781 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     782 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     783 </span><span class="lineCov">          2 :   planimeter(&amp;g, points, 3, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     784 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 539297, 1);</span>
+<span class="lineNum">     785 </span><span class="lineCov">          2 :   result += checkEquals(area, 12476152838.5, 1);</span>
+<span class="lineNum">     786 </span><span class="lineCov">          2 :   return result;</span>
+<a name="787"><span class="lineNum">     787 </span>            : }</a>
+<span class="lineNum">     788 </span>            : 
+<span class="lineNum">     789 </span><span class="lineCov">          2 : static int Planimeter6() {</span>
+<span class="lineNum">     790 </span>            :   /* Check fix for Planimeter lon12 rounding bug found 2012-12-03 */
+<span class="lineNum">     791 </span><span class="lineCov">          2 :   double pa[3][2] = {{9, -0.00000000000001}, {9, 180}, {9, 0}};</span>
+<span class="lineNum">     792 </span><span class="lineCov">          2 :   double pb[3][2] = {{9, 0.00000000000001}, {9, 0}, {9, 180}};</span>
+<span class="lineNum">     793 </span><span class="lineCov">          2 :   double pc[3][2] = {{9, 0.00000000000001}, {9, 180}, {9, 0}};</span>
+<span class="lineNum">     794 </span><span class="lineCov">          2 :   double pd[3][2] = {{9, -0.00000000000001}, {9, 0}, {9, 180}};</span>
+<span class="lineNum">     795 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     796 </span>            :   double perimeter, area;
+<span class="lineNum">     797 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     798 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     799 </span>            : 
+<span class="lineNum">     800 </span><span class="lineCov">          2 :   planimeter(&amp;g, pa, 3, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     801 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 36026861, 1);</span>
+<span class="lineNum">     802 </span><span class="lineCov">          2 :   result += checkEquals(area, 0, 1);</span>
+<span class="lineNum">     803 </span><span class="lineCov">          2 :   planimeter(&amp;g, pb, 3, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     804 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 36026861, 1);</span>
+<span class="lineNum">     805 </span><span class="lineCov">          2 :   result += checkEquals(area, 0, 1);</span>
+<span class="lineNum">     806 </span><span class="lineCov">          2 :   planimeter(&amp;g, pc, 3, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     807 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 36026861, 1);</span>
+<span class="lineNum">     808 </span><span class="lineCov">          2 :   result += checkEquals(area, 0, 1);</span>
+<span class="lineNum">     809 </span><span class="lineCov">          2 :   planimeter(&amp;g, pd, 3, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     810 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 36026861, 1);</span>
+<span class="lineNum">     811 </span><span class="lineCov">          2 :   result += checkEquals(area, 0, 1);</span>
+<span class="lineNum">     812 </span><span class="lineCov">          2 :   return result;</span>
+<a name="813"><span class="lineNum">     813 </span>            : }</a>
+<span class="lineNum">     814 </span>            : 
+<span class="lineNum">     815 </span><span class="lineCov">          2 : static int Planimeter12() {</span>
+<span class="lineNum">     816 </span>            :   /* Area of arctic circle (not really -- adjunct to rhumb-area test) */
+<span class="lineNum">     817 </span><span class="lineCov">          2 :   double points[2][2] = {{66.562222222, 0}, {66.562222222, 180}};</span>
+<span class="lineNum">     818 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     819 </span>            :   double perimeter, area;
+<span class="lineNum">     820 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     821 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     822 </span><span class="lineCov">          2 :   planimeter(&amp;g, points, 2, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     823 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 10465729, 1);</span>
+<span class="lineNum">     824 </span><span class="lineCov">          2 :   result += checkEquals(area, 0, 1);</span>
+<span class="lineNum">     825 </span><span class="lineCov">          2 :   return result;</span>
+<a name="826"><span class="lineNum">     826 </span>            : }</a>
+<span class="lineNum">     827 </span>            : 
+<span class="lineNum">     828 </span><span class="lineCov">          2 : static int Planimeter13() {</span>
+<span class="lineNum">     829 </span>            :   /* Check encircling pole twice */
+<span class="lineNum">     830 </span><span class="lineCov">          2 :   double points[6][2] = {{89,-360}, {89,-240}, {89,-120},</span>
+<span class="lineNum">     831 </span>            :                          {89,0}, {89,120}, {89,240}};
+<span class="lineNum">     832 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     833 </span>            :   double perimeter, area;
+<span class="lineNum">     834 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     835 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     836 </span><span class="lineCov">          2 :   planimeter(&amp;g, points, 6, &amp;perimeter, &amp;area);</span>
+<span class="lineNum">     837 </span><span class="lineCov">          2 :   result += checkEquals(perimeter, 1160741, 1);</span>
+<span class="lineNum">     838 </span><span class="lineCov">          2 :   result += checkEquals(area, 32415230256.0, 1);</span>
+<span class="lineNum">     839 </span><span class="lineCov">          2 :   return result;</span>
+<a name="840"><span class="lineNum">     840 </span>            : }</a>
+<span class="lineNum">     841 </span>            : 
+<span class="lineNum">     842 </span><span class="lineCov">          2 : static int Planimeter15() {</span>
+<span class="lineNum">     843 </span>            :   /* Coverage tests, includes Planimeter15 - Planimeter18 (combinations of
+<span class="lineNum">     844 </span>            :      reverse and sign) + calls to testpoint, testedge, geod_polygonarea. */
+<span class="lineNum">     845 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     846 </span>            :   struct geod_polygon p;
+<span class="lineNum">     847 </span><span class="lineCov">          2 :   double lat[] = {2, 1, 3}, lon[] = {1, 2, 3};</span>
+<span class="lineNum">     848 </span>            :   double area, s12, azi1;
+<span class="lineNum">     849 </span><span class="lineCov">          2 :   double r = 18454562325.45119,</span>
+<span class="lineNum">     850 </span><span class="lineCov">          2 :     a0 = 510065621724088.5093;  /* ellipsoid area */</span>
+<span class="lineNum">     851 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     852 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     853 </span><span class="lineCov">          2 :   geod_polygon_init(&amp;p, 0);</span>
+<span class="lineNum">     854 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat[0], lon[0]);</span>
+<span class="lineNum">     855 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat[1], lon[1]);</span>
+<span class="lineNum">     856 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, lat[2], lon[2], 0, 1, &amp;area, 0);</span>
+<span class="lineNum">     857 </span><span class="lineCov">          2 :   result += checkEquals(area, r, 0.5);</span>
+<span class="lineNum">     858 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, lat[2], lon[2], 0, 0, &amp;area, 0);</span>
+<span class="lineNum">     859 </span><span class="lineCov">          2 :   result += checkEquals(area, r, 0.5);</span>
+<span class="lineNum">     860 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, lat[2], lon[2], 1, 1, &amp;area, 0);</span>
+<span class="lineNum">     861 </span><span class="lineCov">          2 :   result += checkEquals(area, -r, 0.5);</span>
+<span class="lineNum">     862 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, lat[2], lon[2], 1, 0, &amp;area, 0);</span>
+<span class="lineNum">     863 </span><span class="lineCov">          2 :   result += checkEquals(area, a0-r, 0.5);</span>
+<span class="lineNum">     864 </span><span class="lineCov">          2 :   geod_inverse(&amp;g, lat[1], lon[1], lat[2], lon[2], &amp;s12, &amp;azi1, 0);</span>
+<span class="lineNum">     865 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, azi1, s12, 0, 1, &amp;area, 0);</span>
+<span class="lineNum">     866 </span><span class="lineCov">          2 :   result += checkEquals(area, r, 0.5);</span>
+<span class="lineNum">     867 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, azi1, s12, 0, 0, &amp;area, 0);</span>
+<span class="lineNum">     868 </span><span class="lineCov">          2 :   result += checkEquals(area, r, 0.5);</span>
+<span class="lineNum">     869 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, azi1, s12, 1, 1, &amp;area, 0);</span>
+<span class="lineNum">     870 </span><span class="lineCov">          2 :   result += checkEquals(area, -r, 0.5);</span>
+<span class="lineNum">     871 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, azi1, s12, 1, 0, &amp;area, 0);</span>
+<span class="lineNum">     872 </span><span class="lineCov">          2 :   result += checkEquals(area, a0-r, 0.5);</span>
+<span class="lineNum">     873 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat[2], lon[2]);</span>
+<span class="lineNum">     874 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 1, &amp;area, 0);</span>
+<span class="lineNum">     875 </span><span class="lineCov">          2 :   result += checkEquals(area, r, 0.5);</span>
+<span class="lineNum">     876 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 0, &amp;area, 0);</span>
+<span class="lineNum">     877 </span><span class="lineCov">          2 :   result += checkEquals(area, r, 0.5);</span>
+<span class="lineNum">     878 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 1, 1, &amp;area, 0);</span>
+<span class="lineNum">     879 </span><span class="lineCov">          2 :   result += checkEquals(area, -r, 0.5);</span>
+<span class="lineNum">     880 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 1, 0, &amp;area, 0);</span>
+<span class="lineNum">     881 </span><span class="lineCov">          2 :   result += checkEquals(area, a0-r, 0.5);</span>
+<span class="lineNum">     882 </span><span class="lineCov">          2 :   geod_polygonarea(&amp;g, lat, lon, 3, &amp;area, 0);</span>
+<span class="lineNum">     883 </span><span class="lineCov">          2 :   result += checkEquals(area, r, 0.5);</span>
+<span class="lineNum">     884 </span><span class="lineCov">          2 :   return result;</span>
+<a name="885"><span class="lineNum">     885 </span>            : }</a>
+<span class="lineNum">     886 </span>            : 
+<span class="lineNum">     887 </span><span class="lineCov">          2 : static int Planimeter19() {</span>
+<span class="lineNum">     888 </span>            :   /* Coverage tests, includes Planimeter19 - Planimeter20 (degenerate
+<span class="lineNum">     889 </span>            :      polygons) + extra cases.  */
+<span class="lineNum">     890 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     891 </span>            :   struct geod_polygon p;
+<span class="lineNum">     892 </span>            :   double area, perim;
+<span class="lineNum">     893 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     894 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     895 </span><span class="lineCov">          2 :   geod_polygon_init(&amp;p, 0);</span>
+<span class="lineNum">     896 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 1, &amp;area, &amp;perim);</span>
+<span class="lineNum">     897 </span><span class="lineCov">          2 :   result += area == 0 ? 0 : 1;</span>
+<span class="lineNum">     898 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">     899 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, 1, 1, 0, 1, &amp;area, &amp;perim);</span>
+<span class="lineNum">     900 </span><span class="lineCov">          2 :   result += area == 0 ? 0 : 1;</span>
+<span class="lineNum">     901 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">     902 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, 90, 1000, 0, 1, &amp;area, &amp;perim);</span>
+<span class="lineNum">     903 </span><span class="lineCov">          2 :   result += checkNaN(area);</span>
+<span class="lineNum">     904 </span><span class="lineCov">          2 :   result += checkNaN(perim);</span>
+<span class="lineNum">     905 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, 1, 1);</span>
+<span class="lineNum">     906 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 1, &amp;area, &amp;perim);</span>
+<span class="lineNum">     907 </span><span class="lineCov">          2 :   result += area == 0 ? 0 : 1;</span>
+<span class="lineNum">     908 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">     909 </span><span class="lineCov">          2 :   geod_polygon_init(&amp;p, 1);</span>
+<span class="lineNum">     910 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">     911 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">     912 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, 1, 1, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">     913 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">     914 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, 90, 1000, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">     915 </span><span class="lineCov">          2 :   result += checkNaN(perim);</span>
+<span class="lineNum">     916 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, 1, 1);</span>
+<span class="lineNum">     917 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">     918 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">     919 </span><span class="lineCov">          2 :   return result;</span>
+<a name="920"><span class="lineNum">     920 </span>            : }</a>
+<span class="lineNum">     921 </span>            : 
+<span class="lineNum">     922 </span><span class="lineCov">          2 : static int Planimeter21() {</span>
+<span class="lineNum">     923 </span>            :   /* Some test to add code coverage: multiple circlings of pole (includes
+<span class="lineNum">     924 </span>            :      Planimeter21 - Planimeter28) + invocations via testpoint and testedge.
+<span class="lineNum">     925 </span>            :      Some of the results for i = 4 in the loop are wrong because we don't
+<span class="lineNum">     926 </span>            :      reduce the area to the allowed range correctly.  However these cases are
+<span class="lineNum">     927 </span>            :      not &quot;simple&quot; polygons, so we'll defer fixing the problem for now.
+<span class="lineNum">     928 </span>            :    */
+<span class="lineNum">     929 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     930 </span>            :   struct geod_polygon p;
+<span class="lineNum">     931 </span><span class="lineCov">          2 :   double area, lat = 45,</span>
+<span class="lineNum">     932 </span><span class="lineCov">          2 :     a = 39.2144607176828184218, s = 8420705.40957178156285,</span>
+<span class="lineNum">     933 </span><span class="lineCov">          2 :     r = 39433884866571.4277,    /* Area for one circuit */</span>
+<span class="lineNum">     934 </span><span class="lineCov">          2 :     a0 = 510065621724088.5093;  /* Ellipsoid area */</span>
+<span class="lineNum">     935 </span><span class="lineCov">          2 :   int result = 0, i;</span>
+<span class="lineNum">     936 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     937 </span><span class="lineCov">          2 :   geod_polygon_init(&amp;p, 0);</span>
+<span class="lineNum">     938 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat,  60);</span>
+<span class="lineNum">     939 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat, 180);</span>
+<span class="lineNum">     940 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat, -60);</span>
+<span class="lineNum">     941 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat,  60);</span>
+<span class="lineNum">     942 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat, 180);</span>
+<span class="lineNum">     943 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, lat, -60);</span>
+<span class="lineNum">     944 </span><span class="lineCov">          6 :   for (i = 3; i &lt;= 4; ++i) {</span>
+<span class="lineNum">     945 </span><span class="lineCov">          4 :     geod_polygon_addpoint(&amp;g, &amp;p, lat,  60);</span>
+<span class="lineNum">     946 </span><span class="lineCov">          4 :     geod_polygon_addpoint(&amp;g, &amp;p, lat, 180);</span>
+<span class="lineNum">     947 </span><span class="lineCov">          4 :     geod_polygon_testpoint(&amp;g, &amp;p, lat, -60, 0, 1, &amp;area, 0);</span>
+<span class="lineNum">     948 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area,  i*r, 0.5);</span>
+<span class="lineNum">     949 </span><span class="lineCov">          4 :     geod_polygon_testpoint(&amp;g, &amp;p, lat, -60, 0, 0, &amp;area, 0);</span>
+<span class="lineNum">     950 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area,  i*r, 0.5);</span>
+<span class="lineNum">     951 </span><span class="lineCov">          4 :     geod_polygon_testpoint(&amp;g, &amp;p, lat, -60, 1, 1, &amp;area, 0);</span>
+<span class="lineNum">     952 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area, -i*r, 0.5);</span>
+<span class="lineNum">     953 </span><span class="lineCov">          4 :     geod_polygon_testpoint(&amp;g, &amp;p, lat, -60, 1, 0, &amp;area, 0);</span>
+<span class="lineNum">     954 </span><span class="lineCov">          4 :     result += checkEquals(area, -i*r + a0, 0.5);</span>
+<span class="lineNum">     955 </span><span class="lineCov">          4 :     geod_polygon_testedge(&amp;g, &amp;p, a, s, 0, 1, &amp;area, 0);</span>
+<span class="lineNum">     956 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area,  i*r, 0.5);</span>
+<span class="lineNum">     957 </span><span class="lineCov">          4 :     geod_polygon_testedge(&amp;g, &amp;p, a, s, 0, 0, &amp;area, 0);</span>
+<span class="lineNum">     958 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area,  i*r, 0.5);</span>
+<span class="lineNum">     959 </span><span class="lineCov">          4 :     geod_polygon_testedge(&amp;g, &amp;p, a, s, 1, 1, &amp;area, 0);</span>
+<span class="lineNum">     960 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area, -i*r, 0.5);</span>
+<span class="lineNum">     961 </span><span class="lineCov">          4 :     geod_polygon_testedge(&amp;g, &amp;p, a, s, 1, 0, &amp;area, 0);</span>
+<span class="lineNum">     962 </span><span class="lineCov">          4 :     result += checkEquals(area, -i*r + a0, 0.5);</span>
+<span class="lineNum">     963 </span><span class="lineCov">          4 :     geod_polygon_addpoint(&amp;g, &amp;p, lat, -60);</span>
+<span class="lineNum">     964 </span><span class="lineCov">          4 :     geod_polygon_compute(&amp;g, &amp;p, 0, 1, &amp;area, 0);</span>
+<span class="lineNum">     965 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area,  i*r, 0.5);</span>
+<span class="lineNum">     966 </span><span class="lineCov">          4 :     geod_polygon_compute(&amp;g, &amp;p, 0, 0, &amp;area, 0);</span>
+<span class="lineNum">     967 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area,  i*r, 0.5);</span>
+<span class="lineNum">     968 </span><span class="lineCov">          4 :     geod_polygon_compute(&amp;g, &amp;p, 1, 1, &amp;area, 0);</span>
+<span class="lineNum">     969 </span><span class="lineCov">          4 :     if (i != 4) result += checkEquals(area, -i*r, 0.5);</span>
+<span class="lineNum">     970 </span><span class="lineCov">          4 :     geod_polygon_compute(&amp;g, &amp;p, 1, 0, &amp;area, 0);</span>
+<span class="lineNum">     971 </span><span class="lineCov">          4 :     result += checkEquals(area, -i*r + a0, 0.5);</span>
+<span class="lineNum">     972 </span>            :   }
+<span class="lineNum">     973 </span><span class="lineCov">          2 :   return result;</span>
+<a name="974"><span class="lineNum">     974 </span>            : }</a>
+<span class="lineNum">     975 </span>            : 
+<span class="lineNum">     976 </span><span class="lineCov">          2 : static int AddEdge1() {</span>
+<span class="lineNum">     977 </span>            :   /* Check fix to transitdirect vs transit zero handling inconsistency */
+<span class="lineNum">     978 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     979 </span>            :   struct geod_polygon p;
+<span class="lineNum">     980 </span>            :   double area;
+<span class="lineNum">     981 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     982 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     983 </span><span class="lineCov">          2 :   geod_polygon_init(&amp;p, 0);</span>
+<span class="lineNum">     984 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, 0, 0);</span>
+<span class="lineNum">     985 </span><span class="lineCov">          2 :   geod_polygon_addedge(&amp;g, &amp;p,  90, 1000);</span>
+<span class="lineNum">     986 </span><span class="lineCov">          2 :   geod_polygon_addedge(&amp;g, &amp;p,   0, 1000);</span>
+<span class="lineNum">     987 </span><span class="lineCov">          2 :   geod_polygon_addedge(&amp;g, &amp;p, -90, 1000);</span>
+<span class="lineNum">     988 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 1, &amp;area, 0);</span>
+<span class="lineNum">     989 </span><span class="lineCov">          2 :   result += checkEquals(area, 1000000.0, 0.01);</span>
+<span class="lineNum">     990 </span><span class="lineCov">          2 :   return result;</span>
+<a name="991"><span class="lineNum">     991 </span>            : }</a>
+<span class="lineNum">     992 </span>            : 
+<span class="lineNum">     993 </span><span class="lineCov">          2 : static int EmptyPoly() {</span>
+<span class="lineNum">     994 </span>            :   struct geod_geodesic g;
+<span class="lineNum">     995 </span>            :   struct geod_polygon p;
+<span class="lineNum">     996 </span>            :   double perim, area;
+<span class="lineNum">     997 </span><span class="lineCov">          2 :   int result = 0;</span>
+<span class="lineNum">     998 </span><span class="lineCov">          2 :   geod_init(&amp;g, wgs84_a, wgs84_f);</span>
+<span class="lineNum">     999 </span><span class="lineCov">          2 :   geod_polygon_init(&amp;p, 0);</span>
+<span class="lineNum">    1000 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, 1, 1, 0, 1, &amp;area, &amp;perim);</span>
+<span class="lineNum">    1001 </span><span class="lineCov">          2 :   result += area == 0 ? 0 : 1;</span>
+<span class="lineNum">    1002 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">    1003 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, 90, 1000, 0, 1, &amp;area, &amp;perim);</span>
+<span class="lineNum">    1004 </span><span class="lineCov">          2 :   result += checkNaN(area);</span>
+<span class="lineNum">    1005 </span><span class="lineCov">          2 :   result += checkNaN(perim);</span>
+<span class="lineNum">    1006 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 1, &amp;area, &amp;perim);</span>
+<span class="lineNum">    1007 </span><span class="lineCov">          2 :   result += area == 0 ? 0 : 1;</span>
+<span class="lineNum">    1008 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">    1009 </span><span class="lineCov">          2 :   geod_polygon_init(&amp;p, 1);</span>
+<span class="lineNum">    1010 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, 1, 1, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">    1011 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">    1012 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, 90, 1000, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">    1013 </span><span class="lineCov">          2 :   result += checkNaN(perim);</span>
+<span class="lineNum">    1014 </span><span class="lineCov">          2 :   geod_polygon_compute(&amp;g, &amp;p, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">    1015 </span><span class="lineCov">          2 :   result += perim == 0 ? 0 : 1;</span>
+<span class="lineNum">    1016 </span><span class="lineCov">          2 :   geod_polygon_addpoint(&amp;g, &amp;p, 1, 1);</span>
+<span class="lineNum">    1017 </span><span class="lineCov">          2 :   geod_polygon_testedge(&amp;g, &amp;p, 90, 1000, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">    1018 </span><span class="lineCov">          2 :   result += checkEquals(perim, 1000, 1e-10);</span>
+<span class="lineNum">    1019 </span><span class="lineCov">          2 :   geod_polygon_testpoint(&amp;g, &amp;p, 2, 2, 0, 1, 0, &amp;perim);</span>
+<span class="lineNum">    1020 </span><span class="lineCov">          2 :   result += checkEquals(perim, 156876.149, 0.5e-3);</span>
+<span class="lineNum">    1021 </span><span class="lineCov">          2 :   return result;</span>
+<a name="1022"><span class="lineNum">    1022 </span>            : }</a>
+<span class="lineNum">    1023 </span>            : 
+<span class="lineNum">    1024 </span><span class="lineCov">          2 : int main() {</span>
+<span class="lineNum">    1025 </span><span class="lineCov">          2 :   int n = 0, i;</span>
+<span class="lineNum">    1026 </span><span class="lineCov">          2 :   if ((i = testinverse())) {++n; printf(&quot;testinverse fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1027 </span><span class="lineCov">          2 :   if ((i = testdirect())) {++n; printf(&quot;testdirect fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1028 </span><span class="lineCov">          2 :   if ((i = testarcdirect())) {++n; printf(&quot;testarcdirect fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1029 </span><span class="lineCov">          2 :   if ((i = GeodSolve0())) {++n; printf(&quot;GeodSolve0 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1030 </span><span class="lineCov">          2 :   if ((i = GeodSolve1())) {++n; printf(&quot;GeodSolve1 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1031 </span><span class="lineCov">          2 :   if ((i = GeodSolve2())) {++n; printf(&quot;GeodSolve2 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1032 </span><span class="lineCov">          2 :   if ((i = GeodSolve4())) {++n; printf(&quot;GeodSolve4 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1033 </span><span class="lineCov">          2 :   if ((i = GeodSolve5())) {++n; printf(&quot;GeodSolve5 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1034 </span><span class="lineCov">          2 :   if ((i = GeodSolve6())) {++n; printf(&quot;GeodSolve6 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1035 </span><span class="lineCov">          2 :   if ((i = GeodSolve9())) {++n; printf(&quot;GeodSolve9 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1036 </span><span class="lineCov">          2 :   if ((i = GeodSolve10())) {++n; printf(&quot;GeodSolve10 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1037 </span><span class="lineCov">          2 :   if ((i = GeodSolve11())) {++n; printf(&quot;GeodSolve11 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1038 </span><span class="lineCov">          2 :   if ((i = GeodSolve12())) {++n; printf(&quot;GeodSolve12 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1039 </span><span class="lineCov">          2 :   if ((i = GeodSolve14())) {++n; printf(&quot;GeodSolve14 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1040 </span><span class="lineCov">          2 :   if ((i = GeodSolve15())) {++n; printf(&quot;GeodSolve15 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1041 </span><span class="lineCov">          2 :   if ((i = GeodSolve17())) {++n; printf(&quot;GeodSolve17 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1042 </span><span class="lineCov">          2 :   if ((i = GeodSolve26())) {++n; printf(&quot;GeodSolve26 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1043 </span><span class="lineCov">          2 :   if ((i = GeodSolve28())) {++n; printf(&quot;GeodSolve28 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1044 </span><span class="lineCov">          2 :   if ((i = GeodSolve33())) {++n; printf(&quot;GeodSolve33 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1045 </span><span class="lineCov">          2 :   if ((i = GeodSolve55())) {++n; printf(&quot;GeodSolve55 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1046 </span><span class="lineCov">          2 :   if ((i = GeodSolve59())) {++n; printf(&quot;GeodSolve59 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1047 </span><span class="lineCov">          2 :   if ((i = GeodSolve61())) {++n; printf(&quot;GeodSolve61 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1048 </span><span class="lineCov">          2 :   if ((i = GeodSolve65())) {++n; printf(&quot;GeodSolve65 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1049 </span><span class="lineCov">          2 :   if ((i = GeodSolve67())) {++n; printf(&quot;GeodSolve67 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1050 </span><span class="lineCov">          2 :   if ((i = GeodSolve71())) {++n; printf(&quot;GeodSolve71 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1051 </span><span class="lineCov">          2 :   if ((i = GeodSolve73())) {++n; printf(&quot;GeodSolve73 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1052 </span><span class="lineCov">          2 :   if ((i = GeodSolve74())) {++n; printf(&quot;GeodSolve74 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1053 </span><span class="lineCov">          2 :   if ((i = GeodSolve76())) {++n; printf(&quot;GeodSolve76 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1054 </span><span class="lineCov">          2 :   if ((i = GeodSolve78())) {++n; printf(&quot;GeodSolve78 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1055 </span><span class="lineCov">          2 :   if ((i = GeodSolve80())) {++n; printf(&quot;GeodSolve80 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1056 </span><span class="lineCov">          2 :   if ((i = Planimeter0())) {++n; printf(&quot;Planimeter0 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1057 </span><span class="lineCov">          2 :   if ((i = Planimeter5())) {++n; printf(&quot;Planimeter5 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1058 </span><span class="lineCov">          2 :   if ((i = Planimeter6())) {++n; printf(&quot;Planimeter6 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1059 </span><span class="lineCov">          2 :   if ((i = Planimeter12())) {++n; printf(&quot;Planimeter12 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1060 </span><span class="lineCov">          2 :   if ((i = Planimeter13())) {++n; printf(&quot;Planimeter13 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1061 </span><span class="lineCov">          2 :   if ((i = Planimeter15())) {++n; printf(&quot;Planimeter15 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1062 </span><span class="lineCov">          2 :   if ((i = Planimeter19())) {++n; printf(&quot;Planimeter19 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1063 </span><span class="lineCov">          2 :   if ((i = Planimeter21())) {++n; printf(&quot;Planimeter21 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1064 </span><span class="lineCov">          2 :   if ((i = AddEdge1())) {++n; printf(&quot;AddEdge1 fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1065 </span><span class="lineCov">          2 :   if ((i = EmptyPoly())) {++n; printf(&quot;EmptyPoly fail: %d\n&quot;, i);}</span>
+<span class="lineNum">    1066 </span><span class="lineCov">          2 :   return n;</span>
+<span class="lineNum">    1067 </span>            : }
+<span class="lineNum">    1068 </span>            : 
+<span class="lineNum">    1069 </span>            : /** @endcond */
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

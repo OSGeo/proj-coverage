@@ -1,0 +1,1165 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/proj_4D_api.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - proj_4D_api.c<span style="font-size: 80%;"> (source / <a href="proj_4D_api.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">371</td>
+            <td class="headerCovTableEntry">426</td>
+            <td class="headerCovTableEntryMed">87.1 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">34</td>
+            <td class="headerCovTableEntry">36</td>
+            <td class="headerCovTableEntryHi">94.4 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /******************************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Project:  PROJ.4
+<span class="lineNum">       3 </span>            :  * Purpose:  Implement a (currently minimalistic) proj API based primarily
+<span class="lineNum">       4 </span>            :  *           on the PJ_COORD 4D geodetic spatiotemporal data type.
+<span class="lineNum">       5 </span>            :  *
+<span class="lineNum">       6 </span>            :  * Author:   Thomas Knudsen,  thokn@sdfe.dk,  2016-06-09/2016-11-06
+<span class="lineNum">       7 </span>            :  *
+<span class="lineNum">       8 </span>            :  ******************************************************************************
+<span class="lineNum">       9 </span>            :  * Copyright (c) 2016, 2017 Thomas Knudsen/SDFE
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      12 </span>            :  * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      13 </span>            :  * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      14 </span>            :  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      15 </span>            :  * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      16 </span>            :  * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      17 </span>            :  *
+<span class="lineNum">      18 </span>            :  * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      19 </span>            :  * in all copies or substantial portions of the Software.
+<span class="lineNum">      20 </span>            :  *
+<span class="lineNum">      21 </span>            :  * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      22 </span>            :  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      23 </span>            :  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      24 </span>            :  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      25 </span>            :  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      26 </span>            :  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      27 </span>            :  * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      28 </span>            :  *****************************************************************************/
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      31 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">      32 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">      33 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      34 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">      37 </span>            : #include &quot;proj_internal.h&quot;
+<span class="lineNum">      38 </span>            : #include &quot;proj_math.h&quot;
+<span class="lineNum">      39 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      40 </span>            : #include &quot;geodesic.h&quot;
+<span class="lineNum">      41 </span>            : 
+<a name="42"><span class="lineNum">      42 </span>            : </a>
+<span class="lineNum">      43 </span>            : /* Initialize PJ_COORD struct */
+<span class="lineNum">      44 </span><span class="lineCov">       4887 : PJ_COORD proj_coord (double x, double y, double z, double t) {</span>
+<span class="lineNum">      45 </span>            :     PJ_COORD res;
+<span class="lineNum">      46 </span><span class="lineCov">       4887 :     res.v[0] = x;</span>
+<span class="lineNum">      47 </span><span class="lineCov">       4887 :     res.v[1] = y;</span>
+<span class="lineNum">      48 </span><span class="lineCov">       4887 :     res.v[2] = z;</span>
+<span class="lineNum">      49 </span><span class="lineCov">       4887 :     res.v[3] = t;</span>
+<span class="lineNum">      50 </span><span class="lineCov">       4887 :     return res;</span>
+<span class="lineNum">      51 </span>            : }
+<a name="52"><span class="lineNum">      52 </span>            : </a>
+<span class="lineNum">      53 </span>            : /*****************************************************************************/
+<span class="lineNum">      54 </span><span class="lineCov">       9933 : int proj_angular_input (PJ *P, enum PJ_DIRECTION dir) {</span>
+<span class="lineNum">      55 </span>            : /******************************************************************************
+<span class="lineNum">      56 </span>            :     Returns 1 if the operator P expects angular input coordinates when
+<span class="lineNum">      57 </span>            :     operating in direction dir, 0 otherwise.
+<span class="lineNum">      58 </span>            :     dir: {PJ_FWD, PJ_INV}
+<span class="lineNum">      59 </span>            : ******************************************************************************/
+<span class="lineNum">      60 </span><span class="lineCov">       9933 :     if (PJ_FWD==dir)</span>
+<span class="lineNum">      61 </span><span class="lineCov">       4467 :         return pj_left (P)==PJ_IO_UNITS_ANGULAR;</span>
+<span class="lineNum">      62 </span><span class="lineCov">       5466 :     return pj_right (P)==PJ_IO_UNITS_ANGULAR;</span>
+<span class="lineNum">      63 </span>            : }
+<a name="64"><span class="lineNum">      64 </span>            : </a>
+<span class="lineNum">      65 </span>            : /*****************************************************************************/
+<span class="lineNum">      66 </span><span class="lineCov">       6714 : int proj_angular_output (PJ *P, enum PJ_DIRECTION dir) {</span>
+<span class="lineNum">      67 </span>            : /******************************************************************************
+<span class="lineNum">      68 </span>            :     Returns 1 if the operator P provides angular output coordinates when
+<span class="lineNum">      69 </span>            :     operating in direction dir, 0 otherwise.
+<span class="lineNum">      70 </span>            :     dir: {PJ_FWD, PJ_INV}
+<span class="lineNum">      71 </span>            : ******************************************************************************/
+<span class="lineNum">      72 </span><span class="lineCov">       6714 :     return proj_angular_input (P, -dir);</span>
+<span class="lineNum">      73 </span>            : }
+<span class="lineNum">      74 </span>            : 
+<a name="75"><span class="lineNum">      75 </span>            : </a>
+<span class="lineNum">      76 </span>            : /* Geodesic distance (in meter) + fwd and rev azimuth between two points on the ellipsoid */
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 : PJ_COORD proj_geod (const PJ *P, PJ_COORD a, PJ_COORD b) {</span>
+<span class="lineNum">      78 </span>            :     PJ_COORD c;
+<span class="lineNum">      79 </span>            :     /* Note: the geodesic code takes arguments in degrees */
+<span class="lineNum">      80 </span><span class="lineNoCov">          0 :     geod_inverse (P-&gt;geod,</span>
+<span class="lineNum">      81 </span><span class="lineNoCov">          0 :         PJ_TODEG(a.lpz.phi), PJ_TODEG(a.lpz.lam),</span>
+<span class="lineNum">      82 </span><span class="lineNoCov">          0 :         PJ_TODEG(b.lpz.phi), PJ_TODEG(b.lpz.lam),</span>
+<span class="lineNum">      83 </span>            :         c.v, c.v+1, c.v+2
+<span class="lineNum">      84 </span>            :     );
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span><span class="lineNoCov">          0 :     return c;</span>
+<span class="lineNum">      87 </span>            : }
+<span class="lineNum">      88 </span>            : 
+<a name="89"><span class="lineNum">      89 </span>            : </a>
+<span class="lineNum">      90 </span>            : /* Geodesic distance (in meter) between two points with angular 2D coordinates */
+<span class="lineNum">      91 </span><span class="lineCov">       1443 : double proj_lp_dist (const PJ *P, PJ_COORD a, PJ_COORD b) {</span>
+<span class="lineNum">      92 </span>            :     double s12, azi1, azi2;
+<span class="lineNum">      93 </span>            :     /* Note: the geodesic code takes arguments in degrees */
+<span class="lineNum">      94 </span><span class="lineCov">       5772 :     geod_inverse (P-&gt;geod,</span>
+<span class="lineNum">      95 </span><span class="lineCov">       2886 :         PJ_TODEG(a.lpz.phi), PJ_TODEG(a.lpz.lam),</span>
+<span class="lineNum">      96 </span><span class="lineCov">       2886 :         PJ_TODEG(b.lpz.phi), PJ_TODEG(b.lpz.lam),</span>
+<span class="lineNum">      97 </span>            :         &amp;s12, &amp;azi1, &amp;azi2
+<span class="lineNum">      98 </span>            :     );
+<span class="lineNum">      99 </span><span class="lineCov">       1443 :     return s12;</span>
+<span class="lineNum">     100 </span>            : }
+<a name="101"><span class="lineNum">     101 </span>            : </a>
+<span class="lineNum">     102 </span>            : /* The geodesic distance AND the vertical offset */
+<span class="lineNum">     103 </span><span class="lineCov">       1443 : double proj_lpz_dist (const PJ *P, PJ_COORD a, PJ_COORD b) {</span>
+<span class="lineNum">     104 </span><span class="lineCov">       1443 :     if (HUGE_VAL==a.lpz.lam || HUGE_VAL==b.lpz.lam)</span>
+<span class="lineNum">     105 </span><span class="lineNoCov">          0 :         return HUGE_VAL;</span>
+<span class="lineNum">     106 </span><span class="lineCov">       1443 :     return hypot (proj_lp_dist (P, a, b), a.lpz.z - b.lpz.z);</span>
+<span class="lineNum">     107 </span>            : }
+<a name="108"><span class="lineNum">     108 </span>            : </a>
+<span class="lineNum">     109 </span>            : /* Euclidean distance between two points with linear 2D coordinates */
+<span class="lineNum">     110 </span><span class="lineCov">       1263 : double proj_xy_dist (PJ_COORD a, PJ_COORD b) {</span>
+<span class="lineNum">     111 </span><span class="lineCov">       1263 :     return hypot (a.xy.x - b.xy.x, a.xy.y - b.xy.y);</span>
+<span class="lineNum">     112 </span>            : }
+<a name="113"><span class="lineNum">     113 </span>            : </a>
+<span class="lineNum">     114 </span>            : /* Euclidean distance between two points with linear 3D coordinates */
+<span class="lineNum">     115 </span><span class="lineCov">       1260 : double proj_xyz_dist (PJ_COORD a, PJ_COORD b) {</span>
+<span class="lineNum">     116 </span><span class="lineCov">       1260 :     return hypot (proj_xy_dist (a, b), a.xyz.z - b.xyz.z);</span>
+<span class="lineNum">     117 </span>            : }
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            : 
+<a name="120"><span class="lineNum">     120 </span>            : </a>
+<span class="lineNum">     121 </span>            : /* Measure numerical deviation after n roundtrips fwd-inv (or inv-fwd) */
+<span class="lineNum">     122 </span><span class="lineCov">        469 : double proj_roundtrip (PJ *P, PJ_DIRECTION direction, int n, PJ_COORD *coord) {</span>
+<span class="lineNum">     123 </span>            :     int i;
+<span class="lineNum">     124 </span>            :     PJ_COORD t, org;
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span><span class="lineCov">        469 :     if (0==P)</span>
+<span class="lineNum">     127 </span><span class="lineNoCov">          0 :         return HUGE_VAL;</span>
+<span class="lineNum">     128 </span>            : 
+<span class="lineNum">     129 </span><span class="lineCov">        469 :     if (n &lt; 1) {</span>
+<span class="lineNum">     130 </span><span class="lineNoCov">          0 :         proj_errno_set (P, EINVAL);</span>
+<span class="lineNum">     131 </span><span class="lineNoCov">          0 :         return HUGE_VAL;</span>
+<span class="lineNum">     132 </span>            :     }
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span>            :     /* in the first half-step, we generate the output value */
+<span class="lineNum">     135 </span><span class="lineCov">        469 :     org  = *coord;</span>
+<span class="lineNum">     136 </span><span class="lineCov">        469 :     *coord = proj_trans (P, direction, org);</span>
+<span class="lineNum">     137 </span><span class="lineCov">        469 :     t = *coord;</span>
+<span class="lineNum">     138 </span>            : 
+<span class="lineNum">     139 </span>            :     /* now we take n-1 full steps in inverse direction: We are */
+<span class="lineNum">     140 </span>            :     /* out of phase due to the half step already taken */
+<span class="lineNum">     141 </span><span class="lineCov">     368118 :     for (i = 0;  i &lt; n - 1;  i++)</span>
+<span class="lineNum">     142 </span><span class="lineCov">     367649 :         t = proj_trans (P,  direction,  proj_trans (P, -direction, t) );</span>
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span>            :     /* finally, we take the last half-step */
+<span class="lineNum">     145 </span><span class="lineCov">        469 :     t = proj_trans (P, -direction, t);</span>
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span>            :     /* checking for angular *input* since we do a roundtrip, and end where we begin */
+<span class="lineNum">     148 </span><span class="lineCov">        469 :     if (proj_angular_input (P, direction))</span>
+<span class="lineNum">     149 </span><span class="lineCov">        429 :         return proj_lpz_dist (P, org, t);</span>
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span><span class="lineCov">         40 :     return proj_xyz_dist (org, t);</span>
+<span class="lineNum">     152 </span>            : }
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span>            : 
+<a name="155"><span class="lineNum">     155 </span>            : </a>
+<span class="lineNum">     156 </span>            : /**************************************************************************************/
+<span class="lineNum">     157 </span><span class="lineCov">    3894375 : PJ_COORD proj_trans (PJ *P, PJ_DIRECTION direction, PJ_COORD coord) {</span>
+<span class="lineNum">     158 </span>            : /***************************************************************************************
+<span class="lineNum">     159 </span>            : Apply the transformation P to the coordinate coord, preferring the 4D interfaces if
+<span class="lineNum">     160 </span>            : available.
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span>            : See also pj_approx_2D_trans and pj_approx_3D_trans in pj_internal.c, which work
+<span class="lineNum">     163 </span>            : similarly, but prefers the 2D resp. 3D interfaces if available.
+<span class="lineNum">     164 </span>            : ***************************************************************************************/
+<span class="lineNum">     165 </span><span class="lineCov">    3894375 :     if (0==P)</span>
+<span class="lineNum">     166 </span><span class="lineCov">         12 :         return coord;</span>
+<span class="lineNum">     167 </span><span class="lineCov">    3894363 :     if (P-&gt;inverted)</span>
+<span class="lineNum">     168 </span><span class="lineCov">     668014 :         direction = -direction;</span>
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span><span class="lineCov">    3894363 :     switch (direction) {</span>
+<span class="lineNum">     171 </span>            :         case PJ_FWD:
+<span class="lineNum">     172 </span><span class="lineCov">    1947210 :             return pj_fwd4d (coord, P);</span>
+<span class="lineNum">     173 </span>            :         case PJ_INV:
+<span class="lineNum">     174 </span><span class="lineCov">    1947151 :             return  pj_inv4d (coord, P);</span>
+<span class="lineNum">     175 </span>            :         case PJ_IDENT:
+<span class="lineNum">     176 </span><span class="lineCov">          1 :             return coord;</span>
+<span class="lineNum">     177 </span>            :         default:
+<span class="lineNum">     178 </span><span class="lineCov">          1 :             break;</span>
+<span class="lineNum">     179 </span>            :     }
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span><span class="lineCov">          1 :     proj_errno_set (P, EINVAL);</span>
+<span class="lineNum">     182 </span><span class="lineCov">          1 :     return proj_coord_error ();</span>
+<span class="lineNum">     183 </span>            : }
+<span class="lineNum">     184 </span>            : 
+<span class="lineNum">     185 </span>            : 
+<a name="186"><span class="lineNum">     186 </span>            : </a>
+<span class="lineNum">     187 </span>            : /*****************************************************************************/
+<span class="lineNum">     188 </span><span class="lineCov">          1 : int proj_trans_array (PJ *P, PJ_DIRECTION direction, size_t n, PJ_COORD *coord) {</span>
+<span class="lineNum">     189 </span>            : /******************************************************************************
+<span class="lineNum">     190 </span>            :     Batch transform an array of PJ_COORD.
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span>            :     Returns 0 if all coordinates are transformed without error, otherwise
+<span class="lineNum">     193 </span>            :     returns error number.
+<span class="lineNum">     194 </span>            : ******************************************************************************/
+<span class="lineNum">     195 </span>            :     size_t i;
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span><span class="lineCov">          3 :     for (i = 0;  i &lt; n;  i++) {</span>
+<span class="lineNum">     198 </span><span class="lineCov">          2 :         coord[i] = proj_trans (P, direction, coord[i]);</span>
+<span class="lineNum">     199 </span><span class="lineCov">          2 :         if (proj_errno(P))</span>
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :             return proj_errno (P);</span>
+<span class="lineNum">     201 </span>            :     }
+<span class="lineNum">     202 </span>            : 
+<span class="lineNum">     203 </span><span class="lineCov">          1 :    return 0;</span>
+<span class="lineNum">     204 </span>            : }
+<span class="lineNum">     205 </span>            : 
+<span class="lineNum">     206 </span>            : 
+<a name="207"><span class="lineNum">     207 </span>            : </a>
+<span class="lineNum">     208 </span>            : /*************************************************************************************/
+<span class="lineNum">     209 </span><span class="lineCov">          2 : size_t proj_trans_generic (</span>
+<span class="lineNum">     210 </span>            :     PJ *P,
+<span class="lineNum">     211 </span>            :     PJ_DIRECTION direction,
+<span class="lineNum">     212 </span>            :     double *x, size_t sx, size_t nx,
+<span class="lineNum">     213 </span>            :     double *y, size_t sy, size_t ny,
+<span class="lineNum">     214 </span>            :     double *z, size_t sz, size_t nz,
+<span class="lineNum">     215 </span>            :     double *t, size_t st, size_t nt
+<span class="lineNum">     216 </span>            : ) {
+<span class="lineNum">     217 </span>            : /**************************************************************************************
+<span class="lineNum">     218 </span>            : 
+<span class="lineNum">     219 </span>            :     Transform a series of coordinates, where the individual coordinate dimension
+<span class="lineNum">     220 </span>            :     may be represented by an array that is either
+<span class="lineNum">     221 </span>            : 
+<span class="lineNum">     222 </span>            :         1. fully populated
+<span class="lineNum">     223 </span>            :         2. a null pointer and/or a length of zero, which will be treated as a
+<span class="lineNum">     224 </span>            :            fully populated array of zeroes
+<span class="lineNum">     225 </span>            :         3. of length one, i.e. a constant, which will be treated as a fully
+<span class="lineNum">     226 </span>            :            populated array of that constant value
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span>            :     The strides, sx, sy, sz, st, represent the step length, in bytes, between
+<span class="lineNum">     229 </span>            :     consecutive elements of the corresponding array. This makes it possible for
+<span class="lineNum">     230 </span>            :     proj_transform to handle transformation of a large class of application
+<span class="lineNum">     231 </span>            :     specific data structures, without necessarily understanding the data structure
+<span class="lineNum">     232 </span>            :     format, as in:
+<span class="lineNum">     233 </span>            : 
+<span class="lineNum">     234 </span>            :         typedef struct {double x, y; int quality_level; char surveyor_name[134];} XYQS;
+<span class="lineNum">     235 </span>            :         XYQS survey[345];
+<span class="lineNum">     236 </span>            :         double height = 23.45;
+<span class="lineNum">     237 </span>            :         PJ *P = {...};
+<span class="lineNum">     238 </span>            :         size_t stride = sizeof (XYQS);
+<span class="lineNum">     239 </span>            :         ...
+<span class="lineNum">     240 </span>            :         proj_transform (
+<span class="lineNum">     241 </span>            :             P, PJ_INV, sizeof(XYQS),
+<span class="lineNum">     242 </span>            :             &amp;(survey[0].x), stride, 345,  (*  We have 345 eastings  *)
+<span class="lineNum">     243 </span>            :             &amp;(survey[0].y), stride, 345,  (*  ...and 345 northings. *)
+<span class="lineNum">     244 </span>            :             &amp;height, 1,                   (*  The height is the constant  23.45 m *)
+<span class="lineNum">     245 </span>            :             0, 0                          (*  and the time is the constant 0.00 s *)
+<span class="lineNum">     246 </span>            :         );
+<span class="lineNum">     247 </span>            : 
+<span class="lineNum">     248 </span>            :     This is similar to the inner workings of the pj_transform function, but the
+<span class="lineNum">     249 </span>            :     stride functionality has been generalized to work for any size of basic unit,
+<span class="lineNum">     250 </span>            :     not just a fixed number of doubles.
+<span class="lineNum">     251 </span>            : 
+<span class="lineNum">     252 </span>            :     In most cases, the stride will be identical for x, y,z, and t, since they will
+<span class="lineNum">     253 </span>            :     typically be either individual arrays (stride = sizeof(double)), or strided
+<span class="lineNum">     254 </span>            :     views into an array of application specific data structures (stride = sizeof (...)).
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span>            :     But in order to support cases where x, y, z, and t come from heterogeneous
+<span class="lineNum">     257 </span>            :     sources, individual strides, sx, sy, sz, st, are used.
+<span class="lineNum">     258 </span>            : 
+<span class="lineNum">     259 </span>            :     Caveat: Since proj_transform does its work *in place*, this means that even the
+<span class="lineNum">     260 </span>            :     supposedly constants (i.e. length 1 arrays) will return from the call in altered
+<span class="lineNum">     261 </span>            :     state. Hence, remember to reinitialize between repeated calls.
+<span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span>            :     Return value: Number of transformations completed.
+<span class="lineNum">     264 </span>            : 
+<span class="lineNum">     265 </span>            : **************************************************************************************/
+<span class="lineNum">     266 </span><span class="lineCov">          2 :     PJ_COORD coord = {{0,0,0,0}};</span>
+<span class="lineNum">     267 </span>            :     size_t i, nmin;
+<span class="lineNum">     268 </span><span class="lineCov">          2 :     double null_broadcast = 0;</span>
+<span class="lineNum">     269 </span>            : 
+<span class="lineNum">     270 </span><span class="lineCov">          2 :     if (0==P)</span>
+<span class="lineNum">     271 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     272 </span>            : 
+<span class="lineNum">     273 </span><span class="lineCov">          2 :     if (P-&gt;inverted)</span>
+<span class="lineNum">     274 </span><span class="lineNoCov">          0 :         direction = -direction;</span>
+<span class="lineNum">     275 </span>            : 
+<span class="lineNum">     276 </span>            :     /* ignore lengths of null arrays */
+<span class="lineNum">     277 </span><span class="lineCov">          2 :     if (0==x) nx = 0;</span>
+<span class="lineNum">     278 </span><span class="lineCov">          2 :     if (0==y) ny = 0;</span>
+<span class="lineNum">     279 </span><span class="lineCov">          2 :     if (0==z) nz = 0;</span>
+<span class="lineNum">     280 </span><span class="lineCov">          2 :     if (0==t) nt = 0;</span>
+<span class="lineNum">     281 </span>            : 
+<span class="lineNum">     282 </span>            :     /* and make the nullities point to some real world memory for broadcasting nulls */
+<span class="lineNum">     283 </span><span class="lineCov">          2 :     if (0==nx) x = &amp;null_broadcast;</span>
+<span class="lineNum">     284 </span><span class="lineCov">          2 :     if (0==ny) y = &amp;null_broadcast;</span>
+<span class="lineNum">     285 </span><span class="lineCov">          2 :     if (0==nz) z = &amp;null_broadcast;</span>
+<span class="lineNum">     286 </span><span class="lineCov">          2 :     if (0==nt) t = &amp;null_broadcast;</span>
+<span class="lineNum">     287 </span>            : 
+<span class="lineNum">     288 </span>            :     /* nothing to do? */
+<span class="lineNum">     289 </span><span class="lineCov">          2 :     if (0==nx+ny+nz+nt)</span>
+<span class="lineNum">     290 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            :     /* arrays of length 1 are constants, which we broadcast along the longer arrays */
+<span class="lineNum">     293 </span>            :     /* so we need to find the length of the shortest non-unity array to figure out  */
+<span class="lineNum">     294 </span>            :     /* how many coordinate pairs we must transform */
+<span class="lineNum">     295 </span><span class="lineCov">          2 :     nmin = (nx &gt; 1)? nx: (ny &gt; 1)? ny: (nz &gt; 1)? nz: (nt &gt; 1)? nt: 1;</span>
+<span class="lineNum">     296 </span><span class="lineCov">          2 :     if ((nx &gt; 1) &amp;&amp; (nx &lt; nmin))  nmin = nx;</span>
+<span class="lineNum">     297 </span><span class="lineCov">          2 :     if ((ny &gt; 1) &amp;&amp; (ny &lt; nmin))  nmin = ny;</span>
+<span class="lineNum">     298 </span><span class="lineCov">          2 :     if ((nz &gt; 1) &amp;&amp; (nz &lt; nmin))  nmin = nz;</span>
+<span class="lineNum">     299 </span><span class="lineCov">          2 :     if ((nt &gt; 1) &amp;&amp; (nt &lt; nmin))  nmin = nt;</span>
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span>            :     /* Check validity of direction flag */
+<span class="lineNum">     302 </span><span class="lineCov">          2 :     switch (direction) {</span>
+<span class="lineNum">     303 </span>            :         case PJ_FWD:
+<span class="lineNum">     304 </span>            :         case PJ_INV:
+<span class="lineNum">     305 </span><span class="lineCov">          2 :             break;</span>
+<span class="lineNum">     306 </span>            :         case PJ_IDENT:
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :             return nmin;</span>
+<span class="lineNum">     308 </span>            :         default:
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :             proj_errno_set (P, EINVAL);</span>
+<span class="lineNum">     310 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     311 </span>            :     }
+<span class="lineNum">     312 </span>            : 
+<span class="lineNum">     313 </span>            :     /* Arrays of length==0 are broadcast as the constant 0               */
+<span class="lineNum">     314 </span>            :     /* Arrays of length==1 are broadcast as their single value           */
+<span class="lineNum">     315 </span>            :     /* Arrays of length &gt;1 are iterated over (for the first nmin values) */
+<span class="lineNum">     316 </span>            :     /* The slightly convolved incremental indexing is used due           */
+<span class="lineNum">     317 </span>            :     /* to the stride, which may be any size supported by the platform    */
+<span class="lineNum">     318 </span><span class="lineCov">          6 :     for (i = 0;  i &lt; nmin;  i++) {</span>
+<span class="lineNum">     319 </span><span class="lineCov">          4 :         coord.xyzt.x = *x;</span>
+<span class="lineNum">     320 </span><span class="lineCov">          4 :         coord.xyzt.y = *y;</span>
+<span class="lineNum">     321 </span><span class="lineCov">          4 :         coord.xyzt.z = *z;</span>
+<span class="lineNum">     322 </span><span class="lineCov">          4 :         coord.xyzt.t = *t;</span>
+<span class="lineNum">     323 </span>            : 
+<span class="lineNum">     324 </span><span class="lineCov">          4 :         if (PJ_FWD==direction)</span>
+<span class="lineNum">     325 </span><span class="lineCov">          4 :             coord = pj_fwd4d (coord, P);</span>
+<span class="lineNum">     326 </span>            :         else
+<span class="lineNum">     327 </span><span class="lineNoCov">          0 :             coord = pj_inv4d (coord, P);</span>
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span>            :         /* in all full length cases, we overwrite the input with the output,  */
+<span class="lineNum">     330 </span>            :         /* and step on to the next element.                                   */
+<span class="lineNum">     331 </span>            :         /* The casts are somewhat funky, but they compile down to no-ops and  */
+<span class="lineNum">     332 </span>            :         /* they tell compilers and static analyzers that we know what we do   */
+<span class="lineNum">     333 </span><span class="lineCov">          4 :         if (nx &gt; 1)  {</span>
+<span class="lineNum">     334 </span><span class="lineCov">          4 :            *x = coord.xyzt.x;</span>
+<span class="lineNum">     335 </span><span class="lineCov">          4 :             x = (double *) ((void *) ( ((char *) x) + sx));</span>
+<span class="lineNum">     336 </span>            :         }
+<span class="lineNum">     337 </span><span class="lineCov">          4 :         if (ny &gt; 1)  {</span>
+<span class="lineNum">     338 </span><span class="lineCov">          4 :            *y = coord.xyzt.y;</span>
+<span class="lineNum">     339 </span><span class="lineCov">          4 :             y = (double *) ((void *) ( ((char *) y) + sy));</span>
+<span class="lineNum">     340 </span>            :         }
+<span class="lineNum">     341 </span><span class="lineCov">          4 :         if (nz &gt; 1)  {</span>
+<span class="lineNum">     342 </span><span class="lineCov">          2 :            *z = coord.xyzt.z;</span>
+<span class="lineNum">     343 </span><span class="lineCov">          2 :             z = (double *) ((void *) ( ((char *) z) + sz));</span>
+<span class="lineNum">     344 </span>            :         }
+<span class="lineNum">     345 </span><span class="lineCov">          4 :         if (nt &gt; 1)  {</span>
+<span class="lineNum">     346 </span><span class="lineNoCov">          0 :            *t = coord.xyzt.t;</span>
+<span class="lineNum">     347 </span><span class="lineNoCov">          0 :             t = (double *) ((void *) ( ((char *) t) + st));</span>
+<span class="lineNum">     348 </span>            :         }
+<span class="lineNum">     349 </span>            :     }
+<span class="lineNum">     350 </span>            : 
+<span class="lineNum">     351 </span>            :     /* Last time around, we update the length 1 cases with their transformed alter egos */
+<span class="lineNum">     352 </span><span class="lineCov">          2 :     if (nx==1)</span>
+<span class="lineNum">     353 </span><span class="lineNoCov">          0 :         *x = coord.xyzt.x;</span>
+<span class="lineNum">     354 </span><span class="lineCov">          2 :     if (ny==1)</span>
+<span class="lineNum">     355 </span><span class="lineNoCov">          0 :         *y = coord.xyzt.y;</span>
+<span class="lineNum">     356 </span><span class="lineCov">          2 :     if (nz==1)</span>
+<span class="lineNum">     357 </span><span class="lineCov">          1 :         *z = coord.xyzt.z;</span>
+<span class="lineNum">     358 </span><span class="lineCov">          2 :     if (nt==1)</span>
+<span class="lineNum">     359 </span><span class="lineCov">          1 :         *t = coord.xyzt.t;</span>
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span><span class="lineCov">          2 :     return i;</span>
+<span class="lineNum">     362 </span>            : }
+<span class="lineNum">     363 </span>            : 
+<a name="364"><span class="lineNum">     364 </span>            : </a>
+<span class="lineNum">     365 </span>            : /*************************************************************************************/
+<span class="lineNum">     366 </span><span class="lineCov">       2004 : PJ_COORD proj_geocentric_latitude (const PJ *P, PJ_DIRECTION direction, PJ_COORD coord) {</span>
+<span class="lineNum">     367 </span>            : /**************************************************************************************
+<span class="lineNum">     368 </span>            :     Convert geographical latitude to geocentric (or the other way round if
+<span class="lineNum">     369 </span>            :     direction = PJ_INV)
+<span class="lineNum">     370 </span>            : 
+<span class="lineNum">     371 </span>            :     The conversion involves a call to the tangent function, which goes through the
+<span class="lineNum">     372 </span>            :     roof at the poles, so very close (the last centimeter) to the poles no
+<span class="lineNum">     373 </span>            :     conversion takes place and the input latitude is copied directly to the output.
+<span class="lineNum">     374 </span>            : 
+<span class="lineNum">     375 </span>            :     Fortunately, the geocentric latitude converges to the geographical at the
+<span class="lineNum">     376 </span>            :     poles, so the difference is negligible.
+<span class="lineNum">     377 </span>            : 
+<span class="lineNum">     378 </span>            :     For the spherical case, the geographical latitude equals the geocentric, and
+<span class="lineNum">     379 </span>            :     consequently, the input is copied directly to the output.
+<span class="lineNum">     380 </span>            : **************************************************************************************/
+<span class="lineNum">     381 </span><span class="lineCov">       2004 :     const double limit = M_HALFPI - 1e-9;</span>
+<span class="lineNum">     382 </span><span class="lineCov">       2004 :     PJ_COORD res = coord;</span>
+<span class="lineNum">     383 </span><span class="lineCov">       2004 :     if ((coord.lp.phi &gt; limit) || (coord.lp.phi &lt; -limit) || (P-&gt;es==0))</span>
+<span class="lineNum">     384 </span><span class="lineCov">          3 :         return res;</span>
+<span class="lineNum">     385 </span><span class="lineCov">       2001 :     if (direction==PJ_FWD)</span>
+<span class="lineNum">     386 </span><span class="lineCov">       1001 :         res.lp.phi = atan (P-&gt;one_es * tan (coord.lp.phi) );</span>
+<span class="lineNum">     387 </span>            :     else
+<span class="lineNum">     388 </span><span class="lineCov">       1000 :         res.lp.phi = atan (P-&gt;rone_es * tan (coord.lp.phi) );</span>
+<span class="lineNum">     389 </span>            : 
+<span class="lineNum">     390 </span><span class="lineCov">       2001 :     return res;</span>
+<a name="391"><span class="lineNum">     391 </span>            : }</a>
+<a name="392"><span class="lineNum">     392 </span>            : </a>
+<span class="lineNum">     393 </span><span class="lineCov">       5460 : double proj_torad (double angle_in_degrees) { return PJ_TORAD (angle_in_degrees);}</span>
+<a name="394"><span class="lineNum">     394 </span><span class="lineCov">       2044 : double proj_todeg (double angle_in_radians) { return PJ_TODEG (angle_in_radians);}</span></a>
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span><span class="lineCov">      14942 : double proj_dmstor(const char *is, char **rs) {</span>
+<span class="lineNum">     397 </span><span class="lineCov">      14942 :     return dmstor(is, rs);</span>
+<a name="398"><span class="lineNum">     398 </span>            : }</a>
+<span class="lineNum">     399 </span>            : 
+<span class="lineNum">     400 </span><span class="lineCov">          2 : char*  proj_rtodms(char *s, double r, int pos, int neg) {</span>
+<span class="lineNum">     401 </span><span class="lineCov">          2 :     return rtodms(s, r, pos, neg);</span>
+<span class="lineNum">     402 </span>            : }
+<a name="403"><span class="lineNum">     403 </span>            : </a>
+<span class="lineNum">     404 </span>            : /*************************************************************************************/
+<span class="lineNum">     405 </span><span class="lineCov">        259 : static PJ* skip_prep_fin(PJ *P) {</span>
+<span class="lineNum">     406 </span>            : /**************************************************************************************
+<span class="lineNum">     407 </span>            : Skip prepare and finalize function for the various &quot;helper operations&quot; added to P when
+<span class="lineNum">     408 </span>            : in cs2cs compatibility mode.
+<span class="lineNum">     409 </span>            : **************************************************************************************/
+<span class="lineNum">     410 </span><span class="lineCov">        259 :     P-&gt;skip_fwd_prepare  = 1;</span>
+<span class="lineNum">     411 </span><span class="lineCov">        259 :     P-&gt;skip_fwd_finalize = 1;</span>
+<span class="lineNum">     412 </span><span class="lineCov">        259 :     P-&gt;skip_inv_prepare  = 1;</span>
+<span class="lineNum">     413 </span><span class="lineCov">        259 :     P-&gt;skip_inv_finalize = 1;</span>
+<span class="lineNum">     414 </span><span class="lineCov">        259 :     return P;</span>
+<span class="lineNum">     415 </span>            : }
+<a name="416"><span class="lineNum">     416 </span>            : </a>
+<span class="lineNum">     417 </span>            : /*************************************************************************************/
+<span class="lineNum">     418 </span><span class="lineCov">        865 : static int cs2cs_emulation_setup (PJ *P) {</span>
+<span class="lineNum">     419 </span>            : /**************************************************************************************
+<span class="lineNum">     420 </span>            : If any cs2cs style modifiers are given (axis=..., towgs84=..., ) create the 4D API
+<span class="lineNum">     421 </span>            : equivalent operations, so the preparation and finalization steps in the pj_inv/pj_fwd
+<span class="lineNum">     422 </span>            : invocators can emulate the behaviour of pj_transform and the cs2cs app.
+<span class="lineNum">     423 </span>            : 
+<span class="lineNum">     424 </span>            : Returns 1 on success, 0 on failure
+<span class="lineNum">     425 </span>            : **************************************************************************************/
+<span class="lineNum">     426 </span>            :     PJ *Q;
+<span class="lineNum">     427 </span>            :     paralist *p;
+<span class="lineNum">     428 </span><span class="lineCov">        865 :     int do_cart = 0;</span>
+<span class="lineNum">     429 </span><span class="lineCov">        865 :     if (0==P)</span>
+<span class="lineNum">     430 </span><span class="lineCov">         53 :         return 0;</span>
+<span class="lineNum">     431 </span>            : 
+<span class="lineNum">     432 </span>            :     /* Don't recurse when calling proj_create (which calls us back) */
+<span class="lineNum">     433 </span><span class="lineCov">        812 :     if (pj_param_exists (P-&gt;params, &quot;break_cs2cs_recursion&quot;))</span>
+<span class="lineNum">     434 </span><span class="lineCov">        259 :         return 1;</span>
+<span class="lineNum">     435 </span>            : 
+<span class="lineNum">     436 </span>            :     /* Swap axes? */
+<span class="lineNum">     437 </span><span class="lineCov">        553 :     p = pj_param_exists (P-&gt;params, &quot;axis&quot;);</span>
+<span class="lineNum">     438 </span>            : 
+<span class="lineNum">     439 </span>            :     /* Don't axisswap if data are already in &quot;enu&quot; order */
+<span class="lineNum">     440 </span><span class="lineCov">        553 :     if (p &amp;&amp; (0!=strcmp (&quot;enu&quot;, p-&gt;param))) {</span>
+<span class="lineNum">     441 </span><span class="lineCov">         14 :         char *def = malloc (100+strlen(P-&gt;axis));</span>
+<span class="lineNum">     442 </span><span class="lineCov">         14 :         if (0==def)</span>
+<span class="lineNum">     443 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     444 </span><span class="lineCov">         14 :         sprintf (def, &quot;break_cs2cs_recursion     proj=axisswap  axis=%s&quot;, P-&gt;axis);</span>
+<span class="lineNum">     445 </span><span class="lineCov">         14 :         Q = proj_create (P-&gt;ctx, def);</span>
+<span class="lineNum">     446 </span><span class="lineCov">         14 :         free (def);</span>
+<span class="lineNum">     447 </span><span class="lineCov">         14 :         if (0==Q)</span>
+<span class="lineNum">     448 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     449 </span><span class="lineCov">         14 :         P-&gt;axisswap = skip_prep_fin(Q);</span>
+<span class="lineNum">     450 </span>            :     }
+<span class="lineNum">     451 </span>            : 
+<span class="lineNum">     452 </span>            :     /* Geoid grid(s) given? */
+<span class="lineNum">     453 </span><span class="lineCov">        553 :     p = pj_param_exists (P-&gt;params, &quot;geoidgrids&quot;);</span>
+<span class="lineNum">     454 </span><span class="lineCov">        553 :     if (p  &amp;&amp;  strlen (p-&gt;param) &gt; strlen (&quot;geoidgrids=&quot;)) {</span>
+<span class="lineNum">     455 </span><span class="lineCov">         16 :         char *gridnames = p-&gt;param + strlen (&quot;geoidgrids=&quot;);</span>
+<span class="lineNum">     456 </span><span class="lineCov">         16 :         char *def = malloc (100+strlen(gridnames));</span>
+<span class="lineNum">     457 </span><span class="lineCov">         16 :         if (0==def)</span>
+<span class="lineNum">     458 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     459 </span><span class="lineCov">         16 :         sprintf (def, &quot;break_cs2cs_recursion     proj=vgridshift  grids=%s&quot;, gridnames);</span>
+<span class="lineNum">     460 </span><span class="lineCov">         16 :         Q = proj_create (P-&gt;ctx, def);</span>
+<span class="lineNum">     461 </span><span class="lineCov">         16 :         free (def);</span>
+<span class="lineNum">     462 </span><span class="lineCov">         16 :         if (0==Q)</span>
+<span class="lineNum">     463 </span><span class="lineCov">          8 :             return 0;</span>
+<span class="lineNum">     464 </span><span class="lineCov">          8 :         P-&gt;vgridshift = skip_prep_fin(Q);</span>
+<span class="lineNum">     465 </span>            :     }
+<span class="lineNum">     466 </span>            : 
+<span class="lineNum">     467 </span>            :     /* Datum shift grid(s) given? */
+<span class="lineNum">     468 </span><span class="lineCov">        545 :     p = pj_param_exists (P-&gt;params, &quot;nadgrids&quot;);</span>
+<span class="lineNum">     469 </span><span class="lineCov">        545 :     if (p  &amp;&amp;  strlen (p-&gt;param) &gt; strlen (&quot;nadgrids=&quot;)) {</span>
+<span class="lineNum">     470 </span><span class="lineCov">          7 :         char *gridnames = p-&gt;param + strlen (&quot;nadgrids=&quot;);</span>
+<span class="lineNum">     471 </span><span class="lineCov">          7 :         char *def = malloc (100+strlen(gridnames));</span>
+<span class="lineNum">     472 </span><span class="lineCov">          7 :         if (0==def)</span>
+<span class="lineNum">     473 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     474 </span><span class="lineCov">          7 :         sprintf (def, &quot;break_cs2cs_recursion     proj=hgridshift  grids=%s&quot;, gridnames);</span>
+<span class="lineNum">     475 </span><span class="lineCov">          7 :         Q = proj_create (P-&gt;ctx, def);</span>
+<span class="lineNum">     476 </span><span class="lineCov">          7 :         free (def);</span>
+<span class="lineNum">     477 </span><span class="lineCov">          7 :         if (0==Q)</span>
+<span class="lineNum">     478 </span><span class="lineCov">          1 :             return 0;</span>
+<span class="lineNum">     479 </span><span class="lineCov">          6 :         P-&gt;hgridshift = skip_prep_fin(Q);</span>
+<span class="lineNum">     480 </span>            :     }
+<span class="lineNum">     481 </span>            : 
+<span class="lineNum">     482 </span>            :     /* We ignore helmert if we have grid shift */
+<span class="lineNum">     483 </span><span class="lineCov">        544 :     p = P-&gt;hgridshift ? 0 : pj_param_exists (P-&gt;params, &quot;towgs84&quot;);</span>
+<span class="lineNum">     484 </span><span class="lineCov">        544 :     while (p) {</span>
+<span class="lineNum">     485 </span>            :         char *def;
+<span class="lineNum">     486 </span><span class="lineCov">        127 :         char *s = p-&gt;param;</span>
+<span class="lineNum">     487 </span><span class="lineCov">        127 :         double *d = P-&gt;datum_params;</span>
+<span class="lineNum">     488 </span><span class="lineCov">        127 :         size_t n = strlen (s);</span>
+<span class="lineNum">     489 </span>            : 
+<span class="lineNum">     490 </span>            :         /* We ignore null helmert shifts (common in auto-translated resource files, e.g. epsg) */
+<span class="lineNum">     491 </span><span class="lineCov">        127 :         if (0==d[0] &amp;&amp; 0==d[1] &amp;&amp; 0==d[2] &amp;&amp; 0==d[3] &amp;&amp; 0==d[4] &amp;&amp; 0==d[5] &amp;&amp; 0==d[6]) {</span>
+<span class="lineNum">     492 </span>            :             /* If the current ellipsoid is not WGS84, then make sure the */
+<span class="lineNum">     493 </span>            :             /* change in ellipsoid is still done. */
+<span class="lineNum">     494 </span><span class="lineCov">         95 :             if (!(fabs(P-&gt;a_orig - 6378137.0) &lt; 1e-8 &amp;&amp; fabs(P-&gt;es_orig - 0.0066943799901413) &lt; 1e-15)) {</span>
+<span class="lineNum">     495 </span><span class="lineCov">         64 :                 do_cart = 1;</span>
+<span class="lineNum">     496 </span>            :             }
+<span class="lineNum">     497 </span><span class="lineCov">         95 :             break;</span>
+<span class="lineNum">     498 </span>            :         }
+<span class="lineNum">     499 </span>            : 
+<span class="lineNum">     500 </span><span class="lineCov">         32 :         if (n &lt;= 8) /* 8==strlen (&quot;towgs84=&quot;) */</span>
+<span class="lineNum">     501 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     502 </span>            : 
+<span class="lineNum">     503 </span><span class="lineCov">         32 :         def = malloc (100+n);</span>
+<span class="lineNum">     504 </span><span class="lineCov">         32 :         if (0==def)</span>
+<span class="lineNum">     505 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     506 </span><span class="lineCov">         32 :         sprintf (def, &quot;break_cs2cs_recursion     proj=helmert exact %s transpose&quot;, s);</span>
+<span class="lineNum">     507 </span><span class="lineCov">         32 :         Q = proj_create (P-&gt;ctx, def);</span>
+<span class="lineNum">     508 </span><span class="lineCov">         32 :         pj_inherit_ellipsoid_def (P, Q);</span>
+<span class="lineNum">     509 </span><span class="lineCov">         32 :         free (def);</span>
+<span class="lineNum">     510 </span><span class="lineCov">         32 :         if (0==Q)</span>
+<span class="lineNum">     511 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     512 </span><span class="lineCov">         32 :         P-&gt;helmert = skip_prep_fin (Q);</span>
+<span class="lineNum">     513 </span>            : 
+<span class="lineNum">     514 </span><span class="lineCov">         32 :         break;</span>
+<span class="lineNum">     515 </span>            :     }
+<span class="lineNum">     516 </span>            : 
+<span class="lineNum">     517 </span>            :     /* We also need cartesian/geographical transformations if we are working in */
+<span class="lineNum">     518 </span>            :     /* geocentric/cartesian space or we need to do a Helmert transform.         */
+<span class="lineNum">     519 </span><span class="lineCov">        544 :     if (P-&gt;is_geocent || P-&gt;helmert || do_cart) {</span>
+<span class="lineNum">     520 </span>            :         char def[150];
+<span class="lineNum">     521 </span><span class="lineCov">        105 :         sprintf (def, &quot;break_cs2cs_recursion     proj=cart   a=%40.20g  es=%40.20g&quot;, P-&gt;a_orig, P-&gt;es_orig);</span>
+<span class="lineNum">     522 </span><span class="lineCov">        105 :         Q = proj_create (P-&gt;ctx, def);</span>
+<span class="lineNum">     523 </span><span class="lineCov">        105 :         if (0==Q)</span>
+<span class="lineNum">     524 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     525 </span><span class="lineCov">        105 :         P-&gt;cart = skip_prep_fin (Q);</span>
+<span class="lineNum">     526 </span>            : 
+<span class="lineNum">     527 </span><span class="lineCov">        105 :         if (!P-&gt;is_geocent) {</span>
+<span class="lineNum">     528 </span><span class="lineCov">         94 :             sprintf (def, &quot;break_cs2cs_recursion     proj=cart  ellps=WGS84&quot;);</span>
+<span class="lineNum">     529 </span><span class="lineCov">         94 :             Q = proj_create (P-&gt;ctx, def);</span>
+<span class="lineNum">     530 </span><span class="lineCov">         94 :             if (0==Q)</span>
+<span class="lineNum">     531 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     532 </span><span class="lineCov">         94 :             P-&gt;cart_wgs84 = skip_prep_fin (Q);</span>
+<span class="lineNum">     533 </span>            :         }
+<span class="lineNum">     534 </span>            :     }
+<span class="lineNum">     535 </span>            : 
+<span class="lineNum">     536 </span><span class="lineCov">        544 :     return 1;</span>
+<span class="lineNum">     537 </span>            : }
+<span class="lineNum">     538 </span>            : 
+<span class="lineNum">     539 </span>            : 
+<a name="540"><span class="lineNum">     540 </span>            : </a>
+<span class="lineNum">     541 </span>            : /*************************************************************************************/
+<span class="lineNum">     542 </span><span class="lineCov">        866 : PJ *proj_create (PJ_CONTEXT *ctx, const char *definition) {</span>
+<span class="lineNum">     543 </span>            : /**************************************************************************************
+<span class="lineNum">     544 </span>            :     Create a new PJ object in the context ctx, using the given definition. If ctx==0,
+<span class="lineNum">     545 </span>            :     the default context is used, if definition==0, or invalid, a null-pointer is
+<span class="lineNum">     546 </span>            :     returned. The definition may use '+' as argument start indicator, as in
+<span class="lineNum">     547 </span>            :     &quot;+proj=utm +zone=32&quot;, or leave it out, as in &quot;proj=utm zone=32&quot;.
+<span class="lineNum">     548 </span>            : 
+<span class="lineNum">     549 </span>            :     It may even use free formatting &quot;proj  =  utm;  zone  =32  ellps= GRS80&quot;.
+<span class="lineNum">     550 </span>            :     Note that the semicolon separator is allowed, but not required.
+<span class="lineNum">     551 </span>            : **************************************************************************************/
+<span class="lineNum">     552 </span>            :     PJ    *P;
+<span class="lineNum">     553 </span>            :     char  *args, **argv;
+<span class="lineNum">     554 </span>            :     size_t argc, n;
+<span class="lineNum">     555 </span>            :     int    ret;
+<span class="lineNum">     556 </span>            : 
+<span class="lineNum">     557 </span><span class="lineCov">        866 :     if (0==ctx)</span>
+<span class="lineNum">     558 </span><span class="lineCov">        421 :         ctx = pj_get_default_ctx ();</span>
+<span class="lineNum">     559 </span>            : 
+<span class="lineNum">     560 </span>            :     /* Make a copy that we can manipulate */
+<span class="lineNum">     561 </span><span class="lineCov">        866 :     n = strlen (definition);</span>
+<span class="lineNum">     562 </span><span class="lineCov">        866 :     args = (char *) malloc (n + 1);</span>
+<span class="lineNum">     563 </span><span class="lineCov">        866 :     if (0==args)</span>
+<span class="lineNum">     564 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     565 </span><span class="lineCov">        866 :     strcpy (args, definition);</span>
+<span class="lineNum">     566 </span>            : 
+<span class="lineNum">     567 </span><span class="lineCov">        866 :     argc = pj_trim_argc (args);</span>
+<span class="lineNum">     568 </span><span class="lineCov">        866 :     if (argc==0) {</span>
+<span class="lineNum">     569 </span><span class="lineCov">          1 :         pj_dealloc (args);</span>
+<span class="lineNum">     570 </span><span class="lineCov">          1 :         return 0;</span>
+<span class="lineNum">     571 </span>            :     }
+<span class="lineNum">     572 </span>            : 
+<span class="lineNum">     573 </span><span class="lineCov">        865 :     argv = pj_trim_argv (argc, args);</span>
+<span class="lineNum">     574 </span>            : 
+<span class="lineNum">     575 </span>            :     /* ...and let pj_init_ctx do the hard work */
+<span class="lineNum">     576 </span><span class="lineCov">        865 :     P = pj_init_ctx (ctx, (int) argc, argv);</span>
+<span class="lineNum">     577 </span>            : 
+<span class="lineNum">     578 </span><span class="lineCov">        865 :     pj_dealloc (argv);</span>
+<span class="lineNum">     579 </span><span class="lineCov">        865 :     pj_dealloc (args);</span>
+<span class="lineNum">     580 </span>            : 
+<span class="lineNum">     581 </span>            :     /* Support cs2cs-style modifiers */
+<span class="lineNum">     582 </span><span class="lineCov">        865 :     ret = cs2cs_emulation_setup  (P);</span>
+<span class="lineNum">     583 </span><span class="lineCov">        865 :     if (0==ret)</span>
+<span class="lineNum">     584 </span><span class="lineCov">         62 :         return proj_destroy (P);</span>
+<span class="lineNum">     585 </span>            : 
+<span class="lineNum">     586 </span><span class="lineCov">        803 :     return P;</span>
+<span class="lineNum">     587 </span>            : }
+<span class="lineNum">     588 </span>            : 
+<span class="lineNum">     589 </span>            : 
+<a name="590"><span class="lineNum">     590 </span>            : </a>
+<span class="lineNum">     591 </span>            : /*************************************************************************************/
+<span class="lineNum">     592 </span><span class="lineCov">        170 : PJ *proj_create_argv (PJ_CONTEXT *ctx, int argc, char **argv) {</span>
+<span class="lineNum">     593 </span>            : /**************************************************************************************
+<span class="lineNum">     594 </span>            : Create a new PJ object in the context ctx, using the given definition argument
+<span class="lineNum">     595 </span>            : array argv. If ctx==0, the default context is used, if definition==0, or invalid,
+<span class="lineNum">     596 </span>            : a null-pointer is returned. The definition arguments may use '+' as argument start
+<span class="lineNum">     597 </span>            : indicator, as in {&quot;+proj=utm&quot;, &quot;+zone=32&quot;}, or leave it out, as in {&quot;proj=utm&quot;,
+<span class="lineNum">     598 </span>            : &quot;zone=32&quot;}.
+<span class="lineNum">     599 </span>            : **************************************************************************************/
+<span class="lineNum">     600 </span>            :     PJ *P;
+<span class="lineNum">     601 </span>            :     const char *c;
+<span class="lineNum">     602 </span>            : 
+<span class="lineNum">     603 </span><span class="lineCov">        170 :     if (0==argv)</span>
+<span class="lineNum">     604 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     605 </span><span class="lineCov">        170 :     if (0==ctx)</span>
+<span class="lineNum">     606 </span><span class="lineCov">          1 :         ctx = pj_get_default_ctx ();</span>
+<span class="lineNum">     607 </span>            : 
+<span class="lineNum">     608 </span>            :     /* We assume that free format is used, and build a full proj_create compatible string */
+<span class="lineNum">     609 </span><span class="lineCov">        170 :     c = pj_make_args (argc, argv);</span>
+<span class="lineNum">     610 </span><span class="lineCov">        170 :     if (0==c)</span>
+<span class="lineNum">     611 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     612 </span>            : 
+<span class="lineNum">     613 </span><span class="lineCov">        170 :     P = proj_create (ctx, c);</span>
+<span class="lineNum">     614 </span>            : 
+<span class="lineNum">     615 </span><span class="lineCov">        170 :     pj_dealloc ((char *) c);</span>
+<span class="lineNum">     616 </span><span class="lineCov">        170 :     return P;</span>
+<span class="lineNum">     617 </span>            : }
+<span class="lineNum">     618 </span>            : 
+<span class="lineNum">     619 </span>            : 
+<a name="620"><span class="lineNum">     620 </span>            : </a>
+<span class="lineNum">     621 </span>            : /*****************************************************************************/
+<span class="lineNum">     622 </span><span class="lineCov">          2 : PJ  *proj_create_crs_to_crs (PJ_CONTEXT *ctx, const char *srid_from, const char *srid_to, PJ_AREA *area) {</span>
+<span class="lineNum">     623 </span>            : /******************************************************************************
+<span class="lineNum">     624 </span>            :     Create a transformation pipeline between two known coordinate reference
+<span class="lineNum">     625 </span>            :     systems.
+<span class="lineNum">     626 </span>            : 
+<span class="lineNum">     627 </span>            :     srid_from and srid_to should be the value part of a +init=... parameter
+<span class="lineNum">     628 </span>            :     set, i.e. &quot;epsg:25833&quot; or &quot;IGNF:AMST63&quot;. Any projection definition that
+<span class="lineNum">     629 </span>            :     can be found in a init-file in PROJ_LIB is a valid input to this function.
+<span class="lineNum">     630 </span>            : 
+<span class="lineNum">     631 </span>            :     For now the function mimics the cs2cs app: An input and an output CRS is
+<span class="lineNum">     632 </span>            :     given and coordinates are transformed via a hub datum (WGS84). This
+<span class="lineNum">     633 </span>            :     transformation strategy is referred to as &quot;early-binding&quot; by the EPSG. The
+<span class="lineNum">     634 </span>            :     function can be extended to support &quot;late-binding&quot; transformations in the
+<span class="lineNum">     635 </span>            :     future without affecting users of the function.
+<span class="lineNum">     636 </span>            : 
+<span class="lineNum">     637 </span>            :     An &quot;area of use&quot; can be specified in area. In the current version of this
+<span class="lineNum">     638 </span>            :     function is has no function, but is added in anticipation of a
+<span class="lineNum">     639 </span>            :     &quot;late-binding&quot; implementation in the future. The idea being, that if a user
+<span class="lineNum">     640 </span>            :     supplies an area of use, the more accurate transformation between two given
+<span class="lineNum">     641 </span>            :     systems can be chosen.
+<span class="lineNum">     642 </span>            : 
+<span class="lineNum">     643 </span>            :     Example call:
+<span class="lineNum">     644 </span>            : 
+<span class="lineNum">     645 </span>            :         PJ *P = proj_create_crs_to_crs(0, &quot;epsg:25832&quot;, &quot;epsg:25833&quot;, NULL);
+<span class="lineNum">     646 </span>            : 
+<span class="lineNum">     647 </span>            : ******************************************************************************/
+<span class="lineNum">     648 </span>            :     PJ *P;
+<span class="lineNum">     649 </span>            :     char buffer[512];
+<span class="lineNum">     650 </span>            :     size_t len;
+<span class="lineNum">     651 </span>            : 
+<span class="lineNum">     652 </span>            :     /* area not in use yet, suppressing warning */
+<span class="lineNum">     653 </span>            :     (void)area;
+<span class="lineNum">     654 </span>            : 
+<span class="lineNum">     655 </span><span class="lineCov">          2 :     strcpy(buffer, &quot;+proj=pipeline +step +init=&quot;);</span>
+<span class="lineNum">     656 </span><span class="lineCov">          2 :     len = strlen(buffer);</span>
+<span class="lineNum">     657 </span><span class="lineCov">          2 :     strncat(buffer + len, srid_from, sizeof(buffer)-1-len);</span>
+<span class="lineNum">     658 </span><span class="lineCov">          2 :     len += strlen(buffer + len);</span>
+<span class="lineNum">     659 </span><span class="lineCov">          2 :     strncat(buffer + len, &quot; +inv +step +init=&quot;, sizeof(buffer)-1-len);</span>
+<span class="lineNum">     660 </span><span class="lineCov">          2 :     len += strlen(buffer + len);</span>
+<span class="lineNum">     661 </span><span class="lineCov">          2 :     strncat(buffer + len, srid_to, sizeof(buffer)-1-len);</span>
+<span class="lineNum">     662 </span>            : 
+<span class="lineNum">     663 </span><span class="lineCov">          2 :     P = proj_create(ctx, buffer);</span>
+<span class="lineNum">     664 </span>            : 
+<span class="lineNum">     665 </span><span class="lineCov">          2 :     return P;</span>
+<a name="666"><span class="lineNum">     666 </span>            : }</a>
+<span class="lineNum">     667 </span>            : 
+<span class="lineNum">     668 </span><span class="lineCov">        547 : PJ *proj_destroy (PJ *P) {</span>
+<span class="lineNum">     669 </span><span class="lineCov">        547 :     pj_free (P);</span>
+<span class="lineNum">     670 </span><span class="lineCov">        547 :     return 0;</span>
+<span class="lineNum">     671 </span>            : }
+<a name="672"><span class="lineNum">     672 </span>            : </a>
+<span class="lineNum">     673 </span>            : /*****************************************************************************/
+<span class="lineNum">     674 </span><span class="lineCov">    7823835 : int proj_errno (const PJ *P) {</span>
+<span class="lineNum">     675 </span>            : /******************************************************************************
+<span class="lineNum">     676 </span>            :     Read an error level from the context of a PJ.
+<span class="lineNum">     677 </span>            : ******************************************************************************/
+<span class="lineNum">     678 </span><span class="lineCov">    7823835 :     return pj_ctx_get_errno (pj_get_ctx ((PJ *) P));</span>
+<span class="lineNum">     679 </span>            : }
+<a name="680"><span class="lineNum">     680 </span>            : </a>
+<span class="lineNum">     681 </span>            : /*****************************************************************************/
+<span class="lineNum">     682 </span><span class="lineNoCov">          0 : int proj_context_errno (PJ_CONTEXT *ctx) {</span>
+<span class="lineNum">     683 </span>            : /******************************************************************************
+<span class="lineNum">     684 </span>            :     Read an error directly from a context, without going through a PJ
+<span class="lineNum">     685 </span>            :     belonging to that context.
+<span class="lineNum">     686 </span>            : ******************************************************************************/
+<span class="lineNum">     687 </span><span class="lineNoCov">          0 :     if (0==ctx)</span>
+<span class="lineNum">     688 </span><span class="lineNoCov">          0 :         ctx = pj_get_default_ctx();</span>
+<span class="lineNum">     689 </span><span class="lineNoCov">          0 :     return pj_ctx_get_errno (ctx);</span>
+<span class="lineNum">     690 </span>            : }
+<a name="691"><span class="lineNum">     691 </span>            : </a>
+<span class="lineNum">     692 </span>            : /*****************************************************************************/
+<span class="lineNum">     693 </span><span class="lineCov">        137 : int proj_errno_set (const PJ *P, int err) {</span>
+<span class="lineNum">     694 </span>            : /******************************************************************************
+<span class="lineNum">     695 </span>            :     Set context-errno, bubble it up to the thread local errno, return err
+<span class="lineNum">     696 </span>            : ******************************************************************************/
+<span class="lineNum">     697 </span>            :     /* Use proj_errno_reset to explicitly clear the error status */
+<span class="lineNum">     698 </span><span class="lineCov">        137 :     if (0==err)</span>
+<span class="lineNum">     699 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     700 </span>            : 
+<span class="lineNum">     701 </span>            :     /* For P==0 err goes to the default context */
+<span class="lineNum">     702 </span><span class="lineCov">        137 :     proj_context_errno_set (pj_get_ctx ((PJ *) P), err);</span>
+<span class="lineNum">     703 </span><span class="lineCov">        137 :     errno = err;</span>
+<span class="lineNum">     704 </span><span class="lineCov">        137 :     return err;</span>
+<span class="lineNum">     705 </span>            : }
+<a name="706"><span class="lineNum">     706 </span>            : </a>
+<span class="lineNum">     707 </span>            : /*****************************************************************************/
+<span class="lineNum">     708 </span><span class="lineCov">    3906303 : int proj_errno_restore (const PJ *P, int err) {</span>
+<span class="lineNum">     709 </span>            : /******************************************************************************
+<span class="lineNum">     710 </span>            :     Use proj_errno_restore when the current function succeeds, but the
+<span class="lineNum">     711 </span>            :     error flag was set on entry, and stored/reset using proj_errno_reset
+<span class="lineNum">     712 </span>            :     in order to monitor for new errors.
+<span class="lineNum">     713 </span>            : 
+<span class="lineNum">     714 </span>            :     See usage example under proj_errno_reset ()
+<span class="lineNum">     715 </span>            : ******************************************************************************/
+<span class="lineNum">     716 </span><span class="lineCov">    3906303 :     if (0==err)</span>
+<span class="lineNum">     717 </span><span class="lineCov">    3906303 :         return 0;</span>
+<span class="lineNum">     718 </span><span class="lineNoCov">          0 :     proj_errno_set (P, err);</span>
+<span class="lineNum">     719 </span><span class="lineNoCov">          0 :     return 0;</span>
+<span class="lineNum">     720 </span>            : }
+<a name="721"><span class="lineNum">     721 </span>            : </a>
+<span class="lineNum">     722 </span>            : /*****************************************************************************/
+<span class="lineNum">     723 </span><span class="lineCov">    3910881 : int proj_errno_reset (const PJ *P) {</span>
+<span class="lineNum">     724 </span>            : /******************************************************************************
+<span class="lineNum">     725 </span>            :     Clears errno in the context and thread local levels
+<span class="lineNum">     726 </span>            :     through the low level pj_ctx interface.
+<span class="lineNum">     727 </span>            : 
+<span class="lineNum">     728 </span>            :     Returns the previous value of the errno, for convenient reset/restore
+<span class="lineNum">     729 </span>            :     operations:
+<span class="lineNum">     730 </span>            : 
+<span class="lineNum">     731 </span>            :     int foo (PJ *P) {
+<span class="lineNum">     732 </span>            :         // errno may be set on entry, but we need to reset it to be able to
+<span class="lineNum">     733 </span>            :         // check for errors from &quot;do_something_with_P(P)&quot;
+<span class="lineNum">     734 </span>            :         int last_errno = proj_errno_reset (P);
+<span class="lineNum">     735 </span>            : 
+<span class="lineNum">     736 </span>            :         // local failure
+<span class="lineNum">     737 </span>            :         if (0==P)
+<span class="lineNum">     738 </span>            :             return proj_errno_set (P, 42);
+<span class="lineNum">     739 </span>            : 
+<span class="lineNum">     740 </span>            :         // call to function that may fail
+<span class="lineNum">     741 </span>            :         do_something_with_P (P);
+<span class="lineNum">     742 </span>            : 
+<span class="lineNum">     743 </span>            :         // failure in do_something_with_P? - keep latest error status
+<span class="lineNum">     744 </span>            :         if (proj_errno(P))
+<span class="lineNum">     745 </span>            :             return proj_errno (P);
+<span class="lineNum">     746 </span>            : 
+<span class="lineNum">     747 </span>            :         // success - restore previous error status, return 0
+<span class="lineNum">     748 </span>            :         return proj_errno_restore (P, last_errno);
+<span class="lineNum">     749 </span>            :     }
+<span class="lineNum">     750 </span>            : ******************************************************************************/
+<span class="lineNum">     751 </span>            :     int last_errno;
+<span class="lineNum">     752 </span><span class="lineCov">    3910881 :     last_errno = proj_errno (P);</span>
+<span class="lineNum">     753 </span>            : 
+<span class="lineNum">     754 </span><span class="lineCov">    3910881 :     pj_ctx_set_errno (pj_get_ctx ((PJ *) P), 0);</span>
+<span class="lineNum">     755 </span><span class="lineCov">    3910881 :     errno = 0;</span>
+<span class="lineNum">     756 </span><span class="lineCov">    3910881 :     pj_errno = 0;</span>
+<span class="lineNum">     757 </span><span class="lineCov">    3910881 :     return last_errno;</span>
+<span class="lineNum">     758 </span>            : }
+<span class="lineNum">     759 </span>            : 
+<a name="760"><span class="lineNum">     760 </span>            : </a>
+<span class="lineNum">     761 </span>            : /* Create a new context */
+<span class="lineNum">     762 </span><span class="lineCov">          1 : PJ_CONTEXT *proj_context_create (void) {</span>
+<span class="lineNum">     763 </span><span class="lineCov">          1 :     return pj_ctx_alloc ();</span>
+<span class="lineNum">     764 </span>            : }
+<a name="765"><span class="lineNum">     765 </span>            : </a>
+<span class="lineNum">     766 </span>            : 
+<span class="lineNum">     767 </span><span class="lineCov">          1 : PJ_CONTEXT *proj_context_destroy (PJ_CONTEXT *ctx) {</span>
+<span class="lineNum">     768 </span><span class="lineCov">          1 :     if (0==ctx)</span>
+<span class="lineNum">     769 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     770 </span>            : 
+<span class="lineNum">     771 </span>            :     /* Trying to free the default context is a no-op (since it is statically allocated) */
+<span class="lineNum">     772 </span><span class="lineCov">          1 :     if (pj_get_default_ctx ()==ctx)</span>
+<span class="lineNum">     773 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     774 </span>            : 
+<span class="lineNum">     775 </span><span class="lineCov">          1 :     pj_ctx_free (ctx);</span>
+<span class="lineNum">     776 </span><span class="lineCov">          1 :     return 0;</span>
+<span class="lineNum">     777 </span>            : }
+<span class="lineNum">     778 </span>            : 
+<span class="lineNum">     779 </span>            : 
+<span class="lineNum">     780 </span>            : 
+<span class="lineNum">     781 </span>            : 
+<span class="lineNum">     782 </span>            : 
+<a name="783"><span class="lineNum">     783 </span>            : </a>
+<span class="lineNum">     784 </span>            : /*****************************************************************************/
+<span class="lineNum">     785 </span><span class="lineCov">          2 : static char *path_append (char *buf, const char *app, size_t *buf_size) {</span>
+<span class="lineNum">     786 </span>            : /******************************************************************************
+<span class="lineNum">     787 </span>            :     Helper for proj_info() below. Append app to buf, separated by a
+<span class="lineNum">     788 </span>            :     semicolon. Also handle allocation of longer buffer if needed.
+<span class="lineNum">     789 </span>            : 
+<span class="lineNum">     790 </span>            :     Returns buffer and adjusts *buf_size through provided pointer arg.
+<span class="lineNum">     791 </span>            : ******************************************************************************/
+<span class="lineNum">     792 </span>            :     char *p;
+<span class="lineNum">     793 </span><span class="lineCov">          2 :     size_t len, applen = 0, buflen = 0;</span>
+<span class="lineNum">     794 </span>            : #ifdef _WIN32
+<span class="lineNum">     795 </span>            :     char *delim = &quot;;&quot;;
+<span class="lineNum">     796 </span>            : #else
+<span class="lineNum">     797 </span><span class="lineCov">          2 :     char *delim = &quot;:&quot;;</span>
+<span class="lineNum">     798 </span>            : #endif
+<span class="lineNum">     799 </span>            : 
+<span class="lineNum">     800 </span>            :     /* Nothing to do? */
+<span class="lineNum">     801 </span><span class="lineCov">          2 :     if (0 == app)</span>
+<span class="lineNum">     802 </span><span class="lineNoCov">          0 :         return buf;</span>
+<span class="lineNum">     803 </span><span class="lineCov">          2 :     applen = strlen (app);</span>
+<span class="lineNum">     804 </span><span class="lineCov">          2 :     if (0 == applen)</span>
+<span class="lineNum">     805 </span><span class="lineNoCov">          0 :         return buf;</span>
+<span class="lineNum">     806 </span>            : 
+<span class="lineNum">     807 </span>            :     /* Start checking whether buf is long enough */
+<span class="lineNum">     808 </span><span class="lineCov">          2 :     if (0 != buf)</span>
+<span class="lineNum">     809 </span><span class="lineCov">          1 :         buflen = strlen (buf);</span>
+<span class="lineNum">     810 </span><span class="lineCov">          2 :     len = buflen+applen+strlen (delim) + 1;</span>
+<span class="lineNum">     811 </span>            : 
+<span class="lineNum">     812 </span>            :     /* &quot;pj_realloc&quot;, so to speak */
+<span class="lineNum">     813 </span><span class="lineCov">          2 :     if (*buf_size &lt; len) {</span>
+<span class="lineNum">     814 </span><span class="lineCov">          1 :         p = pj_calloc (2 * len, sizeof (char));</span>
+<span class="lineNum">     815 </span><span class="lineCov">          1 :         if (0==p) {</span>
+<span class="lineNum">     816 </span><span class="lineNoCov">          0 :             pj_dealloc (buf);</span>
+<span class="lineNum">     817 </span><span class="lineNoCov">          0 :             return 0;</span>
+<span class="lineNum">     818 </span>            :         }
+<span class="lineNum">     819 </span><span class="lineCov">          1 :         *buf_size = 2 * len;</span>
+<span class="lineNum">     820 </span><span class="lineCov">          1 :         if (buf != 0)</span>
+<span class="lineNum">     821 </span><span class="lineNoCov">          0 :             strcpy (p, buf);</span>
+<span class="lineNum">     822 </span><span class="lineCov">          1 :         pj_dealloc (buf);</span>
+<span class="lineNum">     823 </span><span class="lineCov">          1 :         buf = p;</span>
+<span class="lineNum">     824 </span>            :     }
+<span class="lineNum">     825 </span>            : 
+<span class="lineNum">     826 </span>            :     /* Only append a semicolon if something's already there */
+<span class="lineNum">     827 </span><span class="lineCov">          2 :     if (0 != buflen)</span>
+<span class="lineNum">     828 </span><span class="lineCov">          1 :         strcat (buf, &quot;;&quot;);</span>
+<span class="lineNum">     829 </span><span class="lineCov">          2 :     strcat (buf, app);</span>
+<span class="lineNum">     830 </span><span class="lineCov">          2 :     return buf;</span>
+<span class="lineNum">     831 </span>            : }
+<span class="lineNum">     832 </span>            : 
+<span class="lineNum">     833 </span>            : static const char *empty = {&quot;&quot;};
+<span class="lineNum">     834 </span>            : static char version[64]  = {&quot;&quot;};
+<span class="lineNum">     835 </span>            : static PJ_INFO info = {0, 0, 0, 0, 0, 0, 0, 0};
+<span class="lineNum">     836 </span>            : static volatile int info_initialized = 0;
+<a name="837"><span class="lineNum">     837 </span>            : </a>
+<span class="lineNum">     838 </span>            : /*****************************************************************************/
+<span class="lineNum">     839 </span><span class="lineCov">          1 : PJ_INFO proj_info (void) {</span>
+<span class="lineNum">     840 </span>            : /******************************************************************************
+<span class="lineNum">     841 </span>            :     Basic info about the current instance of the PROJ.4 library.
+<span class="lineNum">     842 </span>            : 
+<span class="lineNum">     843 </span>            :     Returns PJ_INFO struct.
+<span class="lineNum">     844 </span>            : ******************************************************************************/
+<span class="lineNum">     845 </span>            :     const char * const *paths;
+<span class="lineNum">     846 </span>            :     size_t i, n;
+<span class="lineNum">     847 </span>            : 
+<span class="lineNum">     848 </span><span class="lineCov">          1 :     size_t  buf_size = 0;</span>
+<span class="lineNum">     849 </span><span class="lineCov">          1 :     char   *buf = 0;</span>
+<span class="lineNum">     850 </span>            : 
+<span class="lineNum">     851 </span><span class="lineCov">          1 :     pj_acquire_lock ();</span>
+<span class="lineNum">     852 </span>            : 
+<span class="lineNum">     853 </span><span class="lineCov">          1 :     if (0!=info_initialized) {</span>
+<span class="lineNum">     854 </span><span class="lineNoCov">          0 :         pj_release_lock ();</span>
+<span class="lineNum">     855 </span><span class="lineNoCov">          0 :         return info;</span>
+<span class="lineNum">     856 </span>            :     }
+<span class="lineNum">     857 </span>            : 
+<span class="lineNum">     858 </span><span class="lineCov">          1 :     info.major = PROJ_VERSION_MAJOR;</span>
+<span class="lineNum">     859 </span><span class="lineCov">          1 :     info.minor = PROJ_VERSION_MINOR;</span>
+<span class="lineNum">     860 </span><span class="lineCov">          1 :     info.patch = PROJ_VERSION_PATCH;</span>
+<span class="lineNum">     861 </span>            : 
+<span class="lineNum">     862 </span>            :     /* This is a controlled environment, so no risk of sprintf buffer
+<span class="lineNum">     863 </span>            :     overflow. A normal version string is xx.yy.zz which is 8 characters
+<span class="lineNum">     864 </span>            :     long and there is room for 64 bytes in the version string. */
+<span class="lineNum">     865 </span><span class="lineCov">          1 :     sprintf (version, &quot;%d.%d.%d&quot;, info.major, info.minor, info.patch);</span>
+<span class="lineNum">     866 </span>            : 
+<span class="lineNum">     867 </span><span class="lineCov">          1 :     info.searchpath = empty;</span>
+<span class="lineNum">     868 </span><span class="lineCov">          1 :     info.version    = version;</span>
+<span class="lineNum">     869 </span><span class="lineCov">          1 :     info.release    = pj_get_release ();</span>
+<span class="lineNum">     870 </span>            : 
+<span class="lineNum">     871 </span>            :     /* build search path string */
+<span class="lineNum">     872 </span><span class="lineCov">          1 :     buf = path_append (buf, getenv (&quot;HOME&quot;), &amp;buf_size);</span>
+<span class="lineNum">     873 </span><span class="lineCov">          1 :     buf = path_append (buf, getenv (&quot;PROJ_LIB&quot;), &amp;buf_size);</span>
+<span class="lineNum">     874 </span>            : 
+<span class="lineNum">     875 </span><span class="lineCov">          1 :     paths = proj_get_searchpath ();</span>
+<span class="lineNum">     876 </span><span class="lineCov">          1 :     n = (size_t) proj_get_path_count ();</span>
+<span class="lineNum">     877 </span>            : 
+<span class="lineNum">     878 </span><span class="lineCov">          1 :     for (i = 0;  i &lt; n;  i++)</span>
+<span class="lineNum">     879 </span><span class="lineNoCov">          0 :         buf = path_append (buf, paths[i], &amp;buf_size);</span>
+<span class="lineNum">     880 </span><span class="lineCov">          1 :     info.searchpath = buf ? buf : empty;</span>
+<span class="lineNum">     881 </span>            : 
+<span class="lineNum">     882 </span><span class="lineCov">          1 :     info.paths = paths;</span>
+<span class="lineNum">     883 </span><span class="lineCov">          1 :     info.path_count = n;</span>
+<span class="lineNum">     884 </span>            : 
+<span class="lineNum">     885 </span><span class="lineCov">          1 :     info_initialized = 1;</span>
+<span class="lineNum">     886 </span><span class="lineCov">          1 :     pj_release_lock ();</span>
+<span class="lineNum">     887 </span><span class="lineCov">          1 :     return info;</span>
+<span class="lineNum">     888 </span>            : }
+<span class="lineNum">     889 </span>            : 
+<a name="890"><span class="lineNum">     890 </span>            : </a>
+<span class="lineNum">     891 </span>            : /*****************************************************************************/
+<span class="lineNum">     892 </span><span class="lineCov">          2 : PJ_PROJ_INFO proj_pj_info(PJ *P) {</span>
+<span class="lineNum">     893 </span>            : /******************************************************************************
+<span class="lineNum">     894 </span>            :     Basic info about a particular instance of a projection object.
+<span class="lineNum">     895 </span>            : 
+<span class="lineNum">     896 </span>            :     Returns PJ_PROJ_INFO struct.
+<span class="lineNum">     897 </span>            : ******************************************************************************/
+<span class="lineNum">     898 </span>            :     PJ_PROJ_INFO pjinfo;
+<span class="lineNum">     899 </span>            :     char *def;
+<span class="lineNum">     900 </span>            : 
+<span class="lineNum">     901 </span><span class="lineCov">          2 :     memset(&amp;pjinfo, 0, sizeof(PJ_PROJ_INFO));</span>
+<span class="lineNum">     902 </span>            : 
+<span class="lineNum">     903 </span>            :     /* Expected accuracy of the transformation. Hardcoded for now, will be improved */
+<span class="lineNum">     904 </span>            :     /* later. Most likely to be used when a transformation is set up with           */
+<span class="lineNum">     905 </span>            :     /* proj_create_crs_to_crs in a future version that leverages the EPSG database. */
+<span class="lineNum">     906 </span><span class="lineCov">          2 :     pjinfo.accuracy = -1.0;</span>
+<span class="lineNum">     907 </span>            : 
+<span class="lineNum">     908 </span><span class="lineCov">          2 :     if (0==P)</span>
+<span class="lineNum">     909 </span><span class="lineNoCov">          0 :         return pjinfo;</span>
+<span class="lineNum">     910 </span>            : 
+<span class="lineNum">     911 </span>            :     /* projection id */
+<span class="lineNum">     912 </span><span class="lineCov">          2 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tproj&quot;).i)</span>
+<span class="lineNum">     913 </span><span class="lineCov">          2 :         pjinfo.id = pj_param(P-&gt;ctx, P-&gt;params, &quot;sproj&quot;).s;</span>
+<span class="lineNum">     914 </span>            : 
+<span class="lineNum">     915 </span>            :     /* projection description */
+<span class="lineNum">     916 </span><span class="lineCov">          2 :     pjinfo.description = P-&gt;descr;</span>
+<span class="lineNum">     917 </span>            : 
+<span class="lineNum">     918 </span>            :     /* projection definition */
+<span class="lineNum">     919 </span><span class="lineCov">          2 :     if (P-&gt;def_full)</span>
+<span class="lineNum">     920 </span><span class="lineNoCov">          0 :         def = P-&gt;def_full;</span>
+<span class="lineNum">     921 </span>            :     else
+<span class="lineNum">     922 </span><span class="lineCov">          2 :         def = pj_get_def(P, 0); /* pj_get_def takes a non-const PJ pointer */</span>
+<span class="lineNum">     923 </span><span class="lineCov">          2 :     if (0==def)</span>
+<span class="lineNum">     924 </span><span class="lineNoCov">          0 :         pjinfo.definition = empty;</span>
+<span class="lineNum">     925 </span>            :     else
+<span class="lineNum">     926 </span><span class="lineCov">          2 :         pjinfo.definition = pj_shrink (def);</span>
+<span class="lineNum">     927 </span>            :     /* Make pj_free clean this up eventually */
+<span class="lineNum">     928 </span><span class="lineCov">          2 :     P-&gt;def_full = def;</span>
+<span class="lineNum">     929 </span>            : 
+<span class="lineNum">     930 </span><span class="lineCov">          2 :     pjinfo.has_inverse = pj_has_inverse(P);</span>
+<span class="lineNum">     931 </span><span class="lineCov">          2 :     return pjinfo;</span>
+<span class="lineNum">     932 </span>            : }
+<span class="lineNum">     933 </span>            : 
+<a name="934"><span class="lineNum">     934 </span>            : </a>
+<span class="lineNum">     935 </span>            : /*****************************************************************************/
+<span class="lineNum">     936 </span><span class="lineCov">          2 : PJ_GRID_INFO proj_grid_info(const char *gridname) {</span>
+<span class="lineNum">     937 </span>            : /******************************************************************************
+<span class="lineNum">     938 </span>            :     Information about a named datum grid.
+<span class="lineNum">     939 </span>            : 
+<span class="lineNum">     940 </span>            :     Returns PJ_GRID_INFO struct.
+<span class="lineNum">     941 </span>            : ******************************************************************************/
+<span class="lineNum">     942 </span>            :     PJ_GRID_INFO grinfo;
+<span class="lineNum">     943 </span>            : 
+<span class="lineNum">     944 </span>            :     /*PJ_CONTEXT *ctx = proj_context_create(); */
+<span class="lineNum">     945 </span><span class="lineCov">          2 :     PJ_CONTEXT *ctx = pj_get_default_ctx();</span>
+<span class="lineNum">     946 </span><span class="lineCov">          2 :     PJ_GRIDINFO *gridinfo = pj_gridinfo_init(ctx, gridname);</span>
+<span class="lineNum">     947 </span><span class="lineCov">          2 :     memset(&amp;grinfo, 0, sizeof(PJ_GRID_INFO));</span>
+<span class="lineNum">     948 </span>            : 
+<span class="lineNum">     949 </span>            :     /* in case the grid wasn't found */
+<span class="lineNum">     950 </span><span class="lineCov">          2 :     if (gridinfo-&gt;filename == NULL) {</span>
+<span class="lineNum">     951 </span><span class="lineCov">          1 :         pj_gridinfo_free(ctx, gridinfo);</span>
+<span class="lineNum">     952 </span><span class="lineCov">          1 :         strcpy(grinfo.format, &quot;missing&quot;);</span>
+<span class="lineNum">     953 </span><span class="lineCov">          1 :         return grinfo;</span>
+<span class="lineNum">     954 </span>            :     }
+<span class="lineNum">     955 </span>            : 
+<span class="lineNum">     956 </span>            :     /* The string copies below are automatically null-terminated due to */
+<span class="lineNum">     957 </span>            :     /* the memset above, so strncpy is safe */
+<span class="lineNum">     958 </span>            : 
+<span class="lineNum">     959 </span>            :     /* name of grid */
+<span class="lineNum">     960 </span><span class="lineCov">          1 :     strncpy (grinfo.gridname, gridname, sizeof(grinfo.gridname) - 1);</span>
+<span class="lineNum">     961 </span>            : 
+<span class="lineNum">     962 </span>            :     /* full path of grid */
+<span class="lineNum">     963 </span><span class="lineCov">          1 :     pj_find_file(ctx, gridname, grinfo.filename, sizeof(grinfo.filename) - 1);</span>
+<span class="lineNum">     964 </span>            : 
+<span class="lineNum">     965 </span>            :     /* grid format */
+<span class="lineNum">     966 </span><span class="lineCov">          1 :     strncpy (grinfo.format, gridinfo-&gt;format, sizeof(grinfo.format) - 1);</span>
+<span class="lineNum">     967 </span>            : 
+<span class="lineNum">     968 </span>            :     /* grid size */
+<span class="lineNum">     969 </span><span class="lineCov">          1 :     grinfo.n_lon = gridinfo-&gt;ct-&gt;lim.lam;</span>
+<span class="lineNum">     970 </span><span class="lineCov">          1 :     grinfo.n_lat = gridinfo-&gt;ct-&gt;lim.phi;</span>
+<span class="lineNum">     971 </span>            : 
+<span class="lineNum">     972 </span>            :     /* cell size */
+<span class="lineNum">     973 </span><span class="lineCov">          1 :     grinfo.cs_lon = gridinfo-&gt;ct-&gt;del.lam;</span>
+<span class="lineNum">     974 </span><span class="lineCov">          1 :     grinfo.cs_lat = gridinfo-&gt;ct-&gt;del.phi;</span>
+<span class="lineNum">     975 </span>            : 
+<span class="lineNum">     976 </span>            :     /* bounds of grid */
+<span class="lineNum">     977 </span><span class="lineCov">          1 :     grinfo.lowerleft  = gridinfo-&gt;ct-&gt;ll;</span>
+<span class="lineNum">     978 </span><span class="lineCov">          1 :     grinfo.upperright.lam = grinfo.lowerleft.lam + grinfo.n_lon*grinfo.cs_lon;</span>
+<span class="lineNum">     979 </span><span class="lineCov">          1 :     grinfo.upperright.phi = grinfo.lowerleft.phi + grinfo.n_lat*grinfo.cs_lat;</span>
+<span class="lineNum">     980 </span>            : 
+<span class="lineNum">     981 </span><span class="lineCov">          1 :     pj_gridinfo_free(ctx, gridinfo);</span>
+<span class="lineNum">     982 </span>            : 
+<span class="lineNum">     983 </span><span class="lineCov">          1 :     return grinfo;</span>
+<span class="lineNum">     984 </span>            : }
+<span class="lineNum">     985 </span>            : 
+<span class="lineNum">     986 </span>            : 
+<a name="987"><span class="lineNum">     987 </span>            : </a>
+<span class="lineNum">     988 </span>            : /*****************************************************************************/
+<span class="lineNum">     989 </span><span class="lineCov">          2 : PJ_INIT_INFO proj_init_info(const char *initname){</span>
+<span class="lineNum">     990 </span>            : /******************************************************************************
+<span class="lineNum">     991 </span>            :     Information about a named init file.
+<span class="lineNum">     992 </span>            : 
+<span class="lineNum">     993 </span>            :     Maximum length of initname is 64.
+<span class="lineNum">     994 </span>            : 
+<span class="lineNum">     995 </span>            :     Returns PJ_INIT_INFO struct.
+<span class="lineNum">     996 </span>            : 
+<span class="lineNum">     997 </span>            :     If the init file is not found all members of the return struct are set
+<span class="lineNum">     998 </span>            :     to the empty string.
+<span class="lineNum">     999 </span>            : 
+<span class="lineNum">    1000 </span>            :     If the init file is found, but the metadata is missing, the value is
+<span class="lineNum">    1001 </span>            :     set to &quot;Unknown&quot;.
+<span class="lineNum">    1002 </span>            : ******************************************************************************/
+<span class="lineNum">    1003 </span>            :     int file_found;
+<span class="lineNum">    1004 </span>            :     char param[80], key[74];
+<span class="lineNum">    1005 </span>            :     paralist *start, *next;
+<span class="lineNum">    1006 </span>            :     PJ_INIT_INFO ininfo;
+<span class="lineNum">    1007 </span><span class="lineCov">          2 :     PJ_CONTEXT *ctx = pj_get_default_ctx();</span>
+<span class="lineNum">    1008 </span>            : 
+<span class="lineNum">    1009 </span><span class="lineCov">          2 :     memset(&amp;ininfo, 0, sizeof(PJ_INIT_INFO));</span>
+<span class="lineNum">    1010 </span>            : 
+<span class="lineNum">    1011 </span><span class="lineCov">          2 :     file_found = pj_find_file(ctx, initname, ininfo.filename, sizeof(ininfo.filename));</span>
+<span class="lineNum">    1012 </span><span class="lineCov">          2 :     if (!file_found || strlen(initname) &gt; 64) {</span>
+<span class="lineNum">    1013 </span><span class="lineCov">          1 :         return ininfo;</span>
+<span class="lineNum">    1014 </span>            :     }
+<span class="lineNum">    1015 </span>            : 
+<span class="lineNum">    1016 </span>            :     /* The initial memset (0) makes strncpy safe here */
+<span class="lineNum">    1017 </span><span class="lineCov">          1 :     strncpy (ininfo.name, initname, sizeof(ininfo.name) - 1);</span>
+<span class="lineNum">    1018 </span><span class="lineCov">          1 :     strcpy(ininfo.origin, &quot;Unknown&quot;);</span>
+<span class="lineNum">    1019 </span><span class="lineCov">          1 :     strcpy(ininfo.version, &quot;Unknown&quot;);</span>
+<span class="lineNum">    1020 </span><span class="lineCov">          1 :     strcpy(ininfo.lastupdate, &quot;Unknown&quot;);</span>
+<span class="lineNum">    1021 </span>            : 
+<span class="lineNum">    1022 </span><span class="lineCov">          1 :     strncpy (key, initname, 64); /* make room for &quot;:metadata\0&quot; at the end */</span>
+<span class="lineNum">    1023 </span><span class="lineCov">          1 :     key[64] = 0;</span>
+<span class="lineNum">    1024 </span><span class="lineCov">          1 :     memcpy(key + strlen(key), &quot;:metadata&quot;, 9 + 1);</span>
+<span class="lineNum">    1025 </span><span class="lineCov">          1 :     strcpy(param, &quot;+init=&quot;);</span>
+<span class="lineNum">    1026 </span>            :     /* The +strlen(param) avoids a cppcheck false positive warning */
+<span class="lineNum">    1027 </span><span class="lineCov">          1 :     strncat(param + strlen(param), key, sizeof(param)-1-strlen(param));</span>
+<span class="lineNum">    1028 </span>            : 
+<span class="lineNum">    1029 </span><span class="lineCov">          1 :     start = pj_mkparam(param);</span>
+<span class="lineNum">    1030 </span><span class="lineCov">          1 :     pj_expand_init(ctx, start);</span>
+<span class="lineNum">    1031 </span>            : 
+<span class="lineNum">    1032 </span><span class="lineCov">          1 :     if (pj_param(ctx, start, &quot;tversion&quot;).i)</span>
+<span class="lineNum">    1033 </span><span class="lineCov">          1 :         strncpy(ininfo.version, pj_param(ctx, start, &quot;sversion&quot;).s, sizeof(ininfo.version) - 1);</span>
+<span class="lineNum">    1034 </span>            : 
+<span class="lineNum">    1035 </span><span class="lineCov">          1 :     if (pj_param(ctx, start, &quot;torigin&quot;).i)</span>
+<span class="lineNum">    1036 </span><span class="lineCov">          1 :         strncpy(ininfo.origin, pj_param(ctx, start, &quot;sorigin&quot;).s, sizeof(ininfo.origin) - 1);</span>
+<span class="lineNum">    1037 </span>            : 
+<span class="lineNum">    1038 </span><span class="lineCov">          1 :     if (pj_param(ctx, start, &quot;tlastupdate&quot;).i)</span>
+<span class="lineNum">    1039 </span><span class="lineCov">          1 :         strncpy(ininfo.lastupdate, pj_param(ctx, start, &quot;slastupdate&quot;).s, sizeof(ininfo.lastupdate) - 1);</span>
+<span class="lineNum">    1040 </span>            : 
+<span class="lineNum">    1041 </span><span class="lineCov">          5 :     for ( ; start; start = next) {</span>
+<span class="lineNum">    1042 </span><span class="lineCov">          4 :         next = start-&gt;next;</span>
+<span class="lineNum">    1043 </span><span class="lineCov">          4 :         pj_dalloc(start);</span>
+<span class="lineNum">    1044 </span>            :     }
+<span class="lineNum">    1045 </span>            : 
+<span class="lineNum">    1046 </span><span class="lineCov">          1 :    return ininfo;</span>
+<span class="lineNum">    1047 </span>            : }
+<span class="lineNum">    1048 </span>            : 
+<span class="lineNum">    1049 </span>            : 
+<a name="1050"><span class="lineNum">    1050 </span>            : </a>
+<span class="lineNum">    1051 </span>            : /*****************************************************************************/
+<span class="lineNum">    1052 </span><span class="lineCov">          1 : PJ_FACTORS proj_factors(PJ *P, PJ_COORD lp) {</span>
+<span class="lineNum">    1053 </span>            : /******************************************************************************
+<span class="lineNum">    1054 </span>            :     Cartographic characteristics at point lp.
+<span class="lineNum">    1055 </span>            : 
+<span class="lineNum">    1056 </span>            :     Characteristics include meridian, parallel and areal scales, angular
+<span class="lineNum">    1057 </span>            :     distortion, meridian/parallel, meridian convergence and scale error.
+<span class="lineNum">    1058 </span>            : 
+<span class="lineNum">    1059 </span>            :     returns PJ_FACTORS. If unsuccessful, error number is set and the
+<span class="lineNum">    1060 </span>            :     struct returned contains NULL data.
+<span class="lineNum">    1061 </span>            : ******************************************************************************/
+<span class="lineNum">    1062 </span><span class="lineCov">          1 :     PJ_FACTORS factors = {0,0,0,  0,0,0,  0,0,  0,0,0,0};</span>
+<span class="lineNum">    1063 </span>            :     struct FACTORS f;
+<span class="lineNum">    1064 </span>            : 
+<span class="lineNum">    1065 </span><span class="lineCov">          1 :     if (0==P)</span>
+<span class="lineNum">    1066 </span><span class="lineNoCov">          0 :         return factors;</span>
+<span class="lineNum">    1067 </span>            : 
+<span class="lineNum">    1068 </span><span class="lineCov">          1 :     if (pj_factors(lp.lp, P, 0.0, &amp;f))</span>
+<span class="lineNum">    1069 </span><span class="lineNoCov">          0 :         return factors;</span>
+<span class="lineNum">    1070 </span>            : 
+<span class="lineNum">    1071 </span><span class="lineCov">          1 :     factors.meridional_scale  =  f.h;</span>
+<span class="lineNum">    1072 </span><span class="lineCov">          1 :     factors.parallel_scale    =  f.k;</span>
+<span class="lineNum">    1073 </span><span class="lineCov">          1 :     factors.areal_scale       =  f.s;</span>
+<span class="lineNum">    1074 </span>            : 
+<span class="lineNum">    1075 </span><span class="lineCov">          1 :     factors.angular_distortion        =  f.omega;</span>
+<span class="lineNum">    1076 </span><span class="lineCov">          1 :     factors.meridian_parallel_angle   =  f.thetap;</span>
+<span class="lineNum">    1077 </span><span class="lineCov">          1 :     factors.meridian_convergence      =  f.conv;</span>
+<span class="lineNum">    1078 </span>            : 
+<span class="lineNum">    1079 </span><span class="lineCov">          1 :     factors.tissot_semimajor  =  f.a;</span>
+<span class="lineNum">    1080 </span><span class="lineCov">          1 :     factors.tissot_semiminor  =  f.b;</span>
+<span class="lineNum">    1081 </span>            : 
+<span class="lineNum">    1082 </span>            :     /* Raw derivatives, for completeness's sake */
+<span class="lineNum">    1083 </span><span class="lineCov">          1 :     factors.dx_dlam = f.der.x_l;</span>
+<span class="lineNum">    1084 </span><span class="lineCov">          1 :     factors.dx_dphi = f.der.x_p;</span>
+<span class="lineNum">    1085 </span><span class="lineCov">          1 :     factors.dy_dlam = f.der.y_l;</span>
+<span class="lineNum">    1086 </span><span class="lineCov">          1 :     factors.dy_dphi = f.der.y_p;</span>
+<span class="lineNum">    1087 </span>            : 
+<span class="lineNum">    1088 </span><span class="lineCov">          1 :     return factors;</span>
+<span class="lineNum">    1089 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

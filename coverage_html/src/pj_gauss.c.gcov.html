@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/pj_gauss.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - pj_gauss.c<span style="font-size: 80%;"> (source / <a href="pj_gauss.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">35</td>
+            <td class="headerCovTableEntry">39</td>
+            <td class="headerCovTableEntryMed">89.7 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            : ** libproj -- library of cartographic projections
+<span class="lineNum">       3 </span>            : **
+<span class="lineNum">       4 </span>            : ** Copyright (c) 2003   Gerald I. Evenden
+<span class="lineNum">       5 </span>            : */
+<span class="lineNum">       6 </span>            : /*
+<span class="lineNum">       7 </span>            : ** Permission is hereby granted, free of charge, to any person obtaining
+<span class="lineNum">       8 </span>            : ** a copy of this software and associated documentation files (the
+<span class="lineNum">       9 </span>            : ** &quot;Software&quot;), to deal in the Software without restriction, including
+<span class="lineNum">      10 </span>            : ** without limitation the rights to use, copy, modify, merge, publish,
+<span class="lineNum">      11 </span>            : ** distribute, sublicense, and/or sell copies of the Software, and to
+<span class="lineNum">      12 </span>            : ** permit persons to whom the Software is furnished to do so, subject to
+<span class="lineNum">      13 </span>            : ** the following conditions:
+<span class="lineNum">      14 </span>            : **
+<span class="lineNum">      15 </span>            : ** The above copyright notice and this permission notice shall be
+<span class="lineNum">      16 </span>            : ** included in all copies or substantial portions of the Software.
+<span class="lineNum">      17 </span>            : **
+<span class="lineNum">      18 </span>            : ** THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+<span class="lineNum">      19 </span>            : ** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+<span class="lineNum">      20 </span>            : ** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+<span class="lineNum">      21 </span>            : ** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+<span class="lineNum">      22 </span>            : ** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+<span class="lineNum">      23 </span>            : ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+<span class="lineNum">      24 </span>            : ** SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      25 </span>            : */
+<span class="lineNum">      26 </span>            : #define PJ_LIB__
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      29 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            : #define MAX_ITER 20
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : struct GAUSS {
+<span class="lineNum">      36 </span>            :     double C;
+<span class="lineNum">      37 </span>            :     double K;
+<span class="lineNum">      38 </span>            :     double e;
+<span class="lineNum">      39 </span>            :     double ratexp;
+<span class="lineNum">      40 </span>            : };
+<a name="41"><span class="lineNum">      41 </span>            : #define DEL_TOL 1e-14</a>
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span><span class="lineCov">         34 : static double srat(double esinp, double ratexp) {</span>
+<span class="lineNum">      44 </span><span class="lineCov">         34 :     return(pow((1.-esinp)/(1.+esinp), ratexp));</span>
+<a name="45"><span class="lineNum">      45 </span>            : }</a>
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span><span class="lineCov">          2 : void *pj_gauss_ini(double e, double phi0, double *chi, double *rc) {</span>
+<span class="lineNum">      48 </span>            :     double sphi, cphi, es;
+<span class="lineNum">      49 </span>            :     struct GAUSS *en;
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span><span class="lineCov">          2 :     if ((en = (struct GAUSS *)malloc(sizeof(struct GAUSS))) == NULL)</span>
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :         return (NULL);</span>
+<span class="lineNum">      53 </span><span class="lineCov">          2 :     es = e * e;</span>
+<span class="lineNum">      54 </span><span class="lineCov">          2 :     en-&gt;e = e;</span>
+<span class="lineNum">      55 </span><span class="lineCov">          2 :     sphi = sin(phi0);</span>
+<span class="lineNum">      56 </span><span class="lineCov">          2 :     cphi = cos(phi0);  cphi *= cphi;</span>
+<span class="lineNum">      57 </span><span class="lineCov">          2 :     *rc = sqrt(1. - es) / (1. - es * sphi * sphi);</span>
+<span class="lineNum">      58 </span><span class="lineCov">          2 :     en-&gt;C = sqrt(1. + es * cphi * cphi / (1. - es));</span>
+<span class="lineNum">      59 </span><span class="lineCov">          2 :     if (en-&gt;C == 0.0) {</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :         free(en);</span>
+<span class="lineNum">      61 </span><span class="lineNoCov">          0 :         return NULL;</span>
+<span class="lineNum">      62 </span>            :     }
+<span class="lineNum">      63 </span><span class="lineCov">          2 :     *chi = asin(sphi / en-&gt;C);</span>
+<span class="lineNum">      64 </span><span class="lineCov">          2 :     en-&gt;ratexp = 0.5 * en-&gt;C * e;</span>
+<span class="lineNum">      65 </span><span class="lineCov">          4 :     en-&gt;K = tan(.5 * *chi + M_FORTPI) / (</span>
+<span class="lineNum">      66 </span><span class="lineCov">          4 :         pow(tan(.5 * phi0 + M_FORTPI), en-&gt;C) *</span>
+<span class="lineNum">      67 </span><span class="lineCov">          2 :         srat(en-&gt;e * sphi, en-&gt;ratexp)  );</span>
+<span class="lineNum">      68 </span><span class="lineCov">          2 :     return ((void *)en);</span>
+<a name="69"><span class="lineNum">      69 </span>            : }</a>
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span><span class="lineCov">          8 : LP pj_gauss(projCtx ctx, LP elp, const void *data) {</span>
+<span class="lineNum">      72 </span><span class="lineCov">          8 :     const struct GAUSS *en = (const struct GAUSS *)data;</span>
+<span class="lineNum">      73 </span>            :     LP slp;
+<span class="lineNum">      74 </span>            :     (void) ctx;
+<span class="lineNum">      75 </span>            : 
+<span class="lineNum">      76 </span><span class="lineCov">         32 :     slp.phi = 2. * atan( en-&gt;K *</span>
+<span class="lineNum">      77 </span><span class="lineCov">          8 :         pow(tan(.5 * elp.phi + M_FORTPI), en-&gt;C) *</span>
+<span class="lineNum">      78 </span><span class="lineCov">         16 :         srat(en-&gt;e * sin(elp.phi), en-&gt;ratexp) ) - M_HALFPI;</span>
+<span class="lineNum">      79 </span><span class="lineCov">          8 :     slp.lam = en-&gt;C * (elp.lam);</span>
+<span class="lineNum">      80 </span><span class="lineCov">          8 :     return(slp);</span>
+<a name="81"><span class="lineNum">      81 </span>            : }</a>
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span><span class="lineCov">          8 : LP pj_inv_gauss(projCtx ctx, LP slp, const void *data) {</span>
+<span class="lineNum">      84 </span><span class="lineCov">          8 :     const struct GAUSS *en = (const struct GAUSS *)data;</span>
+<span class="lineNum">      85 </span>            :     LP elp;
+<span class="lineNum">      86 </span>            :     double num;
+<span class="lineNum">      87 </span>            :     int i;
+<span class="lineNum">      88 </span>            : 
+<span class="lineNum">      89 </span><span class="lineCov">          8 :     elp.lam = slp.lam / en-&gt;C;</span>
+<span class="lineNum">      90 </span><span class="lineCov">          8 :     num = pow(tan(.5 * slp.phi + M_FORTPI)/en-&gt;K, 1./en-&gt;C);</span>
+<span class="lineNum">      91 </span><span class="lineCov">         24 :     for (i = MAX_ITER; i; --i) {</span>
+<span class="lineNum">      92 </span><span class="lineCov">         48 :         elp.phi = 2. * atan(num * srat(en-&gt;e * sin(slp.phi), -.5 * en-&gt;e))</span>
+<span class="lineNum">      93 </span><span class="lineCov">         24 :             - M_HALFPI;</span>
+<span class="lineNum">      94 </span><span class="lineCov">         24 :         if (fabs(elp.phi - slp.phi) &lt; DEL_TOL) break;</span>
+<span class="lineNum">      95 </span><span class="lineCov">         16 :             slp.phi = elp.phi;</span>
+<span class="lineNum">      96 </span>            :     }
+<span class="lineNum">      97 </span>            :     /* convergence failed */
+<span class="lineNum">      98 </span><span class="lineCov">          8 :     if (!i)</span>
+<span class="lineNum">      99 </span><span class="lineNoCov">          0 :         pj_ctx_set_errno(ctx, PJD_ERR_NON_CONV_INV_MERI_DIST);</span>
+<span class="lineNum">     100 </span><span class="lineCov">          8 :     return (elp);</span>
+<span class="lineNum">     101 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_sch.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_sch.c<span style="font-size: 80%;"> (source / <a href="PJ_sch.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">77</td>
+            <td class="headerCovTableEntry">89</td>
+            <td class="headerCovTableEntryMed">86.5 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /******************************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Project:  SCH Coordinate system
+<span class="lineNum">       3 </span>            :  * Purpose:  Implementation of SCH Coordinate system
+<span class="lineNum">       4 </span>            :  * References :
+<span class="lineNum">       5 </span>            :  *      1. Hensley. Scott. SCH Coordinates and various transformations. June 15, 2000.
+<span class="lineNum">       6 </span>            :  *      2. Buckley, Sean Monroe. Radar interferometry measurement of land subsidence. 2000..
+<span class="lineNum">       7 </span>            :  *         PhD Thesis. UT Austin. (Appendix)
+<span class="lineNum">       8 </span>            :  *      3. Hensley, Scott, Elaine Chapin, and T. Michel. &quot;Improved processing of AIRSAR
+<span class="lineNum">       9 </span>            :  *         data based on the GeoSAR processor.&quot; Airsar earth science and applications
+<span class="lineNum">      10 </span>            :  *         workshop, March. 2002. (http://airsar.jpl.nasa.gov/documents/workshop2002/papers/T3.pdf)
+<span class="lineNum">      11 </span>            :  *
+<span class="lineNum">      12 </span>            :  * Author:   Piyush Agram (piyush.agram@jpl.nasa.gov)
+<span class="lineNum">      13 </span>            :  * Copyright (c) 2015 California Institute of Technology.
+<span class="lineNum">      14 </span>            :  * Government sponsorship acknowledged.
+<span class="lineNum">      15 </span>            :  *
+<span class="lineNum">      16 </span>            :  * NOTE:  The SCH coordinate system is a sensor aligned coordinate system
+<span class="lineNum">      17 </span>            :  * developed at JPL for radar mapping missions. Details pertaining to the
+<span class="lineNum">      18 </span>            :  * coordinate system have been release in the public domain (see references above).
+<span class="lineNum">      19 </span>            :  * This code is an independent implementation of the SCH coordinate system
+<span class="lineNum">      20 </span>            :  * that conforms to the PROJ.4 conventions and uses the details presented in these
+<span class="lineNum">      21 </span>            :  * publicly released documents. All credit for the development of the coordinate
+<span class="lineNum">      22 </span>            :  * system and its use should be directed towards the original developers at JPL.
+<span class="lineNum">      23 </span>            :  ******************************************************************************
+<span class="lineNum">      24 </span>            :  * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      25 </span>            :  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      26 </span>            :  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      27 </span>            :  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      28 </span>            :  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      29 </span>            :  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      30 </span>            :  * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      31 </span>            :  ****************************************************************************/
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            : #define PJ_LIB__
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      36 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">      39 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      40 </span>            : #include &quot;geocent.h&quot;
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            : struct pj_opaque {
+<span class="lineNum">      43 </span>            :     double plat; /*Peg Latitude */
+<span class="lineNum">      44 </span>            :     double plon; /*Peg Longitude*/
+<span class="lineNum">      45 </span>            :     double phdg; /*Peg heading  */
+<span class="lineNum">      46 </span>            :     double h0;   /*Average altitude */
+<span class="lineNum">      47 </span>            :     double transMat[9];
+<span class="lineNum">      48 </span>            :     double xyzoff[3];
+<span class="lineNum">      49 </span>            :     double rcurv;
+<span class="lineNum">      50 </span>            :     GeocentricInfo sph;
+<span class="lineNum">      51 </span>            :     GeocentricInfo elp_0;
+<span class="lineNum">      52 </span>            : };
+<span class="lineNum">      53 </span>            : 
+<a name="54"><span class="lineNum">      54 </span>            : PROJ_HEAD(sch, &quot;Spherical Cross-track Height&quot;) &quot;\n\tMisc\n\tplat_0= plon_0= phdg_0= [h_0=]&quot;;</a>
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span><span class="lineCov">          8 : static LPZ inverse3d(XYZ xyz, PJ *P) {</span>
+<span class="lineNum">      57 </span><span class="lineCov">          8 :     LPZ lpz = {0.0, 0.0, 0.0};</span>
+<span class="lineNum">      58 </span><span class="lineCov">          8 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      59 </span>            :     double temp[3];
+<span class="lineNum">      60 </span>            :     double pxyz[3];
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            :     /* Local lat,lon using radius */
+<span class="lineNum">      63 </span><span class="lineCov">          8 :     pxyz[0] = xyz.y * P-&gt;a / Q-&gt;rcurv;</span>
+<span class="lineNum">      64 </span><span class="lineCov">          8 :     pxyz[1] = xyz.x * P-&gt;a / Q-&gt;rcurv;</span>
+<span class="lineNum">      65 </span><span class="lineCov">          8 :     pxyz[2] = xyz.z;</span>
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span><span class="lineCov">          8 :     if( pj_Convert_Geodetic_To_Geocentric( &amp;(Q-&gt;sph), pxyz[0], pxyz[1], pxyz[2], temp, temp+1, temp+2) != 0) {</span>
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 :             proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">      69 </span><span class="lineNoCov">          0 :             return lpz;</span>
+<span class="lineNum">      70 </span>            :     }
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            :     /* Apply rotation */
+<span class="lineNum">      73 </span><span class="lineCov">          8 :     pxyz[0] = Q-&gt;transMat[0] * temp[0] + Q-&gt;transMat[1] * temp[1] + Q-&gt;transMat[2] * temp[2];</span>
+<span class="lineNum">      74 </span><span class="lineCov">          8 :     pxyz[1] = Q-&gt;transMat[3] * temp[0] + Q-&gt;transMat[4] * temp[1] + Q-&gt;transMat[5] * temp[2];</span>
+<span class="lineNum">      75 </span><span class="lineCov">          8 :     pxyz[2] = Q-&gt;transMat[6] * temp[0] + Q-&gt;transMat[7] * temp[1] + Q-&gt;transMat[8] * temp[2];</span>
+<span class="lineNum">      76 </span>            : 
+<span class="lineNum">      77 </span>            :     /* Apply offset */
+<span class="lineNum">      78 </span><span class="lineCov">          8 :     pxyz[0] += Q-&gt;xyzoff[0];</span>
+<span class="lineNum">      79 </span><span class="lineCov">          8 :     pxyz[1] += Q-&gt;xyzoff[1];</span>
+<span class="lineNum">      80 </span><span class="lineCov">          8 :     pxyz[2] += Q-&gt;xyzoff[2];</span>
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span>            :     /* Convert geocentric coordinates to lat lon */
+<span class="lineNum">      83 </span><span class="lineCov">          8 :     pj_Convert_Geocentric_To_Geodetic( &amp;(Q-&gt;elp_0), pxyz[0], pxyz[1], pxyz[2],</span>
+<span class="lineNum">      84 </span>            :             temp, temp+1, temp+2);
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span><span class="lineCov">          8 :     lpz.lam = temp[1] ;</span>
+<span class="lineNum">      88 </span><span class="lineCov">          8 :     lpz.phi = temp[0] ;</span>
+<span class="lineNum">      89 </span><span class="lineCov">          8 :     lpz.z = temp[2];</span>
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span><span class="lineCov">          8 :     return lpz;</span>
+<a name="92"><span class="lineNum">      92 </span>            : }</a>
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span><span class="lineCov">         12 : static XYZ forward3d(LPZ lpz, PJ *P) {</span>
+<span class="lineNum">      95 </span><span class="lineCov">         12 :     XYZ xyz = {0.0, 0.0, 0.0};</span>
+<span class="lineNum">      96 </span><span class="lineCov">         12 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      97 </span>            :     double temp[3];
+<span class="lineNum">      98 </span>            :     double pxyz[3];
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            :     /* Convert lat lon to geocentric coordinates */
+<span class="lineNum">     102 </span><span class="lineCov">         12 :     if( pj_Convert_Geodetic_To_Geocentric( &amp;(Q-&gt;elp_0), lpz.phi, lpz.lam, lpz.z, temp, temp+1, temp+2 ) != 0 ) {</span>
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 :         proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">     104 </span><span class="lineNoCov">          0 :         return xyz;</span>
+<span class="lineNum">     105 </span>            :     }
+<span class="lineNum">     106 </span>            : 
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            :     /* Adjust for offset */
+<span class="lineNum">     109 </span><span class="lineCov">         12 :     temp[0] -= Q-&gt;xyzoff[0];</span>
+<span class="lineNum">     110 </span><span class="lineCov">         12 :     temp[1] -= Q-&gt;xyzoff[1];</span>
+<span class="lineNum">     111 </span><span class="lineCov">         12 :     temp[2] -= Q-&gt;xyzoff[2];</span>
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span>            : 
+<span class="lineNum">     114 </span>            :     /* Apply rotation */
+<span class="lineNum">     115 </span><span class="lineCov">         12 :     pxyz[0] = Q-&gt;transMat[0] * temp[0] + Q-&gt;transMat[3] * temp[1] + Q-&gt;transMat[6] * temp[2];</span>
+<span class="lineNum">     116 </span><span class="lineCov">         12 :     pxyz[1] = Q-&gt;transMat[1] * temp[0] + Q-&gt;transMat[4] * temp[1] + Q-&gt;transMat[7] * temp[2];</span>
+<span class="lineNum">     117 </span><span class="lineCov">         12 :     pxyz[2] = Q-&gt;transMat[2] * temp[0] + Q-&gt;transMat[5] * temp[1] + Q-&gt;transMat[8] * temp[2];</span>
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            :     /* Convert to local lat,lon */
+<span class="lineNum">     120 </span><span class="lineCov">         12 :     pj_Convert_Geocentric_To_Geodetic( &amp;(Q-&gt;sph), pxyz[0], pxyz[1], pxyz[2],</span>
+<span class="lineNum">     121 </span>            :             temp, temp+1, temp+2);
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span>            :     /* Scale by radius */
+<span class="lineNum">     125 </span><span class="lineCov">         12 :     xyz.x = temp[1] * Q-&gt;rcurv / P-&gt;a;</span>
+<span class="lineNum">     126 </span><span class="lineCov">         12 :     xyz.y = temp[0] * Q-&gt;rcurv / P-&gt;a;</span>
+<span class="lineNum">     127 </span><span class="lineCov">         12 :     xyz.z = temp[2];</span>
+<span class="lineNum">     128 </span>            : 
+<span class="lineNum">     129 </span><span class="lineCov">         12 :     return xyz;</span>
+<span class="lineNum">     130 </span>            : }
+<a name="131"><span class="lineNum">     131 </span>            : </a>
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span><span class="lineCov">          4 : static PJ *setup(PJ *P) { /* general initialization */</span>
+<span class="lineNum">     134 </span><span class="lineCov">          4 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     135 </span>            :     double reast, rnorth;
+<span class="lineNum">     136 </span>            :     double chdg, shdg;
+<span class="lineNum">     137 </span>            :     double clt, slt;
+<span class="lineNum">     138 </span>            :     double clo, slo;
+<span class="lineNum">     139 </span>            :     double temp;
+<span class="lineNum">     140 </span>            :     double pxyz[3];
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span><span class="lineCov">          4 :     temp = P-&gt;a * sqrt(1.0 - P-&gt;es);</span>
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span>            :     /* Setup original geocentric system */
+<span class="lineNum">     145 </span><span class="lineCov">          4 :     if ( pj_Set_Geocentric_Parameters(&amp;(Q-&gt;elp_0), P-&gt;a, temp) != 0)</span>
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, PJD_ERR_FAILED_TO_FIND_PROJ);</span>
+<span class="lineNum">     147 </span>            : 
+<span class="lineNum">     148 </span><span class="lineCov">          4 :     clt = cos(Q-&gt;plat);</span>
+<span class="lineNum">     149 </span><span class="lineCov">          4 :     slt = sin(Q-&gt;plat);</span>
+<span class="lineNum">     150 </span><span class="lineCov">          4 :     clo = cos(Q-&gt;plon);</span>
+<span class="lineNum">     151 </span><span class="lineCov">          4 :     slo = sin(Q-&gt;plon);</span>
+<span class="lineNum">     152 </span>            : 
+<span class="lineNum">     153 </span>            :     /* Estimate the radius of curvature for given peg */
+<span class="lineNum">     154 </span><span class="lineCov">          4 :     temp = sqrt(1.0 - (P-&gt;es) * slt * slt);</span>
+<span class="lineNum">     155 </span><span class="lineCov">          4 :     reast = (P-&gt;a)/temp;</span>
+<span class="lineNum">     156 </span><span class="lineCov">          4 :     rnorth = (P-&gt;a) * (1.0 - (P-&gt;es))/pow(temp,3);</span>
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span><span class="lineCov">          4 :     chdg = cos(Q-&gt;phdg);</span>
+<span class="lineNum">     159 </span><span class="lineCov">          4 :     shdg = sin(Q-&gt;phdg);</span>
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span><span class="lineCov">          4 :     Q-&gt;rcurv = Q-&gt;h0 + (reast*rnorth)/(reast * chdg * chdg + rnorth * shdg * shdg);</span>
+<span class="lineNum">     162 </span>            : 
+<span class="lineNum">     163 </span>            :     /* Set up local sphere at the given peg point */
+<span class="lineNum">     164 </span><span class="lineCov">          4 :     if ( pj_Set_Geocentric_Parameters(&amp;(Q-&gt;sph), Q-&gt;rcurv, Q-&gt;rcurv) != 0)</span>
+<span class="lineNum">     165 </span><span class="lineNoCov">          0 :             return pj_default_destructor(P, PJD_ERR_FAILED_TO_FIND_PROJ);</span>
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span>            :     /* Set up the transformation matrices */
+<span class="lineNum">     168 </span><span class="lineCov">          4 :     Q-&gt;transMat[0] = clt * clo;</span>
+<span class="lineNum">     169 </span><span class="lineCov">          4 :     Q-&gt;transMat[1] = -shdg*slo - slt*clo * chdg;</span>
+<span class="lineNum">     170 </span><span class="lineCov">          4 :     Q-&gt;transMat[2] =  slo*chdg - slt*clo*shdg;</span>
+<span class="lineNum">     171 </span><span class="lineCov">          4 :     Q-&gt;transMat[3] =  clt*slo;</span>
+<span class="lineNum">     172 </span><span class="lineCov">          4 :     Q-&gt;transMat[4] =  clo*shdg - slt*slo*chdg;</span>
+<span class="lineNum">     173 </span><span class="lineCov">          4 :     Q-&gt;transMat[5] = -clo*chdg - slt*slo*shdg;</span>
+<span class="lineNum">     174 </span><span class="lineCov">          4 :     Q-&gt;transMat[6] =  slt;</span>
+<span class="lineNum">     175 </span><span class="lineCov">          4 :     Q-&gt;transMat[7] =  clt*chdg;</span>
+<span class="lineNum">     176 </span><span class="lineCov">          4 :     Q-&gt;transMat[8] =  clt*shdg;</span>
+<span class="lineNum">     177 </span>            : 
+<span class="lineNum">     178 </span>            : 
+<span class="lineNum">     179 </span><span class="lineCov">          4 :     if( pj_Convert_Geodetic_To_Geocentric( &amp;(Q-&gt;elp_0), Q-&gt;plat, Q-&gt;plon, Q-&gt;h0,</span>
+<span class="lineNum">     180 </span>            :                                            pxyz, pxyz+1, pxyz+2 ) != 0 )
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, PJD_ERR_LAT_OR_LON_EXCEED_LIMIT);</span>
+<span class="lineNum">     182 </span>            : 
+<span class="lineNum">     183 </span>            : 
+<span class="lineNum">     184 </span><span class="lineCov">          4 :     Q-&gt;xyzoff[0] = pxyz[0] - (Q-&gt;rcurv) * clt * clo;</span>
+<span class="lineNum">     185 </span><span class="lineCov">          4 :     Q-&gt;xyzoff[1] = pxyz[1] - (Q-&gt;rcurv) * clt * slo;</span>
+<span class="lineNum">     186 </span><span class="lineCov">          4 :     Q-&gt;xyzoff[2] = pxyz[2] - (Q-&gt;rcurv) * slt;</span>
+<span class="lineNum">     187 </span>            : 
+<span class="lineNum">     188 </span><span class="lineCov">          4 :     P-&gt;fwd3d = forward3d;</span>
+<span class="lineNum">     189 </span><span class="lineCov">          4 :     P-&gt;inv3d = inverse3d;</span>
+<span class="lineNum">     190 </span><span class="lineCov">          4 :     return P;</span>
+<span class="lineNum">     191 </span>            : }
+<a name="192"><span class="lineNum">     192 </span>            : </a>
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span><span class="lineCov">         12 : PJ *PROJECTION(sch) {</span>
+<span class="lineNum">     195 </span><span class="lineCov">          4 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     196 </span><span class="lineCov">          4 :     if (0==Q)</span>
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, ENOMEM);</span>
+<span class="lineNum">     198 </span><span class="lineCov">          4 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     199 </span>            : 
+<span class="lineNum">     200 </span><span class="lineCov">          4 :     Q-&gt;h0 = 0.0;</span>
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            :     /* Check if peg latitude was defined */
+<span class="lineNum">     203 </span><span class="lineCov">          4 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tplat_0&quot;).i)</span>
+<span class="lineNum">     204 </span><span class="lineCov">          4 :         Q-&gt;plat = pj_param(P-&gt;ctx, P-&gt;params, &quot;rplat_0&quot;).f;</span>
+<span class="lineNum">     205 </span>            :     else {
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, PJD_ERR_FAILED_TO_FIND_PROJ);</span>
+<span class="lineNum">     207 </span>            :     }
+<span class="lineNum">     208 </span>            : 
+<span class="lineNum">     209 </span>            :     /* Check if peg longitude was defined */
+<span class="lineNum">     210 </span><span class="lineCov">          4 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tplon_0&quot;).i)</span>
+<span class="lineNum">     211 </span><span class="lineCov">          4 :         Q-&gt;plon = pj_param(P-&gt;ctx, P-&gt;params, &quot;rplon_0&quot;).f;</span>
+<span class="lineNum">     212 </span>            :     else {
+<span class="lineNum">     213 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, PJD_ERR_FAILED_TO_FIND_PROJ);</span>
+<span class="lineNum">     214 </span>            :     }
+<span class="lineNum">     215 </span>            : 
+<span class="lineNum">     216 </span>            :     /* Check if peg latitude is defined */
+<span class="lineNum">     217 </span><span class="lineCov">          4 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tphdg_0&quot;).i)</span>
+<span class="lineNum">     218 </span><span class="lineCov">          4 :         Q-&gt;phdg = pj_param(P-&gt;ctx, P-&gt;params, &quot;rphdg_0&quot;).f;</span>
+<span class="lineNum">     219 </span>            :     else {
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, PJD_ERR_FAILED_TO_FIND_PROJ);</span>
+<span class="lineNum">     221 </span>            :     }
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span>            : 
+<span class="lineNum">     224 </span>            :     /* Check if average height was defined - If so read it in */
+<span class="lineNum">     225 </span><span class="lineCov">          4 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;th_0&quot;).i)</span>
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :         Q-&gt;h0 = pj_param(P-&gt;ctx, P-&gt;params, &quot;dh_0&quot;).f;</span>
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span><span class="lineCov">          4 :     return setup(P);</span>
+<span class="lineNum">     230 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

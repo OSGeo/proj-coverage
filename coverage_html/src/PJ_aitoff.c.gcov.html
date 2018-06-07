@@ -1,0 +1,273 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_aitoff.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_aitoff.c<span style="font-size: 80%;"> (source / <a href="PJ_aitoff.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">73</td>
+            <td class="headerCovTableEntry">80</td>
+            <td class="headerCovTableEntryHi">91.2 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /******************************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Project:  PROJ.4
+<span class="lineNum">       3 </span>            :  * Purpose:  Implementation of the aitoff (Aitoff) and wintri (Winkel Tripel)
+<span class="lineNum">       4 </span>            :  *           projections.
+<span class="lineNum">       5 </span>            :  * Author:   Gerald Evenden (1995)
+<span class="lineNum">       6 </span>            :  *           Drazen Tutic, Lovro Gradiser (2015) - add inverse
+<span class="lineNum">       7 </span>            :  *           Thomas Knudsen (2016) - revise/add regression tests
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  ******************************************************************************
+<span class="lineNum">      10 </span>            :  * Copyright (c) 1995, Gerald Evenden
+<span class="lineNum">      11 </span>            :  *
+<span class="lineNum">      12 </span>            :  * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      13 </span>            :  * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      14 </span>            :  * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      15 </span>            :  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      16 </span>            :  * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      17 </span>            :  * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      18 </span>            :  *
+<span class="lineNum">      19 </span>            :  * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      20 </span>            :  * in all copies or substantial portions of the Software.
+<span class="lineNum">      21 </span>            :  *
+<span class="lineNum">      22 </span>            :  * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      23 </span>            :  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      24 </span>            :  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      25 </span>            :  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      26 </span>            :  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      27 </span>            :  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      28 </span>            :  * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      29 </span>            :  *****************************************************************************/
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            : #define PJ_LIB__
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      34 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">      37 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            : enum Mode {
+<span class="lineNum">      41 </span>            :     AITOFF = 0,
+<span class="lineNum">      42 </span>            :     WINKEL_TRIPEL = 1
+<span class="lineNum">      43 </span>            : };
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : struct pj_opaque {
+<span class="lineNum">      46 </span>            :     double  cosphi1;
+<span class="lineNum">      47 </span>            :     enum Mode mode;
+<span class="lineNum">      48 </span>            : };
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            : PROJ_HEAD(aitoff, &quot;Aitoff&quot;) &quot;\n\tMisc Sph&quot;;
+<span class="lineNum">      52 </span>            : PROJ_HEAD(wintri, &quot;Winkel Tripel&quot;) &quot;\n\tMisc Sph\n\tlat_1&quot;;
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            : #if 0
+<span class="lineNum">      57 </span>            : FORWARD(s_forward); /* spheroid */
+<span class="lineNum">      58 </span>            : #endif
+<a name="59"><span class="lineNum">      59 </span>            : </a>
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span><span class="lineCov">          8 : static XY s_forward (LP lp, PJ *P) {           /* Spheroidal, forward */</span>
+<span class="lineNum">      62 </span><span class="lineCov">          8 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">      63 </span><span class="lineCov">          8 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      64 </span>            :     double c, d;
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span><span class="lineCov">          8 :     if((d = acos(cos(lp.phi) * cos(c = 0.5 * lp.lam))) != 0.0) {/* basic Aitoff */</span>
+<span class="lineNum">      67 </span><span class="lineCov">          8 :         xy.x = 2. * d * cos(lp.phi) * sin(c) * (xy.y = 1. / sin(d));</span>
+<span class="lineNum">      68 </span><span class="lineCov">          8 :         xy.y *= d * sin(lp.phi);</span>
+<span class="lineNum">      69 </span>            :     } else
+<span class="lineNum">      70 </span><span class="lineNoCov">          0 :         xy.x = xy.y = 0.;</span>
+<span class="lineNum">      71 </span><span class="lineCov">          8 :     if (Q-&gt;mode == WINKEL_TRIPEL) {</span>
+<span class="lineNum">      72 </span><span class="lineCov">          4 :         xy.x = (xy.x + lp.lam * Q-&gt;cosphi1) * 0.5;</span>
+<span class="lineNum">      73 </span><span class="lineCov">          4 :         xy.y = (xy.y + lp.phi) * 0.5;</span>
+<span class="lineNum">      74 </span>            :     }
+<span class="lineNum">      75 </span><span class="lineCov">          8 :     return (xy);</span>
+<span class="lineNum">      76 </span>            : }
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            : /***********************************************************************************
+<span class="lineNum">      79 </span>            : *
+<span class="lineNum">      80 </span>            : * Inverse functions added by Drazen Tutic and Lovro Gradiser based on paper:
+<span class="lineNum">      81 </span>            : *
+<span class="lineNum">      82 </span>            : * I.Özbug Biklirici and Cengizhan Ipbüker. A General Algorithm for the Inverse
+<span class="lineNum">      83 </span>            : * Transformation of Map Projections Using Jacobian Matrices. In Proceedings of the
+<span class="lineNum">      84 </span>            : * Third International Symposium Mathematical &amp; Computational Applications,
+<span class="lineNum">      85 </span>            : * pages 175{182, Turkey, September 2002.
+<span class="lineNum">      86 </span>            : *
+<span class="lineNum">      87 </span>            : * Expected accuracy is defined by EPSILON = 1e-12. Should be appropriate for
+<span class="lineNum">      88 </span>            : * most applications of Aitoff and Winkel Tripel projections.
+<span class="lineNum">      89 </span>            : *
+<span class="lineNum">      90 </span>            : * Longitudes of 180W and 180E can be mixed in solution obtained.
+<span class="lineNum">      91 </span>            : *
+<span class="lineNum">      92 </span>            : * Inverse for Aitoff projection in poles is undefined, longitude value of 0 is assumed.
+<span class="lineNum">      93 </span>            : *
+<span class="lineNum">      94 </span>            : * Contact : dtutic@geof.hr
+<span class="lineNum">      95 </span>            : * Date: 2015-02-16
+<span class="lineNum">      96 </span>            : *
+<a name="97"><span class="lineNum">      97 </span>            : ************************************************************************************/</a>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineCov">          8 : static LP s_inverse (XY xy, PJ *P) {           /* Spheroidal, inverse */</span>
+<span class="lineNum">     100 </span><span class="lineCov">          8 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">     101 </span><span class="lineCov">          8 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     102 </span><span class="lineCov">          8 :     int iter, MAXITER = 10, round = 0, MAXROUND = 20;</span>
+<span class="lineNum">     103 </span><span class="lineCov">          8 :     double EPSILON = 1e-12, D, C, f1, f2, f1p, f1l, f2p, f2l, dp, dl, sl, sp, cp, cl, x, y;</span>
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span><span class="lineCov">          8 :     if ((fabs(xy.x) &lt; EPSILON) &amp;&amp; (fabs(xy.y) &lt; EPSILON )) { lp.phi = 0.; lp.lam = 0.; return lp; }</span>
+<span class="lineNum">     106 </span>            : 
+<span class="lineNum">     107 </span>            :     /* initial values for Newton-Raphson method */
+<span class="lineNum">     108 </span><span class="lineCov">          8 :     lp.phi = xy.y; lp.lam = xy.x;</span>
+<span class="lineNum">     109 </span>            :     do {
+<span class="lineNum">     110 </span><span class="lineCov">          8 :         iter = 0;</span>
+<span class="lineNum">     111 </span>            :         do {
+<span class="lineNum">     112 </span><span class="lineCov">          8 :             sl = sin(lp.lam * 0.5); cl = cos(lp.lam * 0.5);</span>
+<span class="lineNum">     113 </span><span class="lineCov">          8 :             sp = sin(lp.phi); cp = cos(lp.phi);</span>
+<span class="lineNum">     114 </span><span class="lineCov">          8 :             D = cp * cl;</span>
+<span class="lineNum">     115 </span><span class="lineCov">          8 :                 C = 1. - D * D;</span>
+<span class="lineNum">     116 </span><span class="lineCov">          8 :             D = acos(D) / pow(C, 1.5);</span>
+<span class="lineNum">     117 </span><span class="lineCov">          8 :                 f1 = 2. * D * C * cp * sl;</span>
+<span class="lineNum">     118 </span><span class="lineCov">          8 :                 f2 = D * C * sp;</span>
+<span class="lineNum">     119 </span><span class="lineCov">          8 :                 f1p = 2.* (sl * cl * sp * cp / C - D * sp * sl);</span>
+<span class="lineNum">     120 </span><span class="lineCov">          8 :                 f1l = cp * cp * sl * sl / C + D * cp * cl * sp * sp;</span>
+<span class="lineNum">     121 </span><span class="lineCov">          8 :                 f2p = sp * sp * cl / C + D * sl * sl * cp;</span>
+<span class="lineNum">     122 </span><span class="lineCov">          8 :                 f2l = 0.5 * (sp * cp * sl / C - D * sp * cp * cp * sl * cl);</span>
+<span class="lineNum">     123 </span><span class="lineCov">          8 :                 if (Q-&gt;mode == WINKEL_TRIPEL) {</span>
+<span class="lineNum">     124 </span><span class="lineCov">          4 :                 f1 = 0.5 * (f1 + lp.lam * Q-&gt;cosphi1);</span>
+<span class="lineNum">     125 </span><span class="lineCov">          4 :                 f2 = 0.5 * (f2 + lp.phi);</span>
+<span class="lineNum">     126 </span><span class="lineCov">          4 :                 f1p *= 0.5;</span>
+<span class="lineNum">     127 </span><span class="lineCov">          4 :                 f1l = 0.5 * (f1l + Q-&gt;cosphi1);</span>
+<span class="lineNum">     128 </span><span class="lineCov">          4 :                 f2p = 0.5 * (f2p + 1.);</span>
+<span class="lineNum">     129 </span><span class="lineCov">          4 :                 f2l *= 0.5;</span>
+<span class="lineNum">     130 </span>            :             }
+<span class="lineNum">     131 </span><span class="lineCov">          8 :             f1 -= xy.x; f2 -= xy.y;</span>
+<span class="lineNum">     132 </span><span class="lineCov">          8 :             dl = (f2 * f1p - f1 * f2p) / (dp = f1p * f2l - f2p * f1l);</span>
+<span class="lineNum">     133 </span><span class="lineCov">          8 :             dp = (f1 * f2l - f2 * f1l) / dp;</span>
+<span class="lineNum">     134 </span><span class="lineCov">          8 :             dl = fmod(dl, M_PI); /* set to interval [-M_PI, M_PI] */</span>
+<span class="lineNum">     135 </span><span class="lineCov">          8 :             lp.phi -= dp;   lp.lam -= dl;</span>
+<span class="lineNum">     136 </span><span class="lineCov">          8 :         } while ((fabs(dp) &gt; EPSILON || fabs(dl) &gt; EPSILON) &amp;&amp; (iter++ &lt; MAXITER));</span>
+<span class="lineNum">     137 </span><span class="lineCov">          8 :         if (lp.phi &gt; M_PI_2) lp.phi -= 2.*(lp.phi-M_PI_2); /* correct if symmetrical solution for Aitoff */</span>
+<span class="lineNum">     138 </span><span class="lineCov">          8 :         if (lp.phi &lt; -M_PI_2) lp.phi -= 2.*(lp.phi+M_PI_2); /* correct if symmetrical solution for Aitoff */</span>
+<span class="lineNum">     139 </span><span class="lineCov">          8 :         if ((fabs(fabs(lp.phi) - M_PI_2) &lt; EPSILON) &amp;&amp; (Q-&gt;mode == AITOFF)) lp.lam = 0.; /* if pole in Aitoff, return longitude of 0 */</span>
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span>            :         /* calculate x,y coordinates with solution obtained */
+<span class="lineNum">     142 </span><span class="lineCov">          8 :         if((D = acos(cos(lp.phi) * cos(C = 0.5 * lp.lam))) != 0.0) {/* Aitoff */</span>
+<span class="lineNum">     143 </span><span class="lineCov">          8 :             x = 2. * D * cos(lp.phi) * sin(C) * (y = 1. / sin(D));</span>
+<span class="lineNum">     144 </span><span class="lineCov">          8 :             y *= D * sin(lp.phi);</span>
+<span class="lineNum">     145 </span>            :         } else
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :             x = y = 0.;</span>
+<span class="lineNum">     147 </span><span class="lineCov">          8 :         if (Q-&gt;mode == WINKEL_TRIPEL) {</span>
+<span class="lineNum">     148 </span><span class="lineCov">          4 :             x = (x + lp.lam * Q-&gt;cosphi1) * 0.5;</span>
+<span class="lineNum">     149 </span><span class="lineCov">          4 :             y = (y + lp.phi) * 0.5;</span>
+<span class="lineNum">     150 </span>            :         }
+<span class="lineNum">     151 </span>            :     /* if too far from given values of x,y, repeat with better approximation of phi,lam */
+<span class="lineNum">     152 </span><span class="lineCov">          8 :     } while (((fabs(xy.x-x) &gt; EPSILON) || (fabs(xy.y-y) &gt; EPSILON)) &amp;&amp; (round++ &lt; MAXROUND));</span>
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span><span class="lineCov">          8 :     if (iter == MAXITER &amp;&amp; round == MAXROUND)</span>
+<span class="lineNum">     155 </span>            :         {
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 :             pj_ctx_set_errno( P-&gt;ctx, PJD_ERR_NON_CONVERGENT );</span>
+<span class="lineNum">     157 </span>            :             /* fprintf(stderr, &quot;Warning: Accuracy of 1e-12 not reached. Last increments: dlat=%e and dlon=%e\n&quot;, dp, dl); */
+<span class="lineNum">     158 </span>            :         }
+<span class="lineNum">     159 </span>            : 
+<span class="lineNum">     160 </span><span class="lineCov">          8 :     return lp;</span>
+<span class="lineNum">     161 </span>            : }
+<a name="162"><span class="lineNum">     162 </span>            : </a>
+<span class="lineNum">     163 </span>            : 
+<span class="lineNum">     164 </span><span class="lineCov">          2 : static PJ *setup(PJ *P) {</span>
+<span class="lineNum">     165 </span><span class="lineCov">          2 :     P-&gt;inv = s_inverse;</span>
+<span class="lineNum">     166 </span><span class="lineCov">          2 :     P-&gt;fwd = s_forward;</span>
+<span class="lineNum">     167 </span><span class="lineCov">          2 :     P-&gt;es = 0.;</span>
+<span class="lineNum">     168 </span><span class="lineCov">          2 :     return P;</span>
+<span class="lineNum">     169 </span>            : }
+<a name="170"><span class="lineNum">     170 </span>            : </a>
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span><span class="lineCov">          3 : PJ *PROJECTION(aitoff) {</span>
+<span class="lineNum">     173 </span><span class="lineCov">          1 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     174 </span><span class="lineCov">          1 :     if (0==Q)</span>
+<span class="lineNum">     175 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, ENOMEM);</span>
+<span class="lineNum">     176 </span><span class="lineCov">          1 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     177 </span>            : 
+<span class="lineNum">     178 </span><span class="lineCov">          1 :     Q-&gt;mode = AITOFF;</span>
+<span class="lineNum">     179 </span><span class="lineCov">          1 :     return setup(P);</span>
+<span class="lineNum">     180 </span>            : }
+<a name="181"><span class="lineNum">     181 </span>            : </a>
+<span class="lineNum">     182 </span>            : 
+<span class="lineNum">     183 </span><span class="lineCov">          3 : PJ *PROJECTION(wintri) {</span>
+<span class="lineNum">     184 </span><span class="lineCov">          1 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     185 </span><span class="lineCov">          1 :     if (0==Q)</span>
+<span class="lineNum">     186 </span><span class="lineNoCov">          0 :         return pj_default_destructor(P, ENOMEM);</span>
+<span class="lineNum">     187 </span><span class="lineCov">          1 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     188 </span>            : 
+<span class="lineNum">     189 </span><span class="lineCov">          1 :     Q-&gt;mode = WINKEL_TRIPEL;</span>
+<span class="lineNum">     190 </span><span class="lineCov">          1 :     if (pj_param(P-&gt;ctx, P-&gt;params, &quot;tlat_1&quot;).i) {</span>
+<span class="lineNum">     191 </span><span class="lineCov">          1 :         if ((Q-&gt;cosphi1 = cos(pj_param(P-&gt;ctx, P-&gt;params, &quot;rlat_1&quot;).f)) == 0.)</span>
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :             return pj_default_destructor (P, PJD_ERR_LAT_LARGER_THAN_90);</span>
+<span class="lineNum">     193 </span>            :     }
+<span class="lineNum">     194 </span>            :     else /* 50d28' or acos(2/pi) */
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :         Q-&gt;cosphi1 = 0.636619772367581343;</span>
+<span class="lineNum">     196 </span><span class="lineCov">          1 :     return setup(P);</span>
+<span class="lineNum">     197 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

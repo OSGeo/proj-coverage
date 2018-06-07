@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_patterson.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_patterson.c<span style="font-size: 80%;"> (source / <a href="PJ_patterson.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">29</td>
+            <td class="headerCovTableEntry">30</td>
+            <td class="headerCovTableEntryHi">96.7 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (c) 2014 Bojan Savric
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+<span class="lineNum">       5 </span>            :  * you may not use this file except in compliance with the License.
+<span class="lineNum">       6 </span>            :  * You may obtain a copy of the License at
+<span class="lineNum">       7 </span>            :  *
+<span class="lineNum">       8 </span>            :  * http://www.apache.org/licenses/LICENSE-2.0
+<span class="lineNum">       9 </span>            :  *
+<span class="lineNum">      10 </span>            :  * Unless required by applicable law or agreed to in writing, software
+<span class="lineNum">      11 </span>            :  * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+<span class="lineNum">      12 </span>            :  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+<span class="lineNum">      13 </span>            :  * See the License for the specific language governing permissions and
+<span class="lineNum">      14 </span>            :  * limitations under the License.
+<span class="lineNum">      15 </span>            :  */
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            : /*
+<span class="lineNum">      18 </span>            :  * The Patterson Cylindrical projection was designed by Tom Patterson, US National
+<span class="lineNum">      19 </span>            :  * Park Service, in 2014, using Flex Projector. The polynomial equations for the
+<span class="lineNum">      20 </span>            :  * projection were developed by Bojan Savric, Oregon State University, in
+<span class="lineNum">      21 </span>            :  * collaboration with Tom Patterson and Bernhard Jenny, Oregon State University.
+<span class="lineNum">      22 </span>            :  *
+<span class="lineNum">      23 </span>            :  * Java reference algorithm implemented by Bojan Savric in Java Map Projection
+<span class="lineNum">      24 </span>            :  * Library (a Java port of PROJ.4) in the file PattersonProjection.java.
+<span class="lineNum">      25 </span>            :  *
+<span class="lineNum">      26 </span>            :  * References:
+<span class="lineNum">      27 </span>            :  *    Java Map Projection Library
+<span class="lineNum">      28 </span>            :  *       https://github.com/OSUCartography/JMapProjLib
+<span class="lineNum">      29 </span>            :  *
+<span class="lineNum">      30 </span>            :  *    Patterson Cylindrical Projection
+<span class="lineNum">      31 </span>            :  *       http://shadedrelief.com/patterson/
+<span class="lineNum">      32 </span>            :  *
+<span class="lineNum">      33 </span>            :  *    Patterson, T., Savric, B., and Jenny, B. (2015). Cartographic Perspectives
+<span class="lineNum">      34 </span>            :  *       (No.78). Describes the projection design and characteristics, and
+<span class="lineNum">      35 </span>            :  *       developing the equations.    doi:10.14714/CP78.1270
+<span class="lineNum">      36 </span>            :  *       https://doi.org/10.14714/CP78.1270
+<span class="lineNum">      37 </span>            :  *
+<span class="lineNum">      38 </span>            :  * Port to PROJ.4 by Micah Cochran, 26 March 2016
+<span class="lineNum">      39 </span>            :  */
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : #define PJ_LIB__
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            : PROJ_HEAD(patterson, &quot;Patterson Cylindrical&quot;) &quot;\n\tCyl.&quot;;
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : #define K1 1.0148
+<span class="lineNum">      50 </span>            : #define K2 0.23185
+<span class="lineNum">      51 </span>            : #define K3 -0.14499
+<span class="lineNum">      52 </span>            : #define K4 0.02406
+<span class="lineNum">      53 </span>            : #define C1 K1
+<span class="lineNum">      54 </span>            : #define C2 (5.0 * K2)
+<span class="lineNum">      55 </span>            : #define C3 (7.0 * K3)
+<span class="lineNum">      56 </span>            : #define C4 (9.0 * K4)
+<span class="lineNum">      57 </span>            : #define EPS11 1.0e-11
+<span class="lineNum">      58 </span>            : #define MAX_Y 1.790857183
+<span class="lineNum">      59 </span>            : /* Not sure at all of the appropriate number for MAX_ITER... */
+<span class="lineNum">      60 </span>            : #define MAX_ITER 100
+<a name="61"><span class="lineNum">      61 </span>            : </a>
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span><span class="lineCov">         22 : static XY s_forward (LP lp, PJ *P) {           /* Spheroidal, forward */</span>
+<span class="lineNum">      64 </span><span class="lineCov">         22 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">      65 </span>            :     double phi2;
+<span class="lineNum">      66 </span>            :     (void) P;
+<span class="lineNum">      67 </span>            : 
+<span class="lineNum">      68 </span><span class="lineCov">         22 :     phi2 = lp.phi * lp.phi;</span>
+<span class="lineNum">      69 </span><span class="lineCov">         22 :     xy.x = lp.lam;</span>
+<span class="lineNum">      70 </span><span class="lineCov">         22 :     xy.y = lp.phi * (K1 + phi2 * phi2 * (K2 + phi2 * (K3 + K4 * phi2)));</span>
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span><span class="lineCov">         22 :     return xy;</span>
+<span class="lineNum">      73 </span>            : }
+<a name="74"><span class="lineNum">      74 </span>            : </a>
+<span class="lineNum">      75 </span>            : 
+<span class="lineNum">      76 </span><span class="lineCov">         22 : static LP s_inverse (XY xy, PJ *P) {           /* Spheroidal, inverse */</span>
+<span class="lineNum">      77 </span><span class="lineCov">         22 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">      78 </span>            :     double yc, tol, y2, f, fder;
+<span class="lineNum">      79 </span>            :     int i;
+<span class="lineNum">      80 </span>            :     (void) P;
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span><span class="lineCov">         22 :     yc = xy.y;</span>
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            :     /* make sure y is inside valid range */
+<span class="lineNum">      85 </span><span class="lineCov">         22 :     if (xy.y &gt; MAX_Y) {</span>
+<span class="lineNum">      86 </span><span class="lineCov">          2 :         xy.y = MAX_Y;</span>
+<span class="lineNum">      87 </span><span class="lineCov">         20 :     } else if (xy.y &lt; -MAX_Y) {</span>
+<span class="lineNum">      88 </span><span class="lineCov">          2 :         xy.y = -MAX_Y;</span>
+<span class="lineNum">      89 </span>            :     }
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span><span class="lineCov">         82 :     for (i = MAX_ITER; i ; --i) { /* Newton-Raphson */</span>
+<span class="lineNum">      92 </span><span class="lineCov">         82 :         y2 = yc * yc;</span>
+<span class="lineNum">      93 </span><span class="lineCov">         82 :         f = (yc * (K1 + y2 * y2 * (K2 + y2 * (K3 + K4 * y2)))) - xy.y;</span>
+<span class="lineNum">      94 </span><span class="lineCov">         82 :         fder = C1 + y2 * y2 * (C2 + y2 * (C3 + C4 * y2));</span>
+<span class="lineNum">      95 </span><span class="lineCov">         82 :         yc -= tol = f / fder;</span>
+<span class="lineNum">      96 </span><span class="lineCov">         82 :         if (fabs(tol) &lt; EPS11) {</span>
+<span class="lineNum">      97 </span><span class="lineCov">         22 :             break;</span>
+<span class="lineNum">      98 </span>            :         }
+<span class="lineNum">      99 </span>            :     }
+<span class="lineNum">     100 </span><span class="lineCov">         22 :     if( i == 0 )</span>
+<span class="lineNum">     101 </span><span class="lineNoCov">          0 :         pj_ctx_set_errno( P-&gt;ctx, PJD_ERR_NON_CONVERGENT );</span>
+<span class="lineNum">     102 </span><span class="lineCov">         22 :     lp.phi = yc;</span>
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            :     /* longitude */
+<span class="lineNum">     105 </span><span class="lineCov">         22 :     lp.lam = xy.x;</span>
+<span class="lineNum">     106 </span>            : 
+<span class="lineNum">     107 </span><span class="lineCov">         22 :     return lp;</span>
+<span class="lineNum">     108 </span>            : }
+<a name="109"><span class="lineNum">     109 </span>            : </a>
+<span class="lineNum">     110 </span>            : 
+<span class="lineNum">     111 </span><span class="lineCov">         15 : PJ *PROJECTION(patterson) {</span>
+<span class="lineNum">     112 </span><span class="lineCov">          5 :     P-&gt;es = 0.;</span>
+<span class="lineNum">     113 </span><span class="lineCov">          5 :     P-&gt;inv = s_inverse;</span>
+<span class="lineNum">     114 </span><span class="lineCov">          5 :     P-&gt;fwd = s_forward;</span>
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span><span class="lineCov">          5 :     return P;</span>
+<span class="lineNum">     117 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

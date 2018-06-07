@@ -1,0 +1,303 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_omerc.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_omerc.c<span style="font-size: 80%;"> (source / <a href="PJ_omerc.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">126</td>
+            <td class="headerCovTableEntry">140</td>
+            <td class="headerCovTableEntryHi">90.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            : ** Copyright (c) 2003, 2006   Gerald I. Evenden
+<span class="lineNum">       3 </span>            : */
+<span class="lineNum">       4 </span>            : /*
+<span class="lineNum">       5 </span>            : ** Permission is hereby granted, free of charge, to any person obtaining
+<span class="lineNum">       6 </span>            : ** a copy of this software and associated documentation files (the
+<span class="lineNum">       7 </span>            : ** &quot;Software&quot;), to deal in the Software without restriction, including
+<span class="lineNum">       8 </span>            : ** without limitation the rights to use, copy, modify, merge, publish,
+<span class="lineNum">       9 </span>            : ** distribute, sublicense, and/or sell copies of the Software, and to
+<span class="lineNum">      10 </span>            : ** permit persons to whom the Software is furnished to do so, subject to
+<span class="lineNum">      11 </span>            : ** the following conditions:
+<span class="lineNum">      12 </span>            : **
+<span class="lineNum">      13 </span>            : ** The above copyright notice and this permission notice shall be
+<span class="lineNum">      14 </span>            : ** included in all copies or substantial portions of the Software.
+<span class="lineNum">      15 </span>            : **
+<span class="lineNum">      16 </span>            : ** THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND,
+<span class="lineNum">      17 </span>            : ** EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+<span class="lineNum">      18 </span>            : ** MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+<span class="lineNum">      19 </span>            : ** IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+<span class="lineNum">      20 </span>            : ** CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+<span class="lineNum">      21 </span>            : ** TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+<span class="lineNum">      22 </span>            : ** SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      23 </span>            : */
+<span class="lineNum">      24 </span>            : #define PJ_LIB__
+<span class="lineNum">      25 </span>            : 
+<span class="lineNum">      26 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      27 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      28 </span>            : 
+<span class="lineNum">      29 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">      30 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            : PROJ_HEAD(omerc, &quot;Oblique Mercator&quot;)
+<span class="lineNum">      33 </span>            :     &quot;\n\tCyl, Sph&amp;Ell no_rot\n\t&quot;
+<span class="lineNum">      34 </span>            :     &quot;alpha= [gamma=] [no_off] lonc= or\n\t lon_1= lat_1= lon_2= lat_2=&quot;;
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : struct pj_opaque {
+<span class="lineNum">      37 </span>            :     double  A, B, E, AB, ArB, BrA, rB, singam, cosgam, sinrot, cosrot;
+<span class="lineNum">      38 </span>            :     double  v_pole_n, v_pole_s, u_0;
+<span class="lineNum">      39 </span>            :     int no_rot;
+<span class="lineNum">      40 </span>            : };
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            : #define TOL 1.e-7
+<span class="lineNum">      43 </span>            : #define EPS 1.e-10
+<a name="44"><span class="lineNum">      44 </span>            : </a>
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span><span class="lineCov">      23077 : static XY e_forward (LP lp, PJ *P) {          /* Ellipsoidal, forward */</span>
+<span class="lineNum">      47 </span><span class="lineCov">      23077 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">      48 </span><span class="lineCov">      23077 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      49 </span>            :     double S, T, U, V, W, temp, u, v;
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span><span class="lineCov">      23077 :     if (fabs(fabs(lp.phi) - M_HALFPI) &gt; EPS) {</span>
+<span class="lineNum">      52 </span><span class="lineCov">      23077 :         W = Q-&gt;E / pow(pj_tsfn(lp.phi, sin(lp.phi), P-&gt;e), Q-&gt;B);</span>
+<span class="lineNum">      53 </span><span class="lineCov">      23077 :         temp = 1. / W;</span>
+<span class="lineNum">      54 </span><span class="lineCov">      23077 :         S = .5 * (W - temp);</span>
+<span class="lineNum">      55 </span><span class="lineCov">      23077 :         T = .5 * (W + temp);</span>
+<span class="lineNum">      56 </span><span class="lineCov">      23077 :         V = sin(Q-&gt;B * lp.lam);</span>
+<span class="lineNum">      57 </span><span class="lineCov">      23077 :         U = (S * Q-&gt;singam - V * Q-&gt;cosgam) / T;</span>
+<span class="lineNum">      58 </span><span class="lineCov">      23077 :         if (fabs(fabs(U) - 1.0) &lt; EPS) {</span>
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :             proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :             return xy;</span>
+<span class="lineNum">      61 </span>            :         }
+<span class="lineNum">      62 </span><span class="lineCov">      23077 :         v = 0.5 * Q-&gt;ArB * log((1. - U)/(1. + U));</span>
+<span class="lineNum">      63 </span><span class="lineCov">      23077 :         temp = cos(Q-&gt;B * lp.lam);</span>
+<span class="lineNum">      64 </span><span class="lineCov">      23077 :                 if(fabs(temp) &lt; TOL) {</span>
+<span class="lineNum">      65 </span><span class="lineCov">          2 :                     u = Q-&gt;A * lp.lam;</span>
+<span class="lineNum">      66 </span>            :                 } else {
+<span class="lineNum">      67 </span><span class="lineCov">      23075 :                     u = Q-&gt;ArB * atan2((S * Q-&gt;cosgam + V * Q-&gt;singam), temp);</span>
+<span class="lineNum">      68 </span>            :                 }
+<span class="lineNum">      69 </span>            :     } else {
+<span class="lineNum">      70 </span><span class="lineNoCov">          0 :         v = lp.phi &gt; 0 ? Q-&gt;v_pole_n : Q-&gt;v_pole_s;</span>
+<span class="lineNum">      71 </span><span class="lineNoCov">          0 :         u = Q-&gt;ArB * lp.phi;</span>
+<span class="lineNum">      72 </span>            :     }
+<span class="lineNum">      73 </span><span class="lineCov">      23077 :     if (Q-&gt;no_rot) {</span>
+<span class="lineNum">      74 </span><span class="lineCov">         28 :         xy.x = u;</span>
+<span class="lineNum">      75 </span><span class="lineCov">         28 :         xy.y = v;</span>
+<span class="lineNum">      76 </span>            :     } else {
+<span class="lineNum">      77 </span><span class="lineCov">      23049 :         u -= Q-&gt;u_0;</span>
+<span class="lineNum">      78 </span><span class="lineCov">      23049 :         xy.x = v * Q-&gt;cosrot + u * Q-&gt;sinrot;</span>
+<span class="lineNum">      79 </span><span class="lineCov">      23049 :         xy.y = u * Q-&gt;cosrot - v * Q-&gt;sinrot;</span>
+<span class="lineNum">      80 </span>            :     }
+<span class="lineNum">      81 </span><span class="lineCov">      23077 :     return xy;</span>
+<span class="lineNum">      82 </span>            : }
+<a name="83"><span class="lineNum">      83 </span>            : </a>
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span><span class="lineCov">      23031 : static LP e_inverse (XY xy, PJ *P) {          /* Ellipsoidal, inverse */</span>
+<span class="lineNum">      86 </span><span class="lineCov">      23031 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">      87 </span><span class="lineCov">      23031 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      88 </span>            :     double  u, v, Qp, Sp, Tp, Vp, Up;
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span><span class="lineCov">      23031 :     if (Q-&gt;no_rot) {</span>
+<span class="lineNum">      91 </span><span class="lineCov">          4 :         v = xy.y;</span>
+<span class="lineNum">      92 </span><span class="lineCov">          4 :         u = xy.x;</span>
+<span class="lineNum">      93 </span>            :     } else {
+<span class="lineNum">      94 </span><span class="lineCov">      23027 :         v = xy.x * Q-&gt;cosrot - xy.y * Q-&gt;sinrot;</span>
+<span class="lineNum">      95 </span><span class="lineCov">      23027 :         u = xy.y * Q-&gt;cosrot + xy.x * Q-&gt;sinrot + Q-&gt;u_0;</span>
+<span class="lineNum">      96 </span>            :     }
+<span class="lineNum">      97 </span><span class="lineCov">      23031 :     Qp = exp(- Q-&gt;BrA * v);</span>
+<span class="lineNum">      98 </span><span class="lineCov">      23031 :     Sp = .5 * (Qp - 1. / Qp);</span>
+<span class="lineNum">      99 </span><span class="lineCov">      23031 :     Tp = .5 * (Qp + 1. / Qp);</span>
+<span class="lineNum">     100 </span><span class="lineCov">      23031 :     Vp = sin(Q-&gt;BrA * u);</span>
+<span class="lineNum">     101 </span><span class="lineCov">      23031 :     Up = (Vp * Q-&gt;cosgam + Sp * Q-&gt;singam) / Tp;</span>
+<span class="lineNum">     102 </span><span class="lineCov">      23031 :     if (fabs(fabs(Up) - 1.) &lt; EPS) {</span>
+<span class="lineNum">     103 </span><span class="lineNoCov">          0 :         lp.lam = 0.;</span>
+<span class="lineNum">     104 </span><span class="lineNoCov">          0 :         lp.phi = Up &lt; 0. ? -M_HALFPI : M_HALFPI;</span>
+<span class="lineNum">     105 </span>            :     } else {
+<span class="lineNum">     106 </span><span class="lineCov">      23031 :         lp.phi = Q-&gt;E / sqrt((1. + Up) / (1. - Up));</span>
+<span class="lineNum">     107 </span><span class="lineCov">      23031 :         if ((lp.phi = pj_phi2(P-&gt;ctx, pow(lp.phi, 1. / Q-&gt;B), P-&gt;e)) == HUGE_VAL) {</span>
+<span class="lineNum">     108 </span><span class="lineNoCov">          0 :             proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">     109 </span><span class="lineNoCov">          0 :             return lp;</span>
+<span class="lineNum">     110 </span>            :         }
+<span class="lineNum">     111 </span><span class="lineCov">      69093 :         lp.lam = - Q-&gt;rB * atan2((Sp * Q-&gt;cosgam -</span>
+<span class="lineNum">     112 </span><span class="lineCov">      46062 :             Vp * Q-&gt;singam), cos(Q-&gt;BrA * u));</span>
+<span class="lineNum">     113 </span>            :     }
+<span class="lineNum">     114 </span><span class="lineCov">      23031 :     return lp;</span>
+<span class="lineNum">     115 </span>            : }
+<a name="116"><span class="lineNum">     116 </span>            : </a>
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span><span class="lineCov">         99 : PJ *PROJECTION(omerc) {</span>
+<span class="lineNum">     119 </span><span class="lineCov">         33 :     double con, com, cosph0, D, F, H, L, sinph0, p, J, gamma=0,</span>
+<span class="lineNum">     120 </span><span class="lineCov">         33 :         gamma0, lamc=0, lam1=0, lam2=0, phi1=0, phi2=0, alpha_c=0;</span>
+<span class="lineNum">     121 </span><span class="lineCov">         33 :     int alp, gam, no_off = 0;</span>
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span><span class="lineCov">         33 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     124 </span><span class="lineCov">         33 :     if (0==Q)</span>
+<span class="lineNum">     125 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">     126 </span><span class="lineCov">         33 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     127 </span>            : 
+<span class="lineNum">     128 </span><span class="lineCov">         33 :     Q-&gt;no_rot = pj_param(P-&gt;ctx, P-&gt;params, &quot;bno_rot&quot;).i;</span>
+<span class="lineNum">     129 </span><span class="lineCov">         33 :         if ((alp = pj_param(P-&gt;ctx, P-&gt;params, &quot;talpha&quot;).i) != 0)</span>
+<span class="lineNum">     130 </span><span class="lineCov">         25 :             alpha_c = pj_param(P-&gt;ctx, P-&gt;params, &quot;ralpha&quot;).f;</span>
+<span class="lineNum">     131 </span><span class="lineCov">         33 :         if ((gam = pj_param(P-&gt;ctx, P-&gt;params, &quot;tgamma&quot;).i) != 0)</span>
+<span class="lineNum">     132 </span><span class="lineCov">          5 :             gamma = pj_param(P-&gt;ctx, P-&gt;params, &quot;rgamma&quot;).f;</span>
+<span class="lineNum">     133 </span><span class="lineCov">         33 :     if (alp || gam) {</span>
+<span class="lineNum">     134 </span><span class="lineCov">         25 :         lamc    = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlonc&quot;).f;</span>
+<span class="lineNum">     135 </span><span class="lineCov">         25 :         no_off =</span>
+<span class="lineNum">     136 </span>            :                     /* For libproj4 compatibility */
+<span class="lineNum">     137 </span><span class="lineCov">         25 :                     pj_param(P-&gt;ctx, P-&gt;params, &quot;tno_off&quot;).i</span>
+<span class="lineNum">     138 </span>            :                     /* for backward compatibility */
+<span class="lineNum">     139 </span><span class="lineCov">         25 :                     || pj_param(P-&gt;ctx, P-&gt;params, &quot;tno_uoff&quot;).i;</span>
+<span class="lineNum">     140 </span><span class="lineCov">         50 :         if( no_off )</span>
+<span class="lineNum">     141 </span>            :         {
+<span class="lineNum">     142 </span>            :             /* Mark the parameter as used, so that the pj_get_def() return them */
+<span class="lineNum">     143 </span><span class="lineCov">          3 :             pj_param(P-&gt;ctx, P-&gt;params, &quot;sno_uoff&quot;);</span>
+<span class="lineNum">     144 </span><span class="lineCov">          3 :             pj_param(P-&gt;ctx, P-&gt;params, &quot;sno_off&quot;);</span>
+<span class="lineNum">     145 </span>            :         }
+<span class="lineNum">     146 </span>            :     } else {
+<span class="lineNum">     147 </span><span class="lineCov">          8 :         lam1 = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlon_1&quot;).f;</span>
+<span class="lineNum">     148 </span><span class="lineCov">          8 :         phi1 = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlat_1&quot;).f;</span>
+<span class="lineNum">     149 </span><span class="lineCov">          8 :         lam2 = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlon_2&quot;).f;</span>
+<span class="lineNum">     150 </span><span class="lineCov">          8 :         phi2 = pj_param(P-&gt;ctx, P-&gt;params, &quot;rlat_2&quot;).f;</span>
+<span class="lineNum">     151 </span><span class="lineCov">         16 :         if (fabs(phi1 - phi2) &lt;= TOL ||</span>
+<span class="lineNum">     152 </span><span class="lineCov">         16 :             (con = fabs(phi1)) &lt;= TOL ||</span>
+<span class="lineNum">     153 </span><span class="lineCov">         16 :             fabs(con - M_HALFPI) &lt;= TOL ||</span>
+<span class="lineNum">     154 </span><span class="lineCov">         16 :             fabs(fabs(P-&gt;phi0) - M_HALFPI) &lt;= TOL ||</span>
+<span class="lineNum">     155 </span><span class="lineCov">          8 :             fabs(fabs(phi2) - M_HALFPI) &lt;= TOL)</span>
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 :                 return pj_default_destructor(P, PJD_ERR_LAT_0_OR_ALPHA_EQ_90);</span>
+<span class="lineNum">     157 </span>            :     }
+<span class="lineNum">     158 </span><span class="lineCov">         33 :     com = sqrt(P-&gt;one_es);</span>
+<span class="lineNum">     159 </span><span class="lineCov">         33 :     if (fabs(P-&gt;phi0) &gt; EPS) {</span>
+<span class="lineNum">     160 </span><span class="lineCov">         29 :         sinph0 = sin(P-&gt;phi0);</span>
+<span class="lineNum">     161 </span><span class="lineCov">         29 :         cosph0 = cos(P-&gt;phi0);</span>
+<span class="lineNum">     162 </span><span class="lineCov">         29 :         con = 1. - P-&gt;es * sinph0 * sinph0;</span>
+<span class="lineNum">     163 </span><span class="lineCov">         29 :         Q-&gt;B = cosph0 * cosph0;</span>
+<span class="lineNum">     164 </span><span class="lineCov">         29 :         Q-&gt;B = sqrt(1. + P-&gt;es * Q-&gt;B * Q-&gt;B / P-&gt;one_es);</span>
+<span class="lineNum">     165 </span><span class="lineCov">         29 :         Q-&gt;A = Q-&gt;B * P-&gt;k0 * com / con;</span>
+<span class="lineNum">     166 </span><span class="lineCov">         29 :         D = Q-&gt;B * com / (cosph0 * sqrt(con));</span>
+<span class="lineNum">     167 </span><span class="lineCov">         29 :         if ((F = D * D - 1.) &lt;= 0.)</span>
+<span class="lineNum">     168 </span><span class="lineNoCov">          0 :             F = 0.;</span>
+<span class="lineNum">     169 </span>            :         else {
+<span class="lineNum">     170 </span><span class="lineCov">         29 :             F = sqrt(F);</span>
+<span class="lineNum">     171 </span><span class="lineCov">         29 :             if (P-&gt;phi0 &lt; 0.)</span>
+<span class="lineNum">     172 </span><span class="lineCov">          2 :                 F = -F;</span>
+<span class="lineNum">     173 </span>            :         }
+<span class="lineNum">     174 </span><span class="lineCov">         29 :         Q-&gt;E = F += D;</span>
+<span class="lineNum">     175 </span><span class="lineCov">         29 :         Q-&gt;E *= pow(pj_tsfn(P-&gt;phi0, sinph0, P-&gt;e), Q-&gt;B);</span>
+<span class="lineNum">     176 </span>            :     } else {
+<span class="lineNum">     177 </span><span class="lineCov">          4 :         Q-&gt;B = 1. / com;</span>
+<span class="lineNum">     178 </span><span class="lineCov">          4 :         Q-&gt;A = P-&gt;k0;</span>
+<span class="lineNum">     179 </span><span class="lineCov">          4 :         Q-&gt;E = D = F = 1.;</span>
+<span class="lineNum">     180 </span>            :     }
+<span class="lineNum">     181 </span><span class="lineCov">         33 :     if (alp || gam) {</span>
+<span class="lineNum">     182 </span><span class="lineCov">         25 :         if (alp) {</span>
+<span class="lineNum">     183 </span><span class="lineCov">         25 :             gamma0 = aasin(P-&gt;ctx, sin(alpha_c) / D);</span>
+<span class="lineNum">     184 </span><span class="lineCov">         25 :             if (!gam)</span>
+<span class="lineNum">     185 </span><span class="lineCov">         20 :                 gamma = alpha_c;</span>
+<span class="lineNum">     186 </span>            :         } else
+<span class="lineNum">     187 </span><span class="lineNoCov">          0 :             alpha_c = aasin(P-&gt;ctx, D*sin(gamma0 = gamma));</span>
+<span class="lineNum">     188 </span><span class="lineCov">         75 :         P-&gt;lam0 = lamc - aasin(P-&gt;ctx, .5 * (F - 1. / F) *</span>
+<span class="lineNum">     189 </span><span class="lineCov">         50 :            tan(gamma0)) / Q-&gt;B;</span>
+<span class="lineNum">     190 </span>            :     } else {
+<span class="lineNum">     191 </span><span class="lineCov">          8 :         H = pow(pj_tsfn(phi1, sin(phi1), P-&gt;e), Q-&gt;B);</span>
+<span class="lineNum">     192 </span><span class="lineCov">          8 :         L = pow(pj_tsfn(phi2, sin(phi2), P-&gt;e), Q-&gt;B);</span>
+<span class="lineNum">     193 </span><span class="lineCov">          8 :         F = Q-&gt;E / H;</span>
+<span class="lineNum">     194 </span><span class="lineCov">          8 :         p = (L - H) / (L + H);</span>
+<span class="lineNum">     195 </span><span class="lineCov">          8 :         J = Q-&gt;E * Q-&gt;E;</span>
+<span class="lineNum">     196 </span><span class="lineCov">          8 :         J = (J - L * H) / (J + L * H);</span>
+<span class="lineNum">     197 </span><span class="lineCov">          8 :         if ((con = lam1 - lam2) &lt; -M_PI)</span>
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :             lam2 -= M_TWOPI;</span>
+<span class="lineNum">     199 </span><span class="lineCov">          8 :         else if (con &gt; M_PI)</span>
+<span class="lineNum">     200 </span><span class="lineNoCov">          0 :             lam2 += M_TWOPI;</span>
+<span class="lineNum">     201 </span><span class="lineCov">         24 :         P-&gt;lam0 = adjlon(.5 * (lam1 + lam2) - atan(</span>
+<span class="lineNum">     202 </span><span class="lineCov">         16 :            J * tan(.5 * Q-&gt;B * (lam1 - lam2)) / p) / Q-&gt;B);</span>
+<span class="lineNum">     203 </span><span class="lineCov">         16 :         gamma0 = atan(2. * sin(Q-&gt;B * adjlon(lam1 - P-&gt;lam0)) /</span>
+<span class="lineNum">     204 </span><span class="lineCov">          8 :            (F - 1. / F));</span>
+<span class="lineNum">     205 </span><span class="lineCov">          8 :         gamma = alpha_c = aasin(P-&gt;ctx, D * sin(gamma0));</span>
+<span class="lineNum">     206 </span>            :     }
+<span class="lineNum">     207 </span><span class="lineCov">         33 :     Q-&gt;singam = sin(gamma0);</span>
+<span class="lineNum">     208 </span><span class="lineCov">         33 :     Q-&gt;cosgam = cos(gamma0);</span>
+<span class="lineNum">     209 </span><span class="lineCov">         33 :     Q-&gt;sinrot = sin(gamma);</span>
+<span class="lineNum">     210 </span><span class="lineCov">         33 :     Q-&gt;cosrot = cos(gamma);</span>
+<span class="lineNum">     211 </span><span class="lineCov">         33 :     Q-&gt;BrA = 1. / (Q-&gt;ArB = Q-&gt;A * (Q-&gt;rB = 1. / Q-&gt;B));</span>
+<span class="lineNum">     212 </span><span class="lineCov">         33 :     Q-&gt;AB = Q-&gt;A * Q-&gt;B;</span>
+<span class="lineNum">     213 </span><span class="lineCov">         33 :     if (no_off)</span>
+<span class="lineNum">     214 </span><span class="lineCov">          3 :         Q-&gt;u_0 = 0;</span>
+<span class="lineNum">     215 </span>            :     else {
+<span class="lineNum">     216 </span><span class="lineCov">         30 :         Q-&gt;u_0 = fabs(Q-&gt;ArB * atan(sqrt(D * D - 1.) / cos(alpha_c)));</span>
+<span class="lineNum">     217 </span><span class="lineCov">         30 :         if (P-&gt;phi0 &lt; 0.)</span>
+<span class="lineNum">     218 </span><span class="lineCov">          2 :             Q-&gt;u_0 = - Q-&gt;u_0;</span>
+<span class="lineNum">     219 </span>            :     }
+<span class="lineNum">     220 </span><span class="lineCov">         33 :     F = 0.5 * gamma0;</span>
+<span class="lineNum">     221 </span><span class="lineCov">         33 :     Q-&gt;v_pole_n = Q-&gt;ArB * log(tan(M_FORTPI - F));</span>
+<span class="lineNum">     222 </span><span class="lineCov">         33 :     Q-&gt;v_pole_s = Q-&gt;ArB * log(tan(M_FORTPI + F));</span>
+<span class="lineNum">     223 </span><span class="lineCov">         33 :     P-&gt;inv = e_inverse;</span>
+<span class="lineNum">     224 </span><span class="lineCov">         33 :     P-&gt;fwd = e_forward;</span>
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span><span class="lineCov">         33 :     return P;</span>
+<span class="lineNum">     227 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

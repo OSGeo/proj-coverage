@@ -1,0 +1,238 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_lcca.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_lcca.c<span style="font-size: 80%;"> (source / <a href="PJ_lcca.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">53</td>
+            <td class="headerCovTableEntry">60</td>
+            <td class="headerCovTableEntryMed">88.3 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*****************************************************************************</a>
+<span class="lineNum">       2 </span>            : 
+<span class="lineNum">       3 </span>            :                Lambert Conformal Conic Alternative
+<span class="lineNum">       4 </span>            :                -----------------------------------
+<span class="lineNum">       5 </span>            : 
+<span class="lineNum">       6 </span>            :     This is Gerald Evenden's 2003 implementation of an alternative
+<span class="lineNum">       7 </span>            :     &quot;almost&quot; LCC, which has been in use historically, but which
+<span class="lineNum">       8 </span>            :     should NOT be used for new projects - i.e: use this implementation
+<span class="lineNum">       9 </span>            :     if you need interoperability with old data represented in this
+<span class="lineNum">      10 </span>            :     projection, but not in any other case.
+<span class="lineNum">      11 </span>            : 
+<span class="lineNum">      12 </span>            :     The code was originally discussed on the PROJ.4 mailing list in
+<span class="lineNum">      13 </span>            :     a thread archived over at
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            :     http://lists.maptools.org/pipermail/proj/2003-March/000644.html
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            :     It was discussed again in the thread starting at
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            :     http://lists.maptools.org/pipermail/proj/2017-October/007828.html
+<span class="lineNum">      20 </span>            :         and continuing at
+<span class="lineNum">      21 </span>            :     http://lists.maptools.org/pipermail/proj/2017-November/007831.html
+<span class="lineNum">      22 </span>            : 
+<span class="lineNum">      23 </span>            :     which prompted Clifford J. Mugnier to add these clarifying notes:
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            :     The French Army Truncated Cubic Lambert (partially conformal) Conic
+<span class="lineNum">      26 </span>            :     projection is the Legal system for the projection in France between
+<span class="lineNum">      27 </span>            :     the late 1800s and 1948 when the French Legislature changed the law
+<span class="lineNum">      28 </span>            :     to recognize the fully conformal version.
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            :     It was (might still be in one or two North African prior French
+<span class="lineNum">      31 </span>            :     Colonies) used in North Africa in Algeria, Tunisia, &amp; Morocco, as
+<span class="lineNum">      32 </span>            :     well as in Syria during the Levant.
+<span class="lineNum">      33 </span>            : 
+<span class="lineNum">      34 </span>            :     Last time I have seen it used was about 30+ years ago in
+<span class="lineNum">      35 </span>            :     Algeria when it was used to define Lease Block boundaries for
+<span class="lineNum">      36 </span>            :     Petroleum Exploration &amp; Production.
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :     (signed)
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            :     Clifford J. Mugnier, c.p., c.m.s.
+<span class="lineNum">      41 </span>            :     Chief of Geodesy
+<span class="lineNum">      42 </span>            :     LSU Center for GeoInformatics
+<span class="lineNum">      43 </span>            :     Dept. of Civil Engineering
+<span class="lineNum">      44 </span>            :     LOUISIANA STATE UNIVERSITY
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span>            : *****************************************************************************/
+<span class="lineNum">      47 </span>            : 
+<span class="lineNum">      48 </span>            : #define PJ_LIB__
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      51 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">      54 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            : PROJ_HEAD(lcca, &quot;Lambert Conformal Conic Alternative&quot;)
+<span class="lineNum">      57 </span>            :     &quot;\n\tConic, Sph&amp;Ell\n\tlat_0=&quot;;
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            : #define MAX_ITER 10
+<span class="lineNum">      60 </span>            : #define DEL_TOL 1e-12
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            : struct pj_opaque {
+<span class="lineNum">      63 </span>            :     double *en;
+<span class="lineNum">      64 </span>            :     double r0, l, M0;
+<span class="lineNum">      65 </span>            :     double C;
+<span class="lineNum">      66 </span>            : };
+<a name="67"><span class="lineNum">      67 </span>            : </a>
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span><span class="lineCov">          8 : static double fS(double S, double C) {        /* func to compute dr */</span>
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span><span class="lineCov">          8 :     return S * ( 1. + S * S * C);</span>
+<span class="lineNum">      72 </span>            : }
+<a name="73"><span class="lineNum">      73 </span>            : </a>
+<span class="lineNum">      74 </span>            : 
+<span class="lineNum">      75 </span><span class="lineCov">          4 : static double fSp(double S, double C) {       /* deriv of fs */</span>
+<span class="lineNum">      76 </span>            : 
+<span class="lineNum">      77 </span><span class="lineCov">          4 :     return 1. + 3.* S * S * C;</span>
+<span class="lineNum">      78 </span>            : }
+<a name="79"><span class="lineNum">      79 </span>            : </a>
+<span class="lineNum">      80 </span>            : 
+<span class="lineNum">      81 </span><span class="lineCov">          4 : static XY e_forward (LP lp, PJ *P) {          /* Ellipsoidal, forward */</span>
+<span class="lineNum">      82 </span><span class="lineCov">          4 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">      83 </span><span class="lineCov">          4 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      84 </span>            :     double S, r, dr;
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span><span class="lineCov">          4 :     S = pj_mlfn(lp.phi, sin(lp.phi), cos(lp.phi), Q-&gt;en) - Q-&gt;M0;</span>
+<span class="lineNum">      87 </span><span class="lineCov">          4 :     dr = fS(S, Q-&gt;C);</span>
+<span class="lineNum">      88 </span><span class="lineCov">          4 :     r = Q-&gt;r0 - dr;</span>
+<span class="lineNum">      89 </span><span class="lineCov">          4 :     xy.x = P-&gt;k0 * (r * sin( lp.lam *= Q-&gt;l ) );</span>
+<span class="lineNum">      90 </span><span class="lineCov">          4 :     xy.y = P-&gt;k0 * (Q-&gt;r0 - r * cos(lp.lam) );</span>
+<span class="lineNum">      91 </span><span class="lineCov">          4 :     return xy;</span>
+<span class="lineNum">      92 </span>            : }
+<a name="93"><span class="lineNum">      93 </span>            : </a>
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span><span class="lineCov">          4 : static LP e_inverse (XY xy, PJ *P) {          /* Ellipsoidal, inverse */</span>
+<span class="lineNum">      96 </span><span class="lineCov">          4 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">      97 </span><span class="lineCov">          4 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">      98 </span>            :     double theta, dr, S, dif;
+<span class="lineNum">      99 </span>            :     int i;
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span><span class="lineCov">          4 :     xy.x /= P-&gt;k0;</span>
+<span class="lineNum">     102 </span><span class="lineCov">          4 :     xy.y /= P-&gt;k0;</span>
+<span class="lineNum">     103 </span><span class="lineCov">          4 :     theta = atan2(xy.x , Q-&gt;r0 - xy.y);</span>
+<span class="lineNum">     104 </span><span class="lineCov">          4 :     dr = xy.y - xy.x * tan(0.5 * theta);</span>
+<span class="lineNum">     105 </span><span class="lineCov">          4 :     lp.lam = theta / Q-&gt;l;</span>
+<span class="lineNum">     106 </span><span class="lineCov">          4 :     S = dr;</span>
+<span class="lineNum">     107 </span><span class="lineCov">          4 :     for (i = MAX_ITER; i ; --i) {</span>
+<span class="lineNum">     108 </span><span class="lineCov">          4 :         S -= (dif = (fS(S, Q-&gt;C) - dr) / fSp(S, Q-&gt;C));</span>
+<span class="lineNum">     109 </span><span class="lineCov">          4 :         if (fabs(dif) &lt; DEL_TOL) break;</span>
+<span class="lineNum">     110 </span>            :     }
+<span class="lineNum">     111 </span><span class="lineCov">          4 :     if (!i) {</span>
+<span class="lineNum">     112 </span><span class="lineNoCov">          0 :         proj_errno_set(P, PJD_ERR_TOLERANCE_CONDITION);</span>
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 :         return lp;</span>
+<span class="lineNum">     114 </span>            :     }
+<span class="lineNum">     115 </span><span class="lineCov">          4 :     lp.phi = pj_inv_mlfn(P-&gt;ctx, S + Q-&gt;M0, P-&gt;es, Q-&gt;en);</span>
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span><span class="lineCov">          4 :     return lp;</span>
+<span class="lineNum">     118 </span>            : }
+<a name="119"><span class="lineNum">     119 </span>            : </a>
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span><span class="lineCov">          1 : static void *destructor (PJ *P, int errlev) {</span>
+<span class="lineNum">     122 </span><span class="lineCov">          1 :     if (0==P)</span>
+<span class="lineNum">     123 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     124 </span>            : 
+<span class="lineNum">     125 </span><span class="lineCov">          1 :     if (0==P-&gt;opaque)</span>
+<span class="lineNum">     126 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, errlev);</span>
+<span class="lineNum">     127 </span>            : 
+<span class="lineNum">     128 </span><span class="lineCov">          1 :     pj_dealloc (P-&gt;opaque-&gt;en);</span>
+<span class="lineNum">     129 </span><span class="lineCov">          1 :     return pj_default_destructor (P, errlev);</span>
+<span class="lineNum">     130 </span>            : }
+<a name="131"><span class="lineNum">     131 </span>            : </a>
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span><span class="lineCov">          3 : PJ *PROJECTION(lcca) {</span>
+<span class="lineNum">     134 </span>            :     double s2p0, N0, R0, tan0;
+<span class="lineNum">     135 </span><span class="lineCov">          1 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     136 </span><span class="lineCov">          1 :     if (0==Q)</span>
+<span class="lineNum">     137 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">     138 </span><span class="lineCov">          1 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span><span class="lineCov">          1 :     (Q-&gt;en = pj_enfn(P-&gt;es));</span>
+<span class="lineNum">     141 </span><span class="lineCov">          1 :     if (!Q-&gt;en)</span>
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span><span class="lineCov">          1 :     if (P-&gt;phi0 == 0.) {</span>
+<span class="lineNum">     145 </span><span class="lineNoCov">          0 :         return destructor(P, PJD_ERR_LAT_0_IS_ZERO);</span>
+<span class="lineNum">     146 </span>            :     }
+<span class="lineNum">     147 </span><span class="lineCov">          1 :     Q-&gt;l = sin(P-&gt;phi0);</span>
+<span class="lineNum">     148 </span><span class="lineCov">          1 :     Q-&gt;M0 = pj_mlfn(P-&gt;phi0, Q-&gt;l, cos(P-&gt;phi0), Q-&gt;en);</span>
+<span class="lineNum">     149 </span><span class="lineCov">          1 :     s2p0 = Q-&gt;l * Q-&gt;l;</span>
+<span class="lineNum">     150 </span><span class="lineCov">          1 :     R0 = 1. / (1. - P-&gt;es * s2p0);</span>
+<span class="lineNum">     151 </span><span class="lineCov">          1 :     N0 = sqrt(R0);</span>
+<span class="lineNum">     152 </span><span class="lineCov">          1 :     R0 *= P-&gt;one_es * N0;</span>
+<span class="lineNum">     153 </span><span class="lineCov">          1 :     tan0 = tan(P-&gt;phi0);</span>
+<span class="lineNum">     154 </span><span class="lineCov">          1 :     Q-&gt;r0 = N0 / tan0;</span>
+<span class="lineNum">     155 </span><span class="lineCov">          1 :     Q-&gt;C = 1. / (6. * R0 * N0);</span>
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span><span class="lineCov">          1 :     P-&gt;inv = e_inverse;</span>
+<span class="lineNum">     158 </span><span class="lineCov">          1 :     P-&gt;fwd = e_forward;</span>
+<span class="lineNum">     159 </span><span class="lineCov">          1 :     P-&gt;destructor = destructor;</span>
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span><span class="lineCov">          1 :     return P;</span>
+<span class="lineNum">     162 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

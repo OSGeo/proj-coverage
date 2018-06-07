@@ -1,0 +1,315 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/pj_malloc.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - pj_malloc.c<span style="font-size: 80%;"> (source / <a href="pj_malloc.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">53</td>
+            <td class="headerCovTableEntry">55</td>
+            <td class="headerCovTableEntryHi">96.4 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /******************************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Project:  PROJ.4
+<span class="lineNum">       3 </span>            :  * Purpose:  Memory management for proj.4.
+<span class="lineNum">       4 </span>            :  *           This version includes an implementation of generic destructors,
+<span class="lineNum">       5 </span>            :  *           for memory deallocation for the large majority of PJ-objects
+<span class="lineNum">       6 </span>            :  *           that do not allocate anything else than the PJ-object itself,
+<span class="lineNum">       7 </span>            :  *           and its associated opaque object - i.e. no additional malloc'ed
+<span class="lineNum">       8 </span>            :  *           memory inside the opaque object.
+<span class="lineNum">       9 </span>            :  *
+<span class="lineNum">      10 </span>            :  * Author:   Gerald I. Evenden (Original proj.4 author),
+<span class="lineNum">      11 </span>            :  *           Frank Warmerdam   (2000)  pj_malloc?
+<span class="lineNum">      12 </span>            :  *           Thomas Knudsen    (2016) - freeup/dealloc parts
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  ******************************************************************************
+<span class="lineNum">      15 </span>            :  * Copyright (c) 2000, Frank Warmerdam
+<span class="lineNum">      16 </span>            :  * Copyright (c) 2016, Thomas Knudsen / SDFE
+<span class="lineNum">      17 </span>            :  *
+<span class="lineNum">      18 </span>            :  * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      19 </span>            :  * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      20 </span>            :  * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      21 </span>            :  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      22 </span>            :  * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      23 </span>            :  * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      24 </span>            :  *
+<span class="lineNum">      25 </span>            :  * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      26 </span>            :  * in all copies or substantial portions of the Software.
+<span class="lineNum">      27 </span>            :  *
+<span class="lineNum">      28 </span>            :  * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      29 </span>            :  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      30 </span>            :  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      31 </span>            :  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      32 </span>            :  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      33 </span>            :  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      34 </span>            :  * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      35 </span>            :  *****************************************************************************/
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            : /* allocate and deallocate memory */
+<span class="lineNum">      38 </span>            : /* These routines are used so that applications can readily replace
+<span class="lineNum">      39 </span>            : ** projection system memory allocation/deallocation call with custom
+<span class="lineNum">      40 </span>            : ** application procedures.  */
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      43 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">      44 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      45 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            : #include &quot;proj.h&quot;
+<span class="lineNum">      48 </span>            : #include &quot;projects.h&quot;
+<a name="49"><span class="lineNum">      49 </span>            : </a>
+<span class="lineNum">      50 </span>            : /**********************************************************************/
+<span class="lineNum">      51 </span><span class="lineCov">      53119 : void *pj_malloc(size_t size) {</span>
+<span class="lineNum">      52 </span>            : /***********************************************************************
+<span class="lineNum">      53 </span>            : Currently, pj_malloc is a hack to solve an errno problem.
+<span class="lineNum">      54 </span>            : The problem is described in more details at
+<span class="lineNum">      55 </span>            : https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=86420.
+<span class="lineNum">      56 </span>            : It seems, that pj_init and similar functions incorrectly
+<span class="lineNum">      57 </span>            : (under debian/glibs-2.3.2) assume that pj_malloc resets
+<span class="lineNum">      58 </span>            : errno after success. pj_malloc tries to mimic this.
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            : NOTE (2017-09-29): The problem described at the bugzilla page
+<span class="lineNum">      61 </span>            : referred to above, is most likely a case of someone not
+<span class="lineNum">      62 </span>            : understanding the proper usage of errno. We should review
+<span class="lineNum">      63 </span>            : whether &quot;the problem is actually a problem&quot; in PROJ.4 code.
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            : Library specific allocators can be useful, and improve
+<span class="lineNum">      66 </span>            : interoperability, if properly used. That is, by making them
+<span class="lineNum">      67 </span>            : run/initialization time switchable, somewhat like the file i/o
+<span class="lineNum">      68 </span>            : interface.
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            : But as things stand, we are more likely to get benefit
+<span class="lineNum">      71 </span>            : from reviewing the code for proper errno usage, which is hard,
+<span class="lineNum">      72 </span>            : due to the presence of context local and global pj_errnos.
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span>            : Probably, these were introduced in order to support incomplete
+<span class="lineNum">      75 </span>            : implementations of thread local errnos at an early phase of the
+<span class="lineNum">      76 </span>            : implementation of multithreading support in PROJ.4).
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            : It is likely too late to get rid of contexts, but we can still
+<span class="lineNum">      79 </span>            : benefit from a better usage of errno.
+<span class="lineNum">      80 </span>            : ***********************************************************************/
+<span class="lineNum">      81 </span><span class="lineCov">      53119 :     int old_errno = errno;</span>
+<span class="lineNum">      82 </span><span class="lineCov">      53119 :     void *res = malloc(size);</span>
+<span class="lineNum">      83 </span><span class="lineCov">      53119 :     if ( res &amp;&amp; !old_errno )</span>
+<span class="lineNum">      84 </span><span class="lineCov">      51886 :             errno = 0;</span>
+<span class="lineNum">      85 </span><span class="lineCov">      53119 :     return res;</span>
+<span class="lineNum">      86 </span>            : }
+<span class="lineNum">      87 </span>            : 
+<a name="88"><span class="lineNum">      88 </span>            : </a>
+<span class="lineNum">      89 </span>            : /**********************************************************************/
+<span class="lineNum">      90 </span><span class="lineCov">      17890 : void *pj_calloc (size_t n, size_t size) {</span>
+<span class="lineNum">      91 </span>            : /***********************************************************************
+<span class="lineNum">      92 </span>            : pj_calloc is the pj-equivalent of calloc().
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            : It allocates space for an array of &lt;n&gt; elements of size &lt;size&gt;.
+<span class="lineNum">      95 </span>            : The array is initialized to zeros.
+<span class="lineNum">      96 </span>            : ***********************************************************************/
+<span class="lineNum">      97 </span><span class="lineCov">      17890 :     void *res = pj_malloc (n*size);</span>
+<span class="lineNum">      98 </span><span class="lineCov">      17890 :     if (0==res)</span>
+<span class="lineNum">      99 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     100 </span><span class="lineCov">      17890 :     memset (res, 0, n*size);</span>
+<span class="lineNum">     101 </span><span class="lineCov">      17890 :     return res;</span>
+<span class="lineNum">     102 </span>            : }
+<span class="lineNum">     103 </span>            : 
+<a name="104"><span class="lineNum">     104 </span>            : </a>
+<span class="lineNum">     105 </span>            : /**********************************************************************/
+<span class="lineNum">     106 </span><span class="lineCov">      41243 : void pj_dalloc(void *ptr) {</span>
+<span class="lineNum">     107 </span>            : /**********************************************************************/
+<span class="lineNum">     108 </span><span class="lineCov">      41243 :     free(ptr);</span>
+<span class="lineNum">     109 </span><span class="lineCov">      41243 : }</span>
+<span class="lineNum">     110 </span>            : 
+<a name="111"><span class="lineNum">     111 </span>            : </a>
+<span class="lineNum">     112 </span>            : /**********************************************************************/
+<span class="lineNum">     113 </span><span class="lineCov">      48567 : void *pj_dealloc (void *ptr) {</span>
+<span class="lineNum">     114 </span>            : /***********************************************************************
+<span class="lineNum">     115 </span>            : pj_dealloc supports the common use case of &quot;clean up and return a null
+<span class="lineNum">     116 </span>            : pointer&quot; to signal an error in a multi level allocation:
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span>            :     struct foo { int bar; int *baz; };
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span>            :     struct foo *p = pj_calloc (1, sizeof (struct foo));
+<span class="lineNum">     121 </span>            :     if (0==p)
+<span class="lineNum">     122 </span>            :         return 0;
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span>            :     p-&gt;baz = pj_calloc (10, sizeof(int));
+<span class="lineNum">     125 </span>            :     if (0==p-&gt;baz)
+<span class="lineNum">     126 </span>            :         return pj_dealloc (p); // clean up + signal error by 0-return
+<span class="lineNum">     127 </span>            : 
+<span class="lineNum">     128 </span>            :     return p;  // success
+<span class="lineNum">     129 </span>            : 
+<span class="lineNum">     130 </span>            : ***********************************************************************/
+<span class="lineNum">     131 </span><span class="lineCov">      48567 :     if (0==ptr)</span>
+<span class="lineNum">     132 </span><span class="lineCov">      10082 :         return 0;</span>
+<span class="lineNum">     133 </span><span class="lineCov">      38485 :     pj_dalloc (ptr);</span>
+<span class="lineNum">     134 </span><span class="lineCov">      38485 :     return 0;</span>
+<span class="lineNum">     135 </span>            : }
+<a name="136"><span class="lineNum">     136 </span>            : </a>
+<span class="lineNum">     137 </span>            : /**********************************************************************/
+<span class="lineNum">     138 </span><span class="lineCov">        220 : char *pj_strdup(const char *str)</span>
+<span class="lineNum">     139 </span>            : /**********************************************************************/
+<span class="lineNum">     140 </span>            : {
+<span class="lineNum">     141 </span><span class="lineCov">        220 :     size_t len = strlen(str) + 1;</span>
+<span class="lineNum">     142 </span><span class="lineCov">        220 :     char *dup = pj_malloc(len);</span>
+<span class="lineNum">     143 </span><span class="lineCov">        220 :     if (dup)</span>
+<span class="lineNum">     144 </span><span class="lineCov">        220 :         memcpy(dup, str, len);</span>
+<span class="lineNum">     145 </span><span class="lineCov">        220 :     return dup;</span>
+<span class="lineNum">     146 </span>            : }
+<span class="lineNum">     147 </span>            : 
+<a name="148"><span class="lineNum">     148 </span>            : </a>
+<span class="lineNum">     149 </span>            : /*****************************************************************************/
+<span class="lineNum">     150 </span><span class="lineCov">       3048 : void *pj_dealloc_params (PJ_CONTEXT *ctx, paralist *start, int errlev) {</span>
+<span class="lineNum">     151 </span>            : /*****************************************************************************
+<span class="lineNum">     152 </span>            :     Companion to pj_default_destructor (below). Deallocates a linked list
+<span class="lineNum">     153 </span>            :     of &quot;+proj=xxx&quot; initialization parameters.
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span>            :     Also called from pj_init_ctx when encountering errors before the PJ
+<span class="lineNum">     156 </span>            :     proper is allocated.
+<span class="lineNum">     157 </span>            : ******************************************************************************/
+<span class="lineNum">     158 </span>            :     paralist *t, *n;
+<span class="lineNum">     159 </span><span class="lineCov">      23549 :     for (t = start; t; t = n) {</span>
+<span class="lineNum">     160 </span><span class="lineCov">      20501 :         n = t-&gt;next;</span>
+<span class="lineNum">     161 </span><span class="lineCov">      20501 :         pj_dealloc(t);</span>
+<span class="lineNum">     162 </span>            :     }
+<span class="lineNum">     163 </span><span class="lineCov">       3048 :     pj_ctx_set_errno (ctx, errlev);</span>
+<span class="lineNum">     164 </span><span class="lineCov">       3048 :     return (void *) 0;</span>
+<span class="lineNum">     165 </span>            : }
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span>            : /************************************************************************/
+<span class="lineNum">     171 </span>            : /*                              pj_free()                               */
+<span class="lineNum">     172 </span>            : /*                                                                      */
+<span class="lineNum">     173 </span>            : /*      This is the application callable entry point for destroying     */
+<span class="lineNum">     174 </span>            : /*      a projection definition.  It does work generic to all           */
+<span class="lineNum">     175 </span>            : /*      projection types, and then calls the projection specific        */
+<span class="lineNum">     176 </span>            : /*      free function, P-&gt;destructor(), to do local work.               */
+<span class="lineNum">     177 </span>            : /*      In most cases P-&gt;destructor()==pj_default_destructor.           */
+<a name="178"><span class="lineNum">     178 </span>            : /************************************************************************/</a>
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span><span class="lineCov">      15089 : void pj_free(PJ *P) {</span>
+<span class="lineNum">     181 </span><span class="lineCov">      15089 :     if (0==P)</span>
+<span class="lineNum">     182 </span><span class="lineCov">      12983 :         return;</span>
+<span class="lineNum">     183 </span>            :     /* free projection parameters - all the hard work is done by */
+<span class="lineNum">     184 </span>            :     /* pj_default_destructor, which is supposed */
+<span class="lineNum">     185 </span>            :     /* to be called as the last step of the local destructor     */
+<span class="lineNum">     186 </span>            :     /* pointed to by P-&gt;destructor. In most cases,               */
+<span class="lineNum">     187 </span>            :     /* pj_default_destructor actually *is* what is pointed to    */
+<span class="lineNum">     188 </span><span class="lineCov">       2106 :     P-&gt;destructor (P, proj_errno(P));</span>
+<span class="lineNum">     189 </span>            : }
+<span class="lineNum">     190 </span>            : 
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span>            : 
+<a name="193"><span class="lineNum">     193 </span>            : </a>
+<span class="lineNum">     194 </span>            : /*****************************************************************************/
+<span class="lineNum">     195 </span><span class="lineCov">       2179 : void *pj_default_destructor (PJ *P, int errlev) {   /* Destructor */</span>
+<span class="lineNum">     196 </span>            : /*****************************************************************************
+<span class="lineNum">     197 </span>            :     Does memory deallocation for &quot;plain&quot; PJ objects, i.e. that vast majority
+<span class="lineNum">     198 </span>            :     of PJs where the opaque object does not contain any additionally
+<span class="lineNum">     199 </span>            :     allocated memory below the P-&gt;opaque level.
+<span class="lineNum">     200 </span>            : ******************************************************************************/
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            :     /* Even if P==0, we set the errlev on pj_error and the default context   */
+<span class="lineNum">     203 </span>            :     /* Note that both, in the multithreaded case, may then contain undefined */
+<span class="lineNum">     204 </span>            :     /* values. This is expected behaviour. For MT have one ctx per thread    */
+<span class="lineNum">     205 </span><span class="lineCov">       2179 :     if (0!=errlev)</span>
+<span class="lineNum">     206 </span><span class="lineCov">         73 :         pj_ctx_set_errno (pj_get_ctx(P), errlev);</span>
+<span class="lineNum">     207 </span>            : 
+<span class="lineNum">     208 </span><span class="lineCov">       2179 :     if (0==P)</span>
+<span class="lineNum">     209 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     210 </span>            : 
+<span class="lineNum">     211 </span>            :     /* free grid lists */
+<span class="lineNum">     212 </span><span class="lineCov">       2179 :     pj_dealloc( P-&gt;gridlist );</span>
+<span class="lineNum">     213 </span><span class="lineCov">       2179 :     pj_dealloc( P-&gt;vgridlist_geoid );</span>
+<span class="lineNum">     214 </span><span class="lineCov">       2179 :     pj_dealloc( P-&gt;catalog_name );</span>
+<span class="lineNum">     215 </span>            : 
+<span class="lineNum">     216 </span>            :     /* We used to call pj_dalloc( P-&gt;catalog ), but this will leak */
+<span class="lineNum">     217 </span>            :     /* memory. The safe way to clear catalog and grid is to call */
+<span class="lineNum">     218 </span>            :     /* pj_gc_unloadall(pj_get_default_ctx()); and pj_deallocate_grids(); */
+<span class="lineNum">     219 </span>            :     /* TODO: we should probably have a public pj_cleanup() method to do all */
+<span class="lineNum">     220 </span>            :     /* that */
+<span class="lineNum">     221 </span>            : 
+<span class="lineNum">     222 </span>            :     /* free the interface to Charles Karney's geodesic library */
+<span class="lineNum">     223 </span><span class="lineCov">       2179 :     pj_dealloc( P-&gt;geod );</span>
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span>            :     /* free parameter list elements */
+<span class="lineNum">     226 </span><span class="lineCov">       2179 :     pj_dealloc_params (pj_get_ctx(P), P-&gt;params, errlev);</span>
+<span class="lineNum">     227 </span><span class="lineCov">       2179 :     pj_dealloc (P-&gt;def_full);</span>
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span>            :     /* free the cs2cs emulation elements */
+<span class="lineNum">     230 </span><span class="lineCov">       2179 :     pj_free (P-&gt;axisswap);</span>
+<span class="lineNum">     231 </span><span class="lineCov">       2179 :     pj_free (P-&gt;helmert);</span>
+<span class="lineNum">     232 </span><span class="lineCov">       2179 :     pj_free (P-&gt;cart);</span>
+<span class="lineNum">     233 </span><span class="lineCov">       2179 :     pj_free (P-&gt;cart_wgs84);</span>
+<span class="lineNum">     234 </span><span class="lineCov">       2179 :     pj_free (P-&gt;hgridshift);</span>
+<span class="lineNum">     235 </span><span class="lineCov">       2179 :     pj_free (P-&gt;vgridshift);</span>
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span><span class="lineCov">       2179 :     pj_dealloc (P-&gt;opaque);</span>
+<span class="lineNum">     238 </span><span class="lineCov">       2179 :     return pj_dealloc(P);</span>
+<span class="lineNum">     239 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

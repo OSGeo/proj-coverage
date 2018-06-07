@@ -1,0 +1,521 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/pj_internal.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - pj_internal.c<span style="font-size: 80%;"> (source / <a href="pj_internal.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">155</td>
+            <td class="headerCovTableEntry">187</td>
+            <td class="headerCovTableEntryMed">82.9 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">17</td>
+            <td class="headerCovTableEntry">19</td>
+            <td class="headerCovTableEntryMed">89.5 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /******************************************************************************</a>
+<span class="lineNum">       2 </span>            :  * Project:  PROJ.4
+<span class="lineNum">       3 </span>            :  * Purpose:  This is primarily material originating from pj_obs_api.c
+<span class="lineNum">       4 </span>            :  *           (now proj_4D_api.c), that does not fit into the API
+<span class="lineNum">       5 </span>            :  *           category. Hence this pile of tubings and fittings for
+<span class="lineNum">       6 </span>            :  *           PROJ.4 internal plumbing.
+<span class="lineNum">       7 </span>            :  *
+<span class="lineNum">       8 </span>            :  * Author:   Thomas Knudsen,  thokn@sdfe.dk,  2017-07-05
+<span class="lineNum">       9 </span>            :  *
+<span class="lineNum">      10 </span>            :  ******************************************************************************
+<span class="lineNum">      11 </span>            :  * Copyright (c) 2016, 2017, 2018, Thomas Knudsen/SDFE
+<span class="lineNum">      12 </span>            :  *
+<span class="lineNum">      13 </span>            :  * Permission is hereby granted, free of charge, to any person obtaining a
+<span class="lineNum">      14 </span>            :  * copy of this software and associated documentation files (the &quot;Software&quot;),
+<span class="lineNum">      15 </span>            :  * to deal in the Software without restriction, including without limitation
+<span class="lineNum">      16 </span>            :  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+<span class="lineNum">      17 </span>            :  * and/or sell copies of the Software, and to permit persons to whom the
+<span class="lineNum">      18 </span>            :  * Software is furnished to do so, subject to the following conditions:
+<span class="lineNum">      19 </span>            :  *
+<span class="lineNum">      20 </span>            :  * The above copyright notice and this permission notice shall be included
+<span class="lineNum">      21 </span>            :  * in all copies or substantial portions of the Software.
+<span class="lineNum">      22 </span>            :  *
+<span class="lineNum">      23 </span>            :  * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+<span class="lineNum">      24 </span>            :  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+<span class="lineNum">      25 </span>            :  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+<span class="lineNum">      26 </span>            :  * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+<span class="lineNum">      27 </span>            :  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+<span class="lineNum">      28 </span>            :  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+<span class="lineNum">      29 </span>            :  * DEALINGS IN THE SOFTWARE.
+<span class="lineNum">      30 </span>            :  *****************************************************************************/
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            : #include &lt;ctype.h&gt;
+<span class="lineNum">      33 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      34 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      35 </span>            : #include &lt;stdarg.h&gt;
+<span class="lineNum">      36 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">      37 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      38 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            : #include &quot;geodesic.h&quot;
+<span class="lineNum">      41 </span>            : #include &quot;proj_internal.h&quot;
+<span class="lineNum">      42 </span>            : #include &quot;projects.h&quot;
+<a name="43"><span class="lineNum">      43 </span>            : </a>
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span><span class="lineCov">       4626 : enum pj_io_units pj_left (PJ *P) {</span>
+<span class="lineNum">      46 </span><span class="lineCov">       4626 :     enum pj_io_units u = P-&gt;inverted? P-&gt;right: P-&gt;left;</span>
+<span class="lineNum">      47 </span><span class="lineCov">       4626 :     if (u==PJ_IO_UNITS_CLASSIC)</span>
+<span class="lineNum">      48 </span><span class="lineCov">         26 :         return PJ_IO_UNITS_PROJECTED;</span>
+<span class="lineNum">      49 </span><span class="lineCov">       4600 :     return u;</span>
+<a name="50"><span class="lineNum">      50 </span>            : }</a>
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span><span class="lineCov">       5625 : enum pj_io_units pj_right (PJ *P) {</span>
+<span class="lineNum">      53 </span><span class="lineCov">       5625 :     enum pj_io_units u = P-&gt;inverted? P-&gt;left: P-&gt;right;</span>
+<span class="lineNum">      54 </span><span class="lineCov">       5625 :     if (u==PJ_IO_UNITS_CLASSIC)</span>
+<span class="lineNum">      55 </span><span class="lineCov">       3178 :         return PJ_IO_UNITS_PROJECTED;</span>
+<span class="lineNum">      56 </span><span class="lineCov">       2447 :     return u;</span>
+<span class="lineNum">      57 </span>            : }
+<span class="lineNum">      58 </span>            : 
+<a name="59"><span class="lineNum">      59 </span>            : </a>
+<span class="lineNum">      60 </span>            : /* Work around non-constness of MSVC HUGE_VAL by providing functions rather than constants */
+<span class="lineNum">      61 </span><span class="lineCov">      11806 : PJ_COORD proj_coord_error (void) {</span>
+<span class="lineNum">      62 </span>            :     PJ_COORD c;
+<span class="lineNum">      63 </span><span class="lineCov">      11806 :     c.v[0] = c.v[1] = c.v[2] = c.v[3] = HUGE_VAL;</span>
+<span class="lineNum">      64 </span><span class="lineCov">      11806 :     return c;</span>
+<span class="lineNum">      65 </span>            : }
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : 
+<a name="68"><span class="lineNum">      68 </span>            : </a>
+<span class="lineNum">      69 </span>            : /**************************************************************************************/
+<span class="lineNum">      70 </span><span class="lineCov">       3386 : PJ_COORD pj_approx_2D_trans (PJ *P, PJ_DIRECTION direction, PJ_COORD coo) {</span>
+<span class="lineNum">      71 </span>            : /***************************************************************************************
+<span class="lineNum">      72 </span>            : Behave mostly as proj_trans, but attempt to use 2D interfaces only.
+<span class="lineNum">      73 </span>            : Used in gie.c, to enforce testing 2D code, and by PJ_pipeline.c to implement
+<span class="lineNum">      74 </span>            : chained calls starting out with a call to its 2D interface.
+<span class="lineNum">      75 </span>            : ***************************************************************************************/
+<span class="lineNum">      76 </span><span class="lineCov">       3386 :     if (0==P)</span>
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :         return coo;</span>
+<span class="lineNum">      78 </span><span class="lineCov">       3386 :     if (P-&gt;inverted)</span>
+<span class="lineNum">      79 </span><span class="lineCov">        620 :         direction = -direction;</span>
+<span class="lineNum">      80 </span><span class="lineCov">       3386 :     switch (direction) {</span>
+<span class="lineNum">      81 </span>            :         case PJ_FWD:
+<span class="lineNum">      82 </span><span class="lineCov">       2133 :             coo.xy = pj_fwd (coo.lp, P);</span>
+<span class="lineNum">      83 </span><span class="lineCov">       2133 :             return coo;</span>
+<span class="lineNum">      84 </span>            :         case PJ_INV:
+<span class="lineNum">      85 </span><span class="lineCov">       1253 :             coo.lp = pj_inv (coo.xy, P);</span>
+<span class="lineNum">      86 </span><span class="lineCov">       1253 :             return coo;</span>
+<span class="lineNum">      87 </span>            :         case PJ_IDENT:
+<span class="lineNum">      88 </span><span class="lineNoCov">          0 :             return coo;</span>
+<span class="lineNum">      89 </span>            :         default:
+<span class="lineNum">      90 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">      91 </span>            :     }
+<span class="lineNum">      92 </span><span class="lineNoCov">          0 :     proj_errno_set (P, EINVAL);</span>
+<span class="lineNum">      93 </span><span class="lineNoCov">          0 :     return proj_coord_error ();</span>
+<span class="lineNum">      94 </span>            : }
+<span class="lineNum">      95 </span>            : 
+<a name="96"><span class="lineNum">      96 </span>            : </a>
+<span class="lineNum">      97 </span>            : /**************************************************************************************/
+<span class="lineNum">      98 </span><span class="lineCov">        238 : PJ_COORD pj_approx_3D_trans (PJ *P, PJ_DIRECTION direction, PJ_COORD coo) {</span>
+<span class="lineNum">      99 </span>            : /***************************************************************************************
+<span class="lineNum">     100 </span>            : Companion to pj_approx_2D_trans.
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : Behave mostly as proj_trans, but attempt to use 3D interfaces only.
+<span class="lineNum">     103 </span>            : Used in gie.c, to enforce testing 3D code, and by PJ_pipeline.c to implement
+<span class="lineNum">     104 </span>            : chained calls starting out with a call to its 3D interface.
+<span class="lineNum">     105 </span>            : ***************************************************************************************/
+<span class="lineNum">     106 </span><span class="lineCov">        238 :     if (0==P)</span>
+<span class="lineNum">     107 </span><span class="lineNoCov">          0 :         return coo;</span>
+<span class="lineNum">     108 </span><span class="lineCov">        238 :     if (P-&gt;inverted)</span>
+<span class="lineNum">     109 </span><span class="lineCov">         68 :         direction = -direction;</span>
+<span class="lineNum">     110 </span><span class="lineCov">        238 :     switch (direction) {</span>
+<span class="lineNum">     111 </span>            :         case PJ_FWD:
+<span class="lineNum">     112 </span><span class="lineCov">        162 :             coo.xyz = pj_fwd3d (coo.lpz, P);</span>
+<span class="lineNum">     113 </span><span class="lineCov">        162 :             return coo;</span>
+<span class="lineNum">     114 </span>            :         case PJ_INV:
+<span class="lineNum">     115 </span><span class="lineCov">         76 :             coo.lpz = pj_inv3d (coo.xyz, P);</span>
+<span class="lineNum">     116 </span><span class="lineCov">         76 :             return coo;</span>
+<span class="lineNum">     117 </span>            :         case PJ_IDENT:
+<span class="lineNum">     118 </span><span class="lineNoCov">          0 :             return coo;</span>
+<span class="lineNum">     119 </span>            :         default:
+<span class="lineNum">     120 </span><span class="lineNoCov">          0 :             break;</span>
+<span class="lineNum">     121 </span>            :     }
+<span class="lineNum">     122 </span><span class="lineNoCov">          0 :     proj_errno_set (P, EINVAL);</span>
+<span class="lineNum">     123 </span><span class="lineNoCov">          0 :     return proj_coord_error ();</span>
+<span class="lineNum">     124 </span>            : }
+<a name="125"><span class="lineNum">     125 </span>            : </a>
+<span class="lineNum">     126 </span>            : /**************************************************************************************/
+<span class="lineNum">     127 </span><span class="lineCov">        163 : int pj_has_inverse(PJ *P) {</span>
+<span class="lineNum">     128 </span>            : /***************************************************************************************
+<span class="lineNum">     129 </span>            : Check if a a PJ has an inverse.
+<span class="lineNum">     130 </span>            : ***************************************************************************************/
+<span class="lineNum">     131 </span><span class="lineCov">        414 :     return ( (P-&gt;inverted &amp;&amp; (P-&gt;fwd || P-&gt;fwd3d || P-&gt;fwd4d) ) ||</span>
+<span class="lineNum">     132 </span><span class="lineCov">         96 :              ( P-&gt;inv || P-&gt;inv3d || P-&gt;inv4d) );</span>
+<span class="lineNum">     133 </span>            : }
+<span class="lineNum">     134 </span>            : 
+<a name="135"><span class="lineNum">     135 </span>            : </a>
+<span class="lineNum">     136 </span>            : /* Move P to a new context - or to the default context if 0 is specified */
+<span class="lineNum">     137 </span><span class="lineCov">          2 : void proj_context_set (PJ *P, PJ_CONTEXT *ctx) {</span>
+<span class="lineNum">     138 </span><span class="lineCov">          2 :     if (0==ctx)</span>
+<span class="lineNum">     139 </span><span class="lineCov">          1 :         ctx = pj_get_default_ctx ();</span>
+<span class="lineNum">     140 </span><span class="lineCov">          2 :     pj_set_ctx (P, ctx);</span>
+<span class="lineNum">     141 </span><span class="lineCov">          2 : }</span>
+<a name="142"><span class="lineNum">     142 </span>            : </a>
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span><span class="lineNoCov">          0 : void proj_context_inherit (PJ *parent, PJ *child) {</span>
+<span class="lineNum">     145 </span><span class="lineNoCov">          0 :     if (0==parent)</span>
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :         pj_set_ctx (child, pj_get_default_ctx());</span>
+<span class="lineNum">     147 </span>            :     else
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :         pj_set_ctx (child, pj_get_ctx(parent));</span>
+<span class="lineNum">     149 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span>            : 
+<a name="152"><span class="lineNum">     152 </span>            : </a>
+<span class="lineNum">     153 </span>            : /*****************************************************************************/
+<span class="lineNum">     154 </span><span class="lineCov">     589798 : char *pj_chomp (char *c) {</span>
+<span class="lineNum">     155 </span>            : /******************************************************************************
+<span class="lineNum">     156 </span>            : Strip pre- and postfix whitespace. Inline comments (indicated by '#') are
+<span class="lineNum">     157 </span>            : considered whitespace.
+<span class="lineNum">     158 </span>            : ******************************************************************************/
+<span class="lineNum">     159 </span>            :     size_t i, n;
+<span class="lineNum">     160 </span>            :     char *comment;
+<span class="lineNum">     161 </span><span class="lineCov">     589798 :     char *start = c;</span>
+<span class="lineNum">     162 </span>            : 
+<span class="lineNum">     163 </span><span class="lineCov">     589798 :     if (0==c)</span>
+<span class="lineNum">     164 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span><span class="lineCov">     589798 :     comment = strchr (c, '#');</span>
+<span class="lineNum">     167 </span><span class="lineCov">     589798 :     if (comment)</span>
+<span class="lineNum">     168 </span><span class="lineCov">     157952 :         *comment = 0;</span>
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span><span class="lineCov">     589798 :     n = strlen (c);</span>
+<span class="lineNum">     171 </span><span class="lineCov">     589798 :     if (0==n)</span>
+<span class="lineNum">     172 </span><span class="lineCov">     156213 :         return c;</span>
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span>            :     /* Eliminate postfix whitespace */
+<span class="lineNum">     175 </span><span class="lineCov">     797031 :     for (i = n - 1;  (i &gt; 0) &amp;&amp; (isspace (c[i]) || ';'==c[i]);  i--)</span>
+<span class="lineNum">     176 </span><span class="lineCov">     363446 :         c[i] = 0;</span>
+<span class="lineNum">     177 </span>            : 
+<span class="lineNum">     178 </span>            :     /* Find start of non-whitespace */
+<span class="lineNum">     179 </span><span class="lineCov">     961756 :     while (0 != *start  &amp;&amp;  (';'==*start  ||  isspace (*start)))</span>
+<span class="lineNum">     180 </span><span class="lineCov">      94586 :         start++;</span>
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span><span class="lineCov">     433585 :     n = strlen (start);</span>
+<span class="lineNum">     183 </span><span class="lineCov">     433585 :     if (0==n) {</span>
+<span class="lineNum">     184 </span><span class="lineCov">      64865 :         c[0] = 0;</span>
+<span class="lineNum">     185 </span><span class="lineCov">      64865 :         return c;</span>
+<span class="lineNum">     186 </span>            :     }
+<span class="lineNum">     187 </span>            : 
+<span class="lineNum">     188 </span><span class="lineCov">     368720 :     memmove (c, start, n + 1);</span>
+<span class="lineNum">     189 </span><span class="lineCov">     368720 :     return c;</span>
+<span class="lineNum">     190 </span>            : }
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span>            : 
+<a name="193"><span class="lineNum">     193 </span>            : </a>
+<span class="lineNum">     194 </span>            : /*****************************************************************************/
+<span class="lineNum">     195 </span><span class="lineCov">       9629 : char *pj_shrink (char *c) {</span>
+<span class="lineNum">     196 </span>            : /******************************************************************************
+<span class="lineNum">     197 </span>            : Collapse repeated whitespace. Remove '+' and ';'. Make ',' and '=' greedy,
+<span class="lineNum">     198 </span>            : consuming their surrounding whitespace.
+<span class="lineNum">     199 </span>            : ******************************************************************************/
+<span class="lineNum">     200 </span>            :     size_t i, j, n;
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            :     /* Flag showing that a whitespace (ws) has been written after last non-ws */
+<span class="lineNum">     203 </span>            :     size_t ws;
+<span class="lineNum">     204 </span>            : 
+<span class="lineNum">     205 </span><span class="lineCov">       9629 :     if (0==c)</span>
+<span class="lineNum">     206 </span><span class="lineNoCov">          0 :        return 0;</span>
+<span class="lineNum">     207 </span>            : 
+<span class="lineNum">     208 </span><span class="lineCov">       9629 :     pj_chomp (c);</span>
+<span class="lineNum">     209 </span><span class="lineCov">       9629 :     n = strlen (c);</span>
+<span class="lineNum">     210 </span>            : 
+<span class="lineNum">     211 </span>            :     /* First collapse repeated whitespace (including +/;) */
+<span class="lineNum">     212 </span><span class="lineCov">       9629 :     i = 0;</span>
+<span class="lineNum">     213 </span><span class="lineCov">       9629 :     ws = 0;</span>
+<span class="lineNum">     214 </span><span class="lineCov">     317536 :     for (j = 0;  j &lt; n;  j++) {</span>
+<span class="lineNum">     215 </span>            : 
+<span class="lineNum">     216 </span>            :         /* Eliminate prefix '+', only if preceded by whitespace */
+<span class="lineNum">     217 </span>            :         /* (i.e. keep it in 1.23e+08) */
+<span class="lineNum">     218 </span><span class="lineCov">     307907 :         if ((i &gt; 0) &amp;&amp; ('+'==c[j]) &amp;&amp; ws)</span>
+<span class="lineNum">     219 </span><span class="lineCov">       3035 :             c[j] = ' ';</span>
+<span class="lineNum">     220 </span><span class="lineCov">     307907 :         if ((i==0) &amp;&amp; ('+'==c[j]))</span>
+<span class="lineNum">     221 </span><span class="lineCov">        495 :             c[j] = ' ';</span>
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span><span class="lineCov">     307907 :         if (isspace (c[j]) || ';'==c[j]) {</span>
+<span class="lineNum">     224 </span><span class="lineCov">      35227 :             if (0==ws &amp;&amp; (i &gt; 0))</span>
+<span class="lineNum">     225 </span><span class="lineCov">      21184 :                 c[i++] = ' ';</span>
+<span class="lineNum">     226 </span><span class="lineCov">      35227 :             ws = 1;</span>
+<span class="lineNum">     227 </span><span class="lineCov">      35227 :             continue;</span>
+<span class="lineNum">     228 </span>            :         }
+<span class="lineNum">     229 </span>            :         else {
+<span class="lineNum">     230 </span><span class="lineCov">     272680 :             ws = 0;</span>
+<span class="lineNum">     231 </span><span class="lineCov">     272680 :             c[i++] = c[j];</span>
+<span class="lineNum">     232 </span>            :         }
+<span class="lineNum">     233 </span>            :     }
+<span class="lineNum">     234 </span><span class="lineCov">       9629 :     c[i] = 0;</span>
+<span class="lineNum">     235 </span><span class="lineCov">       9629 :     n = strlen(c);</span>
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span>            :     /* Then make ',' and '=' greedy */
+<span class="lineNum">     238 </span><span class="lineCov">       9629 :     i = 0;</span>
+<span class="lineNum">     239 </span><span class="lineCov">     303493 :     for (j = 0;  j &lt; n;  j++) {</span>
+<span class="lineNum">     240 </span><span class="lineCov">     293864 :         if (i==0) {</span>
+<span class="lineNum">     241 </span><span class="lineCov">       9626 :             c[i++] = c[j];</span>
+<span class="lineNum">     242 </span><span class="lineCov">       9626 :             continue;</span>
+<span class="lineNum">     243 </span>            :         }
+<span class="lineNum">     244 </span>            : 
+<span class="lineNum">     245 </span>            :         /* Skip space before '='/',' */
+<span class="lineNum">     246 </span><span class="lineCov">     284238 :         if ('='==c[j] || ','==c[j]) {</span>
+<span class="lineNum">     247 </span><span class="lineCov">      15239 :             if (c[i - 1]==' ')</span>
+<span class="lineNum">     248 </span><span class="lineCov">         66 :                c[i - 1] = c[j];</span>
+<span class="lineNum">     249 </span>            :             else
+<span class="lineNum">     250 </span><span class="lineCov">      15173 :                 c[i++] = c[j];</span>
+<span class="lineNum">     251 </span><span class="lineCov">      15239 :             continue;</span>
+<span class="lineNum">     252 </span>            :         }
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span><span class="lineCov">     268999 :         if (' '==c[j] &amp;&amp; ('='==c[i - 1] || ','==c[i - 1]) )</span>
+<span class="lineNum">     255 </span><span class="lineCov">        292 :             continue;</span>
+<span class="lineNum">     256 </span>            : 
+<span class="lineNum">     257 </span><span class="lineCov">     268707 :         c[i++] = c[j];</span>
+<span class="lineNum">     258 </span>            :     }
+<span class="lineNum">     259 </span><span class="lineCov">       9629 :     c[i] = 0;</span>
+<span class="lineNum">     260 </span><span class="lineCov">       9629 :     return c;</span>
+<span class="lineNum">     261 </span>            : }
+<span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span>            : 
+<a name="264"><span class="lineNum">     264 </span>            : </a>
+<span class="lineNum">     265 </span>            : /*****************************************************************************/
+<span class="lineNum">     266 </span><span class="lineCov">        866 : size_t pj_trim_argc (char *args) {</span>
+<span class="lineNum">     267 </span>            : /******************************************************************************
+<span class="lineNum">     268 </span>            : Trim all unnecessary whitespace (and non-essential syntactic tokens) from the
+<span class="lineNum">     269 </span>            : argument string, args, and count its number of elements.
+<span class="lineNum">     270 </span>            : ******************************************************************************/
+<span class="lineNum">     271 </span>            :     size_t i, m, n;
+<span class="lineNum">     272 </span><span class="lineCov">        866 :     pj_shrink (args);</span>
+<span class="lineNum">     273 </span><span class="lineCov">        866 :     n = strlen (args);</span>
+<span class="lineNum">     274 </span><span class="lineCov">        866 :     if (n==0)</span>
+<span class="lineNum">     275 </span><span class="lineCov">          1 :         return 0;</span>
+<span class="lineNum">     276 </span><span class="lineCov">      44719 :     for (i = m = 0;  i &lt; n;  i++) {</span>
+<span class="lineNum">     277 </span><span class="lineCov">      43854 :         if (' '==args[i]) {</span>
+<span class="lineNum">     278 </span><span class="lineCov">       2634 :             args[i] = 0;</span>
+<span class="lineNum">     279 </span><span class="lineCov">       2634 :             m++;</span>
+<span class="lineNum">     280 </span>            :         }
+<span class="lineNum">     281 </span>            :     }
+<span class="lineNum">     282 </span><span class="lineCov">        865 :     return m + 1;</span>
+<span class="lineNum">     283 </span>            : }
+<span class="lineNum">     284 </span>            : 
+<span class="lineNum">     285 </span>            : 
+<a name="286"><span class="lineNum">     286 </span>            : </a>
+<span class="lineNum">     287 </span>            : /*****************************************************************************/
+<span class="lineNum">     288 </span><span class="lineCov">        865 : char **pj_trim_argv (size_t argc, char *args) {</span>
+<span class="lineNum">     289 </span>            : /******************************************************************************
+<span class="lineNum">     290 </span>            : Create an argv-style array from elements placed in the argument string, args.
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            : args is a trimmed string as returned by pj_trim_argc(), and argc is the number
+<span class="lineNum">     293 </span>            : of trimmed strings found (i.e. the return value of pj_trim_args()). Hence,
+<span class="lineNum">     294 </span>            :     int argc    = pj_trim_argc (args);
+<span class="lineNum">     295 </span>            :     char **argv = pj_trim_argv (argc, args);
+<span class="lineNum">     296 </span>            : will produce a classic style (argc, argv) pair from a string of whitespace
+<span class="lineNum">     297 </span>            : separated args. No new memory is allocated for storing the individual args
+<span class="lineNum">     298 </span>            : (they stay in the args string), but for the pointers to the args a new array
+<span class="lineNum">     299 </span>            : is allocated and returned.
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span>            : It is the duty of the caller to free this array.
+<span class="lineNum">     302 </span>            : ******************************************************************************/
+<span class="lineNum">     303 </span>            :     size_t i, j;
+<span class="lineNum">     304 </span>            :     char **argv;
+<span class="lineNum">     305 </span>            : 
+<span class="lineNum">     306 </span><span class="lineCov">        865 :     if (0==args)</span>
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     308 </span><span class="lineCov">        865 :     if (0==argc)</span>
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     310 </span>            : 
+<span class="lineNum">     311 </span>            : 
+<span class="lineNum">     312 </span>            :     /* turn the input string into an array of strings */
+<span class="lineNum">     313 </span><span class="lineCov">        865 :     argv = (char **) calloc (argc, sizeof (char *));</span>
+<span class="lineNum">     314 </span><span class="lineCov">        865 :     if (0==argv)</span>
+<span class="lineNum">     315 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     316 </span><span class="lineCov">        865 :     argv[0] = args;</span>
+<span class="lineNum">     317 </span><span class="lineCov">        865 :     j = 1;</span>
+<span class="lineNum">     318 </span><span class="lineCov">      33142 :     for (i = 0;  ;  i++) {</span>
+<span class="lineNum">     319 </span><span class="lineCov">      33142 :         if (0==args[i]) {</span>
+<span class="lineNum">     320 </span><span class="lineCov">       2634 :             argv[j++] = args + (i + 1);</span>
+<span class="lineNum">     321 </span>            :         }
+<span class="lineNum">     322 </span><span class="lineCov">      33142 :         if (j==argc)</span>
+<span class="lineNum">     323 </span><span class="lineCov">        865 :             break;</span>
+<span class="lineNum">     324 </span><span class="lineCov">      32277 :     }</span>
+<span class="lineNum">     325 </span><span class="lineCov">        865 :     return argv;</span>
+<span class="lineNum">     326 </span>            : }
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span>            : 
+<a name="329"><span class="lineNum">     329 </span>            : </a>
+<span class="lineNum">     330 </span>            : /*****************************************************************************/
+<span class="lineNum">     331 </span><span class="lineCov">        170 : char *pj_make_args (size_t argc, char **argv) {</span>
+<span class="lineNum">     332 </span>            : /******************************************************************************
+<span class="lineNum">     333 </span>            : pj_make_args is the inverse of the pj_trim_argc/pj_trim_argv combo: It
+<span class="lineNum">     334 </span>            : converts free format command line input to something proj_create can consume.
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span>            : Allocates, and returns, an array of char, large enough to hold a whitespace
+<span class="lineNum">     337 </span>            : separated copy of the args in argv. It is the duty of the caller to free this
+<span class="lineNum">     338 </span>            : array.
+<span class="lineNum">     339 </span>            : ******************************************************************************/
+<span class="lineNum">     340 </span>            :     size_t i, n;
+<span class="lineNum">     341 </span>            :     char *p;
+<span class="lineNum">     342 </span>            : 
+<span class="lineNum">     343 </span><span class="lineCov">        617 :     for (i = n = 0;  i &lt; argc;  i++)</span>
+<span class="lineNum">     344 </span><span class="lineCov">        447 :         n += strlen (argv[i]);</span>
+<span class="lineNum">     345 </span>            : 
+<span class="lineNum">     346 </span><span class="lineCov">        170 :     p = pj_calloc (n + argc + 1, sizeof (char));</span>
+<span class="lineNum">     347 </span><span class="lineCov">        170 :     if (0==p)</span>
+<span class="lineNum">     348 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     349 </span><span class="lineCov">        170 :     if (0==argc)</span>
+<span class="lineNum">     350 </span><span class="lineNoCov">          0 :         return p;</span>
+<span class="lineNum">     351 </span>            : 
+<span class="lineNum">     352 </span><span class="lineCov">        617 :     for (i = 0;  i &lt; argc;  i++) {</span>
+<span class="lineNum">     353 </span><span class="lineCov">        447 :         strcat (p, argv[i]);</span>
+<span class="lineNum">     354 </span><span class="lineCov">        447 :         strcat (p, &quot; &quot;);</span>
+<span class="lineNum">     355 </span>            :     }
+<span class="lineNum">     356 </span><span class="lineCov">        170 :     return pj_shrink (p);</span>
+<span class="lineNum">     357 </span>            : }
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span>            : 
+<a name="360"><span class="lineNum">     360 </span>            : </a>
+<span class="lineNum">     361 </span>            : /*****************************************************************************/
+<span class="lineNum">     362 </span><span class="lineCov">       1097 : void proj_context_errno_set (PJ_CONTEXT *ctx, int err) {</span>
+<span class="lineNum">     363 </span>            : /******************************************************************************
+<span class="lineNum">     364 </span>            : Raise an error directly on a context, without going through a PJ belonging
+<span class="lineNum">     365 </span>            : to that context.
+<span class="lineNum">     366 </span>            : ******************************************************************************/
+<span class="lineNum">     367 </span><span class="lineCov">       1097 :     if (0==ctx)</span>
+<span class="lineNum">     368 </span><span class="lineNoCov">          0 :         ctx = pj_get_default_ctx();</span>
+<span class="lineNum">     369 </span><span class="lineCov">       1097 :     pj_ctx_set_errno (ctx, err);</span>
+<span class="lineNum">     370 </span><span class="lineCov">       1097 : }</span>
+<span class="lineNum">     371 </span>            : 
+<span class="lineNum">     372 </span>            : /*  logging  */
+<span class="lineNum">     373 </span>            : 
+<span class="lineNum">     374 </span>            : /* pj_vlog resides in pj_log.c and relates to pj_log as vsprintf relates to sprintf */
+<span class="lineNum">     375 </span>            : void pj_vlog( projCtx ctx, int level, const char *fmt, va_list args );
+<span class="lineNum">     376 </span>            : 
+<a name="377"><span class="lineNum">     377 </span>            : </a>
+<span class="lineNum">     378 </span>            : /***************************************************************************************/
+<span class="lineNum">     379 </span><span class="lineCov">         99 : PJ_LOG_LEVEL proj_log_level (PJ_CONTEXT *ctx, PJ_LOG_LEVEL log_level) {</span>
+<span class="lineNum">     380 </span>            : /****************************************************************************************
+<span class="lineNum">     381 </span>            :    Set logging level 0-3. Higher number means more debug info. 0 turns it off
+<span class="lineNum">     382 </span>            : ****************************************************************************************/
+<span class="lineNum">     383 </span>            :     PJ_LOG_LEVEL previous;
+<span class="lineNum">     384 </span><span class="lineCov">         99 :     if (0==ctx)</span>
+<span class="lineNum">     385 </span><span class="lineCov">          5 :         ctx = pj_get_default_ctx();</span>
+<span class="lineNum">     386 </span><span class="lineCov">         99 :     if (0==ctx)</span>
+<span class="lineNum">     387 </span><span class="lineNoCov">          0 :         return PJ_LOG_TELL;</span>
+<span class="lineNum">     388 </span><span class="lineCov">         99 :     previous = abs (ctx-&gt;debug_level);</span>
+<span class="lineNum">     389 </span><span class="lineCov">         99 :     if (PJ_LOG_TELL==log_level)</span>
+<span class="lineNum">     390 </span><span class="lineCov">         94 :         return previous;</span>
+<span class="lineNum">     391 </span><span class="lineCov">          5 :     ctx-&gt;debug_level = log_level;</span>
+<span class="lineNum">     392 </span><span class="lineCov">          5 :     return previous;</span>
+<span class="lineNum">     393 </span>            : }
+<span class="lineNum">     394 </span>            : 
+<a name="395"><span class="lineNum">     395 </span>            : </a>
+<span class="lineNum">     396 </span>            : /*****************************************************************************/
+<span class="lineNum">     397 </span><span class="lineCov">         33 : void proj_log_error (PJ *P, const char *fmt, ...) {</span>
+<span class="lineNum">     398 </span>            : /******************************************************************************
+<span class="lineNum">     399 </span>            :    For reporting the most severe events.
+<span class="lineNum">     400 </span>            : ******************************************************************************/
+<span class="lineNum">     401 </span>            :     va_list args;
+<span class="lineNum">     402 </span><span class="lineCov">         33 :     va_start( args, fmt );</span>
+<span class="lineNum">     403 </span><span class="lineCov">         33 :     pj_vlog (pj_get_ctx (P), PJ_LOG_ERROR , fmt, args);</span>
+<span class="lineNum">     404 </span><span class="lineCov">         33 :     va_end( args );</span>
+<span class="lineNum">     405 </span><span class="lineCov">         33 : }</span>
+<span class="lineNum">     406 </span>            : 
+<a name="407"><span class="lineNum">     407 </span>            : </a>
+<span class="lineNum">     408 </span>            : /*****************************************************************************/
+<span class="lineNum">     409 </span><span class="lineCov">       4406 : void proj_log_debug (PJ *P, const char *fmt, ...) {</span>
+<span class="lineNum">     410 </span>            : /******************************************************************************
+<span class="lineNum">     411 </span>            :    For reporting debugging information.
+<span class="lineNum">     412 </span>            : ******************************************************************************/
+<span class="lineNum">     413 </span>            :     va_list args;
+<span class="lineNum">     414 </span><span class="lineCov">       4406 :     va_start( args, fmt );</span>
+<span class="lineNum">     415 </span><span class="lineCov">       4406 :     pj_vlog (pj_get_ctx (P), PJ_LOG_DEBUG_MAJOR , fmt, args);</span>
+<span class="lineNum">     416 </span><span class="lineCov">       4406 :     va_end( args );</span>
+<span class="lineNum">     417 </span><span class="lineCov">       4406 : }</span>
+<span class="lineNum">     418 </span>            : 
+<a name="419"><span class="lineNum">     419 </span>            : </a>
+<span class="lineNum">     420 </span>            : /*****************************************************************************/
+<span class="lineNum">     421 </span><span class="lineCov">       1970 : void proj_log_trace (PJ *P, const char *fmt, ...) {</span>
+<span class="lineNum">     422 </span>            : /******************************************************************************
+<span class="lineNum">     423 </span>            :    For reporting embarrasingly detailed debugging information.
+<span class="lineNum">     424 </span>            : ******************************************************************************/
+<span class="lineNum">     425 </span>            :     va_list args;
+<span class="lineNum">     426 </span><span class="lineCov">       1970 :     va_start( args, fmt );</span>
+<span class="lineNum">     427 </span><span class="lineCov">       1970 :     pj_vlog (pj_get_ctx (P), PJ_LOG_DEBUG_MINOR , fmt, args);</span>
+<span class="lineNum">     428 </span><span class="lineCov">       1970 :     va_end( args );</span>
+<span class="lineNum">     429 </span><span class="lineCov">       1970 : }</span>
+<span class="lineNum">     430 </span>            : 
+<a name="431"><span class="lineNum">     431 </span>            : </a>
+<span class="lineNum">     432 </span>            : /*****************************************************************************/
+<span class="lineNum">     433 </span><span class="lineNoCov">          0 : void proj_log_func (PJ_CONTEXT *ctx, void *app_data, PJ_LOG_FUNCTION logf) {</span>
+<span class="lineNum">     434 </span>            : /******************************************************************************
+<span class="lineNum">     435 </span>            :     Put a new logging function into P's context. The opaque object app_data is
+<span class="lineNum">     436 </span>            :     passed as first arg at each call to the logger
+<span class="lineNum">     437 </span>            : ******************************************************************************/
+<span class="lineNum">     438 </span><span class="lineNoCov">          0 :     if (0==ctx)</span>
+<span class="lineNum">     439 </span><span class="lineNoCov">          0 :         pj_get_default_ctx ();</span>
+<span class="lineNum">     440 </span><span class="lineNoCov">          0 :     if (0==ctx)</span>
+<span class="lineNum">     441 </span><span class="lineNoCov">          0 :         return;</span>
+<span class="lineNum">     442 </span><span class="lineNoCov">          0 :     ctx-&gt;app_data = app_data;</span>
+<span class="lineNum">     443 </span><span class="lineNoCov">          0 :     if (0!=logf)</span>
+<span class="lineNum">     444 </span><span class="lineNoCov">          0 :         ctx-&gt;logger = logf;</span>
+<span class="lineNum">     445 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

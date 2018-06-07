@@ -1,0 +1,478 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - proj.info - src/PJ_qsc.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">src</a> - PJ_qsc.c<span style="font-size: 80%;"> (source / <a href="PJ_qsc.c.func-sort-c.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">proj.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">106</td>
+            <td class="headerCovTableEntry">208</td>
+            <td class="headerCovTableEntryLo">51.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2018-06-07 22:42:34</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntryMed">83.3 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * This implements the Quadrilateralized Spherical Cube (QSC) projection.
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * Copyright (c) 2011, 2012  Martin Lambers &lt;marlam@marlam.de&gt;
+<span class="lineNum">       5 </span>            :  *
+<span class="lineNum">       6 </span>            :  * The QSC projection was introduced in:
+<span class="lineNum">       7 </span>            :  * [OL76]
+<span class="lineNum">       8 </span>            :  * E.M. O'Neill and R.E. Laubscher, &quot;Extended Studies of a Quadrilateralized
+<span class="lineNum">       9 </span>            :  * Spherical Cube Earth Data Base&quot;, Naval Environmental Prediction Research
+<span class="lineNum">      10 </span>            :  * Facility Tech. Report NEPRF 3-76 (CSC), May 1976.
+<span class="lineNum">      11 </span>            :  *
+<span class="lineNum">      12 </span>            :  * The preceding shift from an ellipsoid to a sphere, which allows to apply
+<span class="lineNum">      13 </span>            :  * this projection to ellipsoids as used in the Ellipsoidal Cube Map model,
+<span class="lineNum">      14 </span>            :  * is described in
+<span class="lineNum">      15 </span>            :  * [LK12]
+<span class="lineNum">      16 </span>            :  * M. Lambers and A. Kolb, &quot;Ellipsoidal Cube Maps for Accurate Rendering of
+<span class="lineNum">      17 </span>            :  * Planetary-Scale Terrain Data&quot;, Proc. Pacific Graphics (Short Papers), Sep.
+<span class="lineNum">      18 </span>            :  * 2012
+<span class="lineNum">      19 </span>            :  *
+<span class="lineNum">      20 </span>            :  * You have to choose one of the following projection centers,
+<span class="lineNum">      21 </span>            :  * corresponding to the centers of the six cube faces:
+<span class="lineNum">      22 </span>            :  * phi0 = 0.0, lam0 = 0.0       (&quot;front&quot; face)
+<span class="lineNum">      23 </span>            :  * phi0 = 0.0, lam0 = 90.0      (&quot;right&quot; face)
+<span class="lineNum">      24 </span>            :  * phi0 = 0.0, lam0 = 180.0     (&quot;back&quot; face)
+<span class="lineNum">      25 </span>            :  * phi0 = 0.0, lam0 = -90.0     (&quot;left&quot; face)
+<span class="lineNum">      26 </span>            :  * phi0 = 90.0                  (&quot;top&quot; face)
+<span class="lineNum">      27 </span>            :  * phi0 = -90.0                 (&quot;bottom&quot; face)
+<span class="lineNum">      28 </span>            :  * Other projection centers will not work!
+<span class="lineNum">      29 </span>            :  *
+<span class="lineNum">      30 </span>            :  * In the projection code below, each cube face is handled differently.
+<span class="lineNum">      31 </span>            :  * See the computation of the face parameter in the PROJECTION(qsc) function
+<span class="lineNum">      32 </span>            :  * and the handling of different face values (FACE_*) in the forward and
+<span class="lineNum">      33 </span>            :  * inverse projections.
+<span class="lineNum">      34 </span>            :  *
+<span class="lineNum">      35 </span>            :  * Furthermore, the projection is originally only defined for theta angles
+<span class="lineNum">      36 </span>            :  * between (-1/4 * PI) and (+1/4 * PI) on the current cube face. This area
+<span class="lineNum">      37 </span>            :  * of definition is named AREA_0 in the projection code below. The other
+<span class="lineNum">      38 </span>            :  * three areas of a cube face are handled by rotation of AREA_0.
+<span class="lineNum">      39 </span>            :  */
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : #define PJ_LIB__
+<span class="lineNum">      42 </span>            : 
+<span class="lineNum">      43 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">      44 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span>            : #include &quot;projects.h&quot;
+<span class="lineNum">      47 </span>            : 
+<span class="lineNum">      48 </span>            : /* The six cube faces. */
+<span class="lineNum">      49 </span>            : enum Face {
+<span class="lineNum">      50 </span>            :     FACE_FRONT  = 0,
+<span class="lineNum">      51 </span>            :     FACE_RIGHT  = 1,
+<span class="lineNum">      52 </span>            :     FACE_BACK   = 2,
+<span class="lineNum">      53 </span>            :     FACE_LEFT   = 3,
+<span class="lineNum">      54 </span>            :     FACE_TOP    = 4,
+<span class="lineNum">      55 </span>            :     FACE_BOTTOM = 5
+<span class="lineNum">      56 </span>            : };
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span>            : struct pj_opaque {
+<span class="lineNum">      59 </span>            :         enum Face face;
+<span class="lineNum">      60 </span>            :         double a_squared;
+<span class="lineNum">      61 </span>            :         double b;
+<span class="lineNum">      62 </span>            :         double one_minus_f;
+<span class="lineNum">      63 </span>            :         double one_minus_f_squared;
+<span class="lineNum">      64 </span>            : };
+<span class="lineNum">      65 </span>            : PROJ_HEAD(qsc, &quot;Quadrilateralized Spherical Cube&quot;) &quot;\n\tAzi, Sph.&quot;;
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : #define EPS10 1.e-10
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span>            : /* The four areas on a cube face. AREA_0 is the area of definition,
+<span class="lineNum">      70 </span>            :  * the other three areas are counted counterclockwise. */
+<span class="lineNum">      71 </span>            : enum Area {
+<span class="lineNum">      72 </span>            :     AREA_0 = 0,
+<span class="lineNum">      73 </span>            :     AREA_1 = 1,
+<span class="lineNum">      74 </span>            :     AREA_2 = 2,
+<span class="lineNum">      75 </span>            :     AREA_3 = 3
+<span class="lineNum">      76 </span>            : };
+<span class="lineNum">      77 </span>            : 
+<a name="78"><span class="lineNum">      78 </span>            : /* Helper function for forward projection: compute the theta angle</a>
+<span class="lineNum">      79 </span>            :  * and determine the area number. */
+<span class="lineNum">      80 </span><span class="lineCov">         10 : static double qsc_fwd_equat_face_theta(double phi, double y, double x, enum Area *area) {</span>
+<span class="lineNum">      81 </span>            :     double theta;
+<span class="lineNum">      82 </span><span class="lineCov">         10 :     if (phi &lt; EPS10) {</span>
+<span class="lineNum">      83 </span><span class="lineNoCov">          0 :         *area = AREA_0;</span>
+<span class="lineNum">      84 </span><span class="lineNoCov">          0 :         theta = 0.0;</span>
+<span class="lineNum">      85 </span>            :     } else {
+<span class="lineNum">      86 </span><span class="lineCov">         10 :         theta = atan2(y, x);</span>
+<span class="lineNum">      87 </span><span class="lineCov">         10 :         if (fabs(theta) &lt;= M_FORTPI) {</span>
+<span class="lineNum">      88 </span><span class="lineCov">          6 :             *area = AREA_0;</span>
+<span class="lineNum">      89 </span><span class="lineCov">          4 :         } else if (theta &gt; M_FORTPI &amp;&amp; theta &lt;= M_HALFPI + M_FORTPI) {</span>
+<span class="lineNum">      90 </span><span class="lineNoCov">          0 :             *area = AREA_1;</span>
+<span class="lineNum">      91 </span><span class="lineNoCov">          0 :             theta -= M_HALFPI;</span>
+<span class="lineNum">      92 </span><span class="lineCov">          4 :         } else if (theta &gt; M_HALFPI + M_FORTPI || theta &lt;= -(M_HALFPI + M_FORTPI)) {</span>
+<span class="lineNum">      93 </span><span class="lineCov">          4 :             *area = AREA_2;</span>
+<span class="lineNum">      94 </span><span class="lineCov">          4 :             theta = (theta &gt;= 0.0 ? theta - M_PI : theta + M_PI);</span>
+<span class="lineNum">      95 </span>            :         } else {
+<span class="lineNum">      96 </span><span class="lineNoCov">          0 :             *area = AREA_3;</span>
+<span class="lineNum">      97 </span><span class="lineNoCov">          0 :             theta += M_HALFPI;</span>
+<span class="lineNum">      98 </span>            :         }
+<span class="lineNum">      99 </span>            :     }
+<span class="lineNum">     100 </span><span class="lineCov">         10 :     return theta;</span>
+<span class="lineNum">     101 </span>            : }
+<a name="102"><span class="lineNum">     102 </span>            : </a>
+<span class="lineNum">     103 </span>            : /* Helper function: shift the longitude. */
+<span class="lineNum">     104 </span><span class="lineNoCov">          0 : static double qsc_shift_lon_origin(double lon, double offset) {</span>
+<span class="lineNum">     105 </span><span class="lineNoCov">          0 :     double slon = lon + offset;</span>
+<span class="lineNum">     106 </span><span class="lineNoCov">          0 :     if (slon &lt; -M_PI) {</span>
+<span class="lineNum">     107 </span><span class="lineNoCov">          0 :         slon += M_TWOPI;</span>
+<span class="lineNum">     108 </span><span class="lineNoCov">          0 :     } else if (slon &gt; +M_PI) {</span>
+<span class="lineNum">     109 </span><span class="lineNoCov">          0 :         slon -= M_TWOPI;</span>
+<span class="lineNum">     110 </span>            :     }
+<span class="lineNum">     111 </span><span class="lineNoCov">          0 :     return slon;</span>
+<span class="lineNum">     112 </span>            : }
+<a name="113"><span class="lineNum">     113 </span>            : </a>
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span><span class="lineCov">         10 : static XY e_forward (LP lp, PJ *P) {          /* Ellipsoidal, forward */</span>
+<span class="lineNum">     116 </span><span class="lineCov">         10 :     XY xy = {0.0,0.0};</span>
+<span class="lineNum">     117 </span><span class="lineCov">         10 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     118 </span>            :     double lat, lon;
+<span class="lineNum">     119 </span>            :     double theta, phi;
+<span class="lineNum">     120 </span>            :     double t, mu; /* nu; */
+<span class="lineNum">     121 </span>            :     enum Area area;
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            :     /* Convert the geodetic latitude to a geocentric latitude.
+<span class="lineNum">     124 </span>            :      * This corresponds to the shift from the ellipsoid to the sphere
+<span class="lineNum">     125 </span>            :      * described in [LK12]. */
+<span class="lineNum">     126 </span><span class="lineCov">         10 :     if (P-&gt;es != 0.0) {</span>
+<span class="lineNum">     127 </span><span class="lineCov">          6 :         lat = atan(Q-&gt;one_minus_f_squared * tan(lp.phi));</span>
+<span class="lineNum">     128 </span>            :     } else {
+<span class="lineNum">     129 </span><span class="lineCov">          4 :         lat = lp.phi;</span>
+<span class="lineNum">     130 </span>            :     }
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span>            :     /* Convert the input lat, lon into theta, phi as used by QSC.
+<span class="lineNum">     133 </span>            :      * This depends on the cube face and the area on it.
+<span class="lineNum">     134 </span>            :      * For the top and bottom face, we can compute theta and phi
+<span class="lineNum">     135 </span>            :      * directly from phi, lam. For the other faces, we must use
+<span class="lineNum">     136 </span>            :      * unit sphere cartesian coordinates as an intermediate step. */
+<span class="lineNum">     137 </span><span class="lineCov">         10 :     lon = lp.lam;</span>
+<span class="lineNum">     138 </span><span class="lineCov">         10 :     if (Q-&gt;face == FACE_TOP) {</span>
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :         phi = M_HALFPI - lat;</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :         if (lon &gt;= M_FORTPI &amp;&amp; lon &lt;= M_HALFPI + M_FORTPI) {</span>
+<span class="lineNum">     141 </span><span class="lineNoCov">          0 :             area = AREA_0;</span>
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :             theta = lon - M_HALFPI;</span>
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :         } else if (lon &gt; M_HALFPI + M_FORTPI || lon &lt;= -(M_HALFPI + M_FORTPI)) {</span>
+<span class="lineNum">     144 </span><span class="lineNoCov">          0 :             area = AREA_1;</span>
+<span class="lineNum">     145 </span><span class="lineNoCov">          0 :             theta = (lon &gt; 0.0 ? lon - M_PI : lon + M_PI);</span>
+<span class="lineNum">     146 </span><span class="lineNoCov">          0 :         } else if (lon &gt; -(M_HALFPI + M_FORTPI) &amp;&amp; lon &lt;= -M_FORTPI) {</span>
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :             area = AREA_2;</span>
+<span class="lineNum">     148 </span><span class="lineNoCov">          0 :             theta = lon + M_HALFPI;</span>
+<span class="lineNum">     149 </span>            :         } else {
+<span class="lineNum">     150 </span><span class="lineNoCov">          0 :             area = AREA_3;</span>
+<span class="lineNum">     151 </span><span class="lineNoCov">          0 :             theta = lon;</span>
+<span class="lineNum">     152 </span>            :         }
+<span class="lineNum">     153 </span><span class="lineCov">         10 :     } else if (Q-&gt;face == FACE_BOTTOM) {</span>
+<span class="lineNum">     154 </span><span class="lineNoCov">          0 :         phi = M_HALFPI + lat;</span>
+<span class="lineNum">     155 </span><span class="lineNoCov">          0 :         if (lon &gt;= M_FORTPI &amp;&amp; lon &lt;= M_HALFPI + M_FORTPI) {</span>
+<span class="lineNum">     156 </span><span class="lineNoCov">          0 :             area = AREA_0;</span>
+<span class="lineNum">     157 </span><span class="lineNoCov">          0 :             theta = -lon + M_HALFPI;</span>
+<span class="lineNum">     158 </span><span class="lineNoCov">          0 :         } else if (lon &lt; M_FORTPI &amp;&amp; lon &gt;= -M_FORTPI) {</span>
+<span class="lineNum">     159 </span><span class="lineNoCov">          0 :             area = AREA_1;</span>
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :             theta = -lon;</span>
+<span class="lineNum">     161 </span><span class="lineNoCov">          0 :         } else if (lon &lt; -M_FORTPI &amp;&amp; lon &gt;= -(M_HALFPI + M_FORTPI)) {</span>
+<span class="lineNum">     162 </span><span class="lineNoCov">          0 :             area = AREA_2;</span>
+<span class="lineNum">     163 </span><span class="lineNoCov">          0 :             theta = -lon - M_HALFPI;</span>
+<span class="lineNum">     164 </span>            :         } else {
+<span class="lineNum">     165 </span><span class="lineNoCov">          0 :             area = AREA_3;</span>
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :             theta = (lon &gt; 0.0 ? -lon + M_PI : -lon - M_PI);</span>
+<span class="lineNum">     167 </span>            :         }
+<span class="lineNum">     168 </span>            :     } else {
+<span class="lineNum">     169 </span>            :         double q, r, s;
+<span class="lineNum">     170 </span>            :         double sinlat, coslat;
+<span class="lineNum">     171 </span>            :         double sinlon, coslon;
+<span class="lineNum">     172 </span>            : 
+<span class="lineNum">     173 </span><span class="lineCov">         10 :         if (Q-&gt;face == FACE_RIGHT) {</span>
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 :             lon = qsc_shift_lon_origin(lon, +M_HALFPI);</span>
+<span class="lineNum">     175 </span><span class="lineCov">         10 :         } else if (Q-&gt;face == FACE_BACK) {</span>
+<span class="lineNum">     176 </span><span class="lineNoCov">          0 :             lon = qsc_shift_lon_origin(lon, +M_PI);</span>
+<span class="lineNum">     177 </span><span class="lineCov">         10 :         } else if (Q-&gt;face == FACE_LEFT) {</span>
+<span class="lineNum">     178 </span><span class="lineNoCov">          0 :             lon = qsc_shift_lon_origin(lon, -M_HALFPI);</span>
+<span class="lineNum">     179 </span>            :         }
+<span class="lineNum">     180 </span><span class="lineCov">         10 :         sinlat = sin(lat);</span>
+<span class="lineNum">     181 </span><span class="lineCov">         10 :         coslat = cos(lat);</span>
+<span class="lineNum">     182 </span><span class="lineCov">         10 :         sinlon = sin(lon);</span>
+<span class="lineNum">     183 </span><span class="lineCov">         10 :         coslon = cos(lon);</span>
+<span class="lineNum">     184 </span><span class="lineCov">         10 :         q = coslat * coslon;</span>
+<span class="lineNum">     185 </span><span class="lineCov">         10 :         r = coslat * sinlon;</span>
+<span class="lineNum">     186 </span><span class="lineCov">         10 :         s = sinlat;</span>
+<span class="lineNum">     187 </span>            : 
+<span class="lineNum">     188 </span><span class="lineCov">         10 :         if (Q-&gt;face == FACE_FRONT) {</span>
+<span class="lineNum">     189 </span><span class="lineCov">         10 :             phi = acos(q);</span>
+<span class="lineNum">     190 </span><span class="lineCov">         10 :             theta = qsc_fwd_equat_face_theta(phi, s, r, &amp;area);</span>
+<span class="lineNum">     191 </span><span class="lineNoCov">          0 :         } else if (Q-&gt;face == FACE_RIGHT) {</span>
+<span class="lineNum">     192 </span><span class="lineNoCov">          0 :             phi = acos(r);</span>
+<span class="lineNum">     193 </span><span class="lineNoCov">          0 :             theta = qsc_fwd_equat_face_theta(phi, s, -q, &amp;area);</span>
+<span class="lineNum">     194 </span><span class="lineNoCov">          0 :         } else if (Q-&gt;face == FACE_BACK) {</span>
+<span class="lineNum">     195 </span><span class="lineNoCov">          0 :             phi = acos(-q);</span>
+<span class="lineNum">     196 </span><span class="lineNoCov">          0 :             theta = qsc_fwd_equat_face_theta(phi, s, -r, &amp;area);</span>
+<span class="lineNum">     197 </span><span class="lineNoCov">          0 :         } else if (Q-&gt;face == FACE_LEFT) {</span>
+<span class="lineNum">     198 </span><span class="lineNoCov">          0 :             phi = acos(-r);</span>
+<span class="lineNum">     199 </span><span class="lineNoCov">          0 :             theta = qsc_fwd_equat_face_theta(phi, s, q, &amp;area);</span>
+<span class="lineNum">     200 </span>            :         } else {
+<span class="lineNum">     201 </span>            :             /* Impossible */
+<span class="lineNum">     202 </span><span class="lineNoCov">          0 :             phi = theta = 0.0;</span>
+<span class="lineNum">     203 </span><span class="lineNoCov">          0 :             area = AREA_0;</span>
+<span class="lineNum">     204 </span>            :         }
+<span class="lineNum">     205 </span>            :     }
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            :     /* Compute mu and nu for the area of definition.
+<span class="lineNum">     208 </span>            :      * For mu, see Eq. (3-21) in [OL76], but note the typos:
+<span class="lineNum">     209 </span>            :      * compare with Eq. (3-14). For nu, see Eq. (3-38). */
+<span class="lineNum">     210 </span><span class="lineCov">         10 :     mu = atan((12.0 / M_PI) * (theta + acos(sin(theta) * cos(M_FORTPI)) - M_HALFPI));</span>
+<span class="lineNum">     211 </span><span class="lineCov">         10 :     t = sqrt((1.0 - cos(phi)) / (cos(mu) * cos(mu)) / (1.0 - cos(atan(1.0 / cos(theta)))));</span>
+<span class="lineNum">     212 </span>            :     /* nu = atan(t);        We don't really need nu, just t, see below. */
+<span class="lineNum">     213 </span>            : 
+<span class="lineNum">     214 </span>            :     /* Apply the result to the real area. */
+<span class="lineNum">     215 </span><span class="lineCov">         10 :     if (area == AREA_1) {</span>
+<span class="lineNum">     216 </span><span class="lineNoCov">          0 :         mu += M_HALFPI;</span>
+<span class="lineNum">     217 </span><span class="lineCov">         10 :     } else if (area == AREA_2) {</span>
+<span class="lineNum">     218 </span><span class="lineCov">          4 :         mu += M_PI;</span>
+<span class="lineNum">     219 </span><span class="lineCov">          6 :     } else if (area == AREA_3) {</span>
+<span class="lineNum">     220 </span><span class="lineNoCov">          0 :         mu += M_PI_HALFPI;</span>
+<span class="lineNum">     221 </span>            :     }
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span>            :     /* Now compute x, y from mu and nu */
+<span class="lineNum">     224 </span>            :     /* t = tan(nu); */
+<span class="lineNum">     225 </span><span class="lineCov">         10 :     xy.x = t * cos(mu);</span>
+<span class="lineNum">     226 </span><span class="lineCov">         10 :     xy.y = t * sin(mu);</span>
+<span class="lineNum">     227 </span><span class="lineCov">         10 :     return xy;</span>
+<span class="lineNum">     228 </span>            : }
+<a name="229"><span class="lineNum">     229 </span>            : </a>
+<span class="lineNum">     230 </span>            : 
+<span class="lineNum">     231 </span><span class="lineCov">         10 : static LP e_inverse (XY xy, PJ *P) {          /* Ellipsoidal, inverse */</span>
+<span class="lineNum">     232 </span><span class="lineCov">         10 :     LP lp = {0.0,0.0};</span>
+<span class="lineNum">     233 </span><span class="lineCov">         10 :     struct pj_opaque *Q = P-&gt;opaque;</span>
+<span class="lineNum">     234 </span>            :     double mu, nu, cosmu, tannu;
+<span class="lineNum">     235 </span>            :     double tantheta, theta, cosphi, phi;
+<span class="lineNum">     236 </span>            :     double t;
+<span class="lineNum">     237 </span>            :     int area;
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span>            :     /* Convert the input x, y to the mu and nu angles as used by QSC.
+<span class="lineNum">     240 </span>            :      * This depends on the area of the cube face. */
+<span class="lineNum">     241 </span><span class="lineCov">         10 :     nu = atan(sqrt(xy.x * xy.x + xy.y * xy.y));</span>
+<span class="lineNum">     242 </span><span class="lineCov">         10 :     mu = atan2(xy.y, xy.x);</span>
+<span class="lineNum">     243 </span><span class="lineCov">         10 :     if (xy.x &gt;= 0.0 &amp;&amp; xy.x &gt;= fabs(xy.y)) {</span>
+<span class="lineNum">     244 </span><span class="lineCov">          6 :         area = AREA_0;</span>
+<span class="lineNum">     245 </span><span class="lineCov">          4 :     } else if (xy.y &gt;= 0.0 &amp;&amp; xy.y &gt;= fabs(xy.x)) {</span>
+<span class="lineNum">     246 </span><span class="lineNoCov">          0 :         area = AREA_1;</span>
+<span class="lineNum">     247 </span><span class="lineNoCov">          0 :         mu -= M_HALFPI;</span>
+<span class="lineNum">     248 </span><span class="lineCov">          4 :     } else if (xy.x &lt; 0.0 &amp;&amp; -xy.x &gt;= fabs(xy.y)) {</span>
+<span class="lineNum">     249 </span><span class="lineCov">          4 :         area = AREA_2;</span>
+<span class="lineNum">     250 </span><span class="lineCov">          4 :         mu = (mu &lt; 0.0 ? mu + M_PI : mu - M_PI);</span>
+<span class="lineNum">     251 </span>            :     } else {
+<span class="lineNum">     252 </span><span class="lineNoCov">          0 :         area = AREA_3;</span>
+<span class="lineNum">     253 </span><span class="lineNoCov">          0 :         mu += M_HALFPI;</span>
+<span class="lineNum">     254 </span>            :     }
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span>            :     /* Compute phi and theta for the area of definition.
+<span class="lineNum">     257 </span>            :      * The inverse projection is not described in the original paper, but some
+<span class="lineNum">     258 </span>            :      * good hints can be found here (as of 2011-12-14):
+<span class="lineNum">     259 </span>            :      * http://fits.gsfc.nasa.gov/fitsbits/saf.93/saf.9302
+<span class="lineNum">     260 </span>            :      * (search for &quot;Message-Id: &lt;9302181759.AA25477 at fits.cv.nrao.edu&gt;&quot;) */
+<span class="lineNum">     261 </span><span class="lineCov">         10 :     t = (M_PI / 12.0) * tan(mu);</span>
+<span class="lineNum">     262 </span><span class="lineCov">         10 :     tantheta = sin(t) / (cos(t) - (1.0 / sqrt(2.0)));</span>
+<span class="lineNum">     263 </span><span class="lineCov">         10 :     theta = atan(tantheta);</span>
+<span class="lineNum">     264 </span><span class="lineCov">         10 :     cosmu = cos(mu);</span>
+<span class="lineNum">     265 </span><span class="lineCov">         10 :     tannu = tan(nu);</span>
+<span class="lineNum">     266 </span><span class="lineCov">         10 :     cosphi = 1.0 - cosmu * cosmu * tannu * tannu * (1.0 - cos(atan(1.0 / cos(theta))));</span>
+<span class="lineNum">     267 </span><span class="lineCov">         10 :     if (cosphi &lt; -1.0) {</span>
+<span class="lineNum">     268 </span><span class="lineNoCov">          0 :         cosphi = -1.0;</span>
+<span class="lineNum">     269 </span><span class="lineCov">         10 :     } else if (cosphi &gt; +1.0) {</span>
+<span class="lineNum">     270 </span><span class="lineNoCov">          0 :         cosphi = +1.0;</span>
+<span class="lineNum">     271 </span>            :     }
+<span class="lineNum">     272 </span>            : 
+<span class="lineNum">     273 </span>            :     /* Apply the result to the real area on the cube face.
+<span class="lineNum">     274 </span>            :      * For the top and bottom face, we can compute phi and lam directly.
+<span class="lineNum">     275 </span>            :      * For the other faces, we must use unit sphere cartesian coordinates
+<span class="lineNum">     276 </span>            :      * as an intermediate step. */
+<span class="lineNum">     277 </span><span class="lineCov">         10 :     if (Q-&gt;face == FACE_TOP) {</span>
+<span class="lineNum">     278 </span><span class="lineNoCov">          0 :         phi = acos(cosphi);</span>
+<span class="lineNum">     279 </span><span class="lineNoCov">          0 :         lp.phi = M_HALFPI - phi;</span>
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :         if (area == AREA_0) {</span>
+<span class="lineNum">     281 </span><span class="lineNoCov">          0 :             lp.lam = theta + M_HALFPI;</span>
+<span class="lineNum">     282 </span><span class="lineNoCov">          0 :         } else if (area == AREA_1) {</span>
+<span class="lineNum">     283 </span><span class="lineNoCov">          0 :             lp.lam = (theta &lt; 0.0 ? theta + M_PI : theta - M_PI);</span>
+<span class="lineNum">     284 </span><span class="lineNoCov">          0 :         } else if (area == AREA_2) {</span>
+<span class="lineNum">     285 </span><span class="lineNoCov">          0 :             lp.lam = theta - M_HALFPI;</span>
+<span class="lineNum">     286 </span>            :         } else /* area == AREA_3 */ {
+<span class="lineNum">     287 </span><span class="lineNoCov">          0 :             lp.lam = theta;</span>
+<span class="lineNum">     288 </span>            :         }
+<span class="lineNum">     289 </span><span class="lineCov">         10 :     } else if (Q-&gt;face == FACE_BOTTOM) {</span>
+<span class="lineNum">     290 </span><span class="lineNoCov">          0 :         phi = acos(cosphi);</span>
+<span class="lineNum">     291 </span><span class="lineNoCov">          0 :         lp.phi = phi - M_HALFPI;</span>
+<span class="lineNum">     292 </span><span class="lineNoCov">          0 :         if (area == AREA_0) {</span>
+<span class="lineNum">     293 </span><span class="lineNoCov">          0 :             lp.lam = -theta + M_HALFPI;</span>
+<span class="lineNum">     294 </span><span class="lineNoCov">          0 :         } else if (area == AREA_1) {</span>
+<span class="lineNum">     295 </span><span class="lineNoCov">          0 :             lp.lam = -theta;</span>
+<span class="lineNum">     296 </span><span class="lineNoCov">          0 :         } else if (area == AREA_2) {</span>
+<span class="lineNum">     297 </span><span class="lineNoCov">          0 :             lp.lam = -theta - M_HALFPI;</span>
+<span class="lineNum">     298 </span>            :         } else /* area == AREA_3 */ {
+<span class="lineNum">     299 </span><span class="lineNoCov">          0 :             lp.lam = (theta &lt; 0.0 ? -theta - M_PI : -theta + M_PI);</span>
+<span class="lineNum">     300 </span>            :         }
+<span class="lineNum">     301 </span>            :     } else {
+<span class="lineNum">     302 </span>            :         /* Compute phi and lam via cartesian unit sphere coordinates. */
+<span class="lineNum">     303 </span>            :         double q, r, s;
+<span class="lineNum">     304 </span><span class="lineCov">         10 :         q = cosphi;</span>
+<span class="lineNum">     305 </span><span class="lineCov">         10 :         t = q * q;</span>
+<span class="lineNum">     306 </span><span class="lineCov">         10 :         if (t &gt;= 1.0) {</span>
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :             s = 0.0;</span>
+<span class="lineNum">     308 </span>            :         } else {
+<span class="lineNum">     309 </span><span class="lineCov">         10 :             s = sqrt(1.0 - t) * sin(theta);</span>
+<span class="lineNum">     310 </span>            :         }
+<span class="lineNum">     311 </span><span class="lineCov">         10 :         t += s * s;</span>
+<span class="lineNum">     312 </span><span class="lineCov">         10 :         if (t &gt;= 1.0) {</span>
+<span class="lineNum">     313 </span><span class="lineNoCov">          0 :             r = 0.0;</span>
+<span class="lineNum">     314 </span>            :         } else {
+<span class="lineNum">     315 </span><span class="lineCov">         10 :             r = sqrt(1.0 - t);</span>
+<span class="lineNum">     316 </span>            :         }
+<span class="lineNum">     317 </span>            :         /* Rotate q,r,s into the correct area. */
+<span class="lineNum">     318 </span><span class="lineCov">         10 :         if (area == AREA_1) {</span>
+<span class="lineNum">     319 </span><span class="lineNoCov">          0 :             t = r;</span>
+<span class="lineNum">     320 </span><span class="lineNoCov">          0 :             r = -s;</span>
+<span class="lineNum">     321 </span><span class="lineNoCov">          0 :             s = t;</span>
+<span class="lineNum">     322 </span><span class="lineCov">         10 :         } else if (area == AREA_2) {</span>
+<span class="lineNum">     323 </span><span class="lineCov">          4 :             r = -r;</span>
+<span class="lineNum">     324 </span><span class="lineCov">          4 :             s = -s;</span>
+<span class="lineNum">     325 </span><span class="lineCov">          6 :         } else if (area == AREA_3) {</span>
+<span class="lineNum">     326 </span><span class="lineNoCov">          0 :             t = r;</span>
+<span class="lineNum">     327 </span><span class="lineNoCov">          0 :             r = s;</span>
+<span class="lineNum">     328 </span><span class="lineNoCov">          0 :             s = -t;</span>
+<span class="lineNum">     329 </span>            :         }
+<span class="lineNum">     330 </span>            :         /* Rotate q,r,s into the correct cube face. */
+<span class="lineNum">     331 </span><span class="lineCov">         10 :         if (Q-&gt;face == FACE_RIGHT) {</span>
+<span class="lineNum">     332 </span><span class="lineNoCov">          0 :             t = q;</span>
+<span class="lineNum">     333 </span><span class="lineNoCov">          0 :             q = -r;</span>
+<span class="lineNum">     334 </span><span class="lineNoCov">          0 :             r = t;</span>
+<span class="lineNum">     335 </span><span class="lineCov">         10 :         } else if (Q-&gt;face == FACE_BACK) {</span>
+<span class="lineNum">     336 </span><span class="lineNoCov">          0 :             q = -q;</span>
+<span class="lineNum">     337 </span><span class="lineNoCov">          0 :             r = -r;</span>
+<span class="lineNum">     338 </span><span class="lineCov">         10 :         } else if (Q-&gt;face == FACE_LEFT) {</span>
+<span class="lineNum">     339 </span><span class="lineNoCov">          0 :             t = q;</span>
+<span class="lineNum">     340 </span><span class="lineNoCov">          0 :             q = r;</span>
+<span class="lineNum">     341 </span><span class="lineNoCov">          0 :             r = -t;</span>
+<span class="lineNum">     342 </span>            :         }
+<span class="lineNum">     343 </span>            :         /* Now compute phi and lam from the unit sphere coordinates. */
+<span class="lineNum">     344 </span><span class="lineCov">         10 :         lp.phi = acos(-s) - M_HALFPI;</span>
+<span class="lineNum">     345 </span><span class="lineCov">         10 :         lp.lam = atan2(r, q);</span>
+<span class="lineNum">     346 </span><span class="lineCov">         10 :         if (Q-&gt;face == FACE_RIGHT) {</span>
+<span class="lineNum">     347 </span><span class="lineNoCov">          0 :             lp.lam = qsc_shift_lon_origin(lp.lam, -M_HALFPI);</span>
+<span class="lineNum">     348 </span><span class="lineCov">         10 :         } else if (Q-&gt;face == FACE_BACK) {</span>
+<span class="lineNum">     349 </span><span class="lineNoCov">          0 :             lp.lam = qsc_shift_lon_origin(lp.lam, -M_PI);</span>
+<span class="lineNum">     350 </span><span class="lineCov">         10 :         } else if (Q-&gt;face == FACE_LEFT) {</span>
+<span class="lineNum">     351 </span><span class="lineNoCov">          0 :             lp.lam = qsc_shift_lon_origin(lp.lam, +M_HALFPI);</span>
+<span class="lineNum">     352 </span>            :         }
+<span class="lineNum">     353 </span>            :     }
+<span class="lineNum">     354 </span>            : 
+<span class="lineNum">     355 </span>            :     /* Apply the shift from the sphere to the ellipsoid as described
+<span class="lineNum">     356 </span>            :      * in [LK12]. */
+<span class="lineNum">     357 </span><span class="lineCov">         10 :     if (P-&gt;es != 0.0) {</span>
+<span class="lineNum">     358 </span>            :         int invert_sign;
+<span class="lineNum">     359 </span>            :         double tanphi, xa;
+<span class="lineNum">     360 </span><span class="lineCov">          6 :         invert_sign = (lp.phi &lt; 0.0 ? 1 : 0);</span>
+<span class="lineNum">     361 </span><span class="lineCov">          6 :         tanphi = tan(lp.phi);</span>
+<span class="lineNum">     362 </span><span class="lineCov">          6 :         xa = Q-&gt;b / sqrt(tanphi * tanphi + Q-&gt;one_minus_f_squared);</span>
+<span class="lineNum">     363 </span><span class="lineCov">          6 :         lp.phi = atan(sqrt(P-&gt;a * P-&gt;a - xa * xa) / (Q-&gt;one_minus_f * xa));</span>
+<span class="lineNum">     364 </span><span class="lineCov">          6 :         if (invert_sign) {</span>
+<span class="lineNum">     365 </span><span class="lineCov">          4 :             lp.phi = -lp.phi;</span>
+<span class="lineNum">     366 </span>            :         }
+<span class="lineNum">     367 </span>            :     }
+<span class="lineNum">     368 </span><span class="lineCov">         10 :     return lp;</span>
+<span class="lineNum">     369 </span>            : }
+<a name="370"><span class="lineNum">     370 </span>            : </a>
+<span class="lineNum">     371 </span>            : 
+<span class="lineNum">     372 </span><span class="lineCov">         18 : PJ *PROJECTION(qsc) {</span>
+<span class="lineNum">     373 </span><span class="lineCov">          6 :     struct pj_opaque *Q = pj_calloc (1, sizeof (struct pj_opaque));</span>
+<span class="lineNum">     374 </span><span class="lineCov">          6 :     if (0==Q)</span>
+<span class="lineNum">     375 </span><span class="lineNoCov">          0 :         return pj_default_destructor (P, ENOMEM);</span>
+<span class="lineNum">     376 </span><span class="lineCov">          6 :     P-&gt;opaque = Q;</span>
+<span class="lineNum">     377 </span>            : 
+<span class="lineNum">     378 </span><span class="lineCov">          6 :     P-&gt;inv = e_inverse;</span>
+<span class="lineNum">     379 </span><span class="lineCov">          6 :     P-&gt;fwd = e_forward;</span>
+<span class="lineNum">     380 </span>            :     /* Determine the cube face from the center of projection. */
+<span class="lineNum">     381 </span><span class="lineCov">          6 :     if (P-&gt;phi0 &gt;= M_HALFPI - M_FORTPI / 2.0) {</span>
+<span class="lineNum">     382 </span><span class="lineNoCov">          0 :         Q-&gt;face = FACE_TOP;</span>
+<span class="lineNum">     383 </span><span class="lineCov">          6 :     } else if (P-&gt;phi0 &lt;= -(M_HALFPI - M_FORTPI / 2.0)) {</span>
+<span class="lineNum">     384 </span><span class="lineNoCov">          0 :         Q-&gt;face = FACE_BOTTOM;</span>
+<span class="lineNum">     385 </span><span class="lineCov">          6 :     } else if (fabs(P-&gt;lam0) &lt;= M_FORTPI) {</span>
+<span class="lineNum">     386 </span><span class="lineCov">          6 :         Q-&gt;face = FACE_FRONT;</span>
+<span class="lineNum">     387 </span><span class="lineNoCov">          0 :     } else if (fabs(P-&gt;lam0) &lt;= M_HALFPI + M_FORTPI) {</span>
+<span class="lineNum">     388 </span><span class="lineNoCov">          0 :         Q-&gt;face = (P-&gt;lam0 &gt; 0.0 ? FACE_RIGHT : FACE_LEFT);</span>
+<span class="lineNum">     389 </span>            :     } else {
+<span class="lineNum">     390 </span><span class="lineNoCov">          0 :         Q-&gt;face = FACE_BACK;</span>
+<span class="lineNum">     391 </span>            :     }
+<span class="lineNum">     392 </span>            :     /* Fill in useful values for the ellipsoid &lt;-&gt; sphere shift
+<span class="lineNum">     393 </span>            :      * described in [LK12]. */
+<span class="lineNum">     394 </span><span class="lineCov">          6 :     if (P-&gt;es != 0.0) {</span>
+<span class="lineNum">     395 </span><span class="lineCov">          5 :         Q-&gt;a_squared = P-&gt;a * P-&gt;a;</span>
+<span class="lineNum">     396 </span><span class="lineCov">          5 :         Q-&gt;b = P-&gt;a * sqrt(1.0 - P-&gt;es);</span>
+<span class="lineNum">     397 </span><span class="lineCov">          5 :         Q-&gt;one_minus_f = 1.0 - (P-&gt;a - Q-&gt;b) / P-&gt;a;</span>
+<span class="lineNum">     398 </span><span class="lineCov">          5 :         Q-&gt;one_minus_f_squared = Q-&gt;one_minus_f * Q-&gt;one_minus_f;</span>
+<span class="lineNum">     399 </span>            :     }
+<span class="lineNum">     400 </span>            : 
+<span class="lineNum">     401 </span><span class="lineCov">          6 :     return P;</span>
+<span class="lineNum">     402 </span>            : }
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.12</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>
